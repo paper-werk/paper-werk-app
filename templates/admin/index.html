@@ -1,0 +1,242 @@
+{% extends "admin/base.html" %}
+{% load i18n unfold %}
+
+{% comment %}
+Startseite des Admins mit den Auswertungen anstelle der App-Liste.
+
+Auf Projektebene, weil Unfold dasselbe Template mitbringt und in
+INSTALLED_APPS vorne steht; bei APP_DIRS gilt die erste App, eine Fassung in
+core/templates bliebe ohne Fehlermeldung wirkungslos. TEMPLATES['DIRS'] wird
+vor allen Apps durchsucht (settings/base.py).
+
+Erbt von admin/base.html, weil admin/index.html diese Datei selbst ist.
+
+Die Zahlen kommen fertig berechnet aus auswertung/dashboard.py, auch
+Prozentwerte, weil Fachlogik in Templates schlecht testbar ist.
+{% endcomment %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+{% include "admin/_eigene_stile.html" %}
+    {% comment %} Ablaufendes HTTPS-Zertifikat: nur für die Verwaltung, nur im
+       Modus "datei", nur unter 30 Tagen (core/zertifikat.py). Ganz oben,
+       weil die Seite nach Ablauf nicht mehr erreichbar ist. Der Text nennt
+       den Zuständigen; die Erneuerung liegt beim Betreiber der Installation.
+
+       Dieselben Klassen wie die Warnkästen der Projekt- und Auftragsakte.
+       Regression: Eigene Rottöne (text-red-800, border-red-300 ...) fehlten
+       im Unfold-CSS, der Kasten blieb farblos; test_stilklassen.py erkennt
+       das. {% endcomment %}
+    {% if zertifikat %}
+        <div id="zertifikat-hinweis" class="border border-red-200 dark:border-red-900 flex gap-3 items-start mb-6 p-4 rounded-default">
+            <span class="material-symbols-outlined text-red-600 dark:text-red-500">gpp_maybe</span>
+            <div>
+                <div class="font-medium text-red-600 dark:text-red-500">
+                    {% if zertifikat.abgelaufen %}
+                        Das Sicherheitszertifikat ist abgelaufen (seit {{ zertifikat.gueltig_bis|date:"j. F Y" }})
+                    {% else %}
+                        Das Sicherheitszertifikat läuft in {{ zertifikat.tage }} Tag{{ zertifikat.tage|pluralize:"en" }} ab ({{ zertifikat.gueltig_bis|date:"j. F Y" }})
+                    {% endif %}
+                </div>
+                <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+                    {% if not zertifikat.abgelaufen %}Danach öffnen die Browser {{ marke }} und das Archiv nicht mehr. {% endif %}Bitte geben Sie der Person Bescheid, die bei Ihnen die IT betreut:
+                    Das Zertifikat für diesen Server muss erneuert werden.
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if zeige_auswertung %}
+
+        {% comment %} Ein Link ins Controlling. Die Startseite zeigt den aktuellen
+           Stand; Fragen nach der Entwicklung (Stundensatz, Abhängigkeit von
+           einem Kunden) beantwortet das Controlling. Oben, damit der Link
+           vor der Projekttabelle steht. {% endcomment %}
+        <div class="flex flex-wrap gap-3 items-end justify-between mb-6">
+            <div>
+                <h1 class="font-semibold text-xl text-font-important-light dark:text-font-important-dark">Übersicht</h1>
+                <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">Stand {% now "l, j. F Y" %}</p>
+            </div>
+            <a href="{{ controlling_url }}"
+               class="border border-base-200 flex font-medium gap-2 items-center px-3 py-2 rounded-default text-sm dark:border-base-700 hover:bg-base-50 dark:hover:bg-base-800">
+                <span class="material-symbols-outlined text-base">monitoring</span>
+                Controlling
+            </a>
+        </div>
+
+        {% comment %} Offene Aufgaben, die dringendste zuerst
+           (auswertung/aufgaben.py), über den Kennzahlen. Die Dringlichkeit
+           steht als farbiger Streifen und zusätzlich im Text, damit Farbe
+           nicht allein die Information trägt. {% endcomment %}
+        <div id="zu-erledigen" class="bg-white border border-base-200 mb-6 rounded-default shadow-xs dark:bg-base-900 dark:border-base-800">
+            <div class="border-b border-base-200 flex items-center justify-between px-4 py-3 dark:border-base-800">
+                <h2 class="font-semibold text-font-important-light dark:text-font-important-dark">Zu erledigen</h2>
+                {% if aufgaben %}<span class="text-font-subtle-light text-sm dark:text-font-subtle-dark">{{ aufgaben|length }}</span>{% endif %}
+            </div>
+            {% for aufgabe in aufgaben %}
+                <div class="flex flex-wrap gap-x-4 gap-y-2 items-center px-4 py-3 {% if not forloop.last %}border-b border-base-200 dark:border-base-800{% endif %}">
+                    <span class="self-stretch rounded-full w-1 {% if aufgabe.schwere == 'rot' %}bg-red-600{% elif aufgabe.schwere == 'gelb' %}bg-orange-400{% elif aufgabe.schwere == 'blau' %}bg-primary-500{% else %}bg-base-400{% endif %}"></span>
+                    <div class="flex-1 min-w-56">
+                        <div class="font-medium text-font-important-light dark:text-font-important-dark">{{ aufgabe.titel }}</div>
+                        <div class="text-font-subtle-light text-sm dark:text-font-subtle-dark">{{ aufgabe.text }}</div>
+                    </div>
+                    <div class="font-medium whitespace-nowrap" style="font-variant-numeric: tabular-nums">{{ aufgabe.groesse }}</div>
+                    {% if aufgabe.url %}
+                        <a href="{{ aufgabe.url }}"
+                           class="border border-base-200 flex font-medium gap-1 items-center px-3 py-1.5 rounded-default text-sm whitespace-nowrap dark:border-base-700 hover:bg-base-50 dark:hover:bg-base-800">
+                            {{ aufgabe.knopf }}
+                            <span class="material-symbols-outlined text-base">arrow_forward</span>
+                        </a>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p class="px-4 py-3 text-font-subtle-light text-sm dark:text-font-subtle-dark">Nichts liegt an: keine Rechnung über der Frist, keine alte Leistung ohne Rechnung.</p>
+            {% endfor %}
+        </div>
+
+        {% comment %} Die fünf Kennzahlen. Auf schmalen Geräten untereinander, ab
+           mittlerer Breite zwei nebeneinander, ab großer alle fünf.
+
+           Karte aus admin/_kennzahl.html (Begründung dort). Unter dem
+           Betrag eine Zeile (``kurz``), der vollständige Text im Tooltip
+           (``hinweis``); ``warnung`` setzt einen roten Rahmen. {% endcomment %}
+        <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-2 lg:grid-cols-5">
+            {% for kennzahl in kennzahlen %}
+                {% component "admin/_kennzahl.html" with titel=kennzahl.titel icon=kennzahl.icon warnung=kennzahl.warnung hinweis=kennzahl.hinweis %}
+                    <div class="pw-kennzahl-wert">{{ kennzahl.wert }}</div>
+                    <div class="pw-kennzahl-text{% if kennzahl.warnung %} pw-rot{% endif %}">{{ kennzahl.kurz }}</div>
+                {% endcomponent %}
+            {% endfor %}
+        </div>
+
+        <div class="flex flex-col lg:flex-row lg:gap-8">
+            <div class="grow min-w-0">
+
+                {% comment %} Jahresverlauf als Säulen (admin/_saeulen.html,
+                   darstellung.saeulen). Verworfen: Chart.js, dessen Achse
+                   "20000 €" ohne Tausenderpunkt beschriftete. {% endcomment %}
+                {% comment %} Zeitraum im Titel, weil die Kachel darüber "Fakturiert im
+                   laufenden Jahr" das Kalenderjahr zeigt, die Säulen dagegen
+                   die letzten zwölf Monate; die Summen weichen ab.
+
+                   Beide Zeiträume bleiben: Das Kalenderjahr ist die
+                   kaufmännische Kennzahl, der rollende Verlauf zeigt die
+                   Entwicklung ohne Sprung auf null am 1. Januar, und die
+                   Reichweite darunter beruht auf ihm. {% endcomment %}
+                <div class="mb-8">
+                    {% component "unfold/components/card.html" with title="Fakturierte Beträge in den letzten 12 Monaten" %}
+                        {% include "admin/_saeulen.html" with saeulen=verlauf_saeulen beschreibung="Fakturierte Nettobeträge je Monat, die letzten zwölf Monate" %}
+                        <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                            Nettobeträge nach Belegdatum, ohne Entwürfe.
+                            {% if verlauf_spitze %}Stärkster Monat:
+                            {{ verlauf_spitze }}.{% endif %}
+                        </p>
+                    {% endcomponent %}
+                </div>
+
+                {% comment %} Projekttabelle, auf schmalen Bildschirmen horizontal
+                   scrollbar, weil sechs Spalten mit Beträgen umbrochen
+                   unlesbar werden. {% endcomment %}
+                {% component "unfold/components/card.html" with title="Projektstatus" %}
+                    {% if projektzeilen %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+                                <thead>
+                                    <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                                        <th class="font-medium pb-2 pr-4 text-left">Projekt</th>
+                                        <th class="font-medium pb-2 pr-4 text-right">Beauftragt</th>
+                                        <th class="font-medium pb-2 pr-4 text-right">Fakturiert</th>
+                                        <th class="font-medium pb-2 pr-4 text-right">Offen</th>
+                                        <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Nicht abgerechnet</th>
+                                        <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Ergebnis</th>
+                                        <th class="font-medium pb-2 text-left w-32">Fortschritt</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for zeile in projektzeilen %}
+                                        <tr class="border-b border-base-200 last:border-b-0 dark:border-base-800">
+                                            <td class="py-3 pr-4">
+                                                <a href="{{ zeile.url }}" class="font-medium text-primary-600 dark:text-primary-500">
+                                                    {{ zeile.nummer }}
+                                                </a>
+                                                <div class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                                                    {{ zeile.bezeichnung }} &middot; {{ zeile.kunde }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 pr-4 text-right whitespace-nowrap">{{ zeile.beauftragt }}</td>
+                                            <td class="py-3 pr-4 text-right whitespace-nowrap">{{ zeile.fakturiert }}</td>
+                                            <td class="py-3 pr-4 text-right whitespace-nowrap font-medium text-font-important-light dark:text-font-important-dark">
+                                                {{ zeile.offen }}
+                                            </td>
+                                            <td class="py-3 pr-4 text-right whitespace-nowrap">
+                                              {{ zeile.leistung }}
+                                              {% comment %} Der Betrag über dem Auftragswert wird
+                                                 nur angezeigt und nicht vom Ergebnis abgezogen, weil
+                                                 die Abrechnungsart (Aufwand oder pauschal) nicht
+                                                 erfasst ist.
+                                                 {% endcomment %}
+                                              {% if zeile.ueberschreitung %}
+                                                <div class="font-medium text-red-600 text-xs dark:text-red-500">
+                                                  {{ zeile.ueberschreitung }}
+                                                </div>
+                                              {% endif %}
+                                            </td>
+                                            <td class="py-3 pr-4 text-right whitespace-nowrap {% if zeile.traegt %}text-green-600 dark:text-green-500{% else %}font-semibold text-red-600 dark:text-red-500{% endif %}">
+                                              {{ zeile.ergebnis }}{% if zeile.marge %}<span class="ml-1 text-font-subtle-light text-xs dark:text-font-subtle-dark">{{ zeile.marge }}</span>{% endif %}
+                                            </td>
+                                            <td class="py-3">
+                                                {% if zeile.zeige_fortschritt %}
+                                                    <div class="bg-base-100 h-1.5 overflow-hidden rounded-full w-full dark:bg-base-800">
+                                                        <div class="bg-primary-500 h-1.5 rounded-full" style="width: {{ zeile.fortschritt }}%"></div>
+                                                    </div>
+                                                    <div class="mt-1 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                                                        {{ zeile.fortschritt }} %
+                                                    </div>
+                                                {% else %}
+                                                    {% comment %} Ohne Auftrag kein Balken, weil der Nenner
+                                                       fehlt; ein Balken bei null zeigte "nichts berechnet". {% endcomment %}
+                                                    <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                                                        ohne Auftrag
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                            Nettobeträge, laufende Projekte, nach offenem Auftragsbestand sortiert.
+                            {% if weitere_projekte %}
+                                {{ weitere_projekte }} weitere unter
+                                <a href="{{ projekte_url }}" class="text-primary-600 dark:text-primary-500">Projekte</a>.
+                            {% endif %}
+                        </p>
+                    {% else %}
+                        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+                            Kein laufendes Projekt. Sobald eines angelegt ist und Belege trägt,
+                            steht seine Lage hier.
+                        </p>
+                    {% endif %}
+                {% endcomponent %}
+
+            </div>
+
+            {% include "unfold/helpers/history.html" %}
+        </div>
+
+    {% else %}
+        {% comment %} Ohne Recht auf Rechnungen keine Zahlen; dann die Startseite
+           des Django-Admins. {% endcomment %}
+        <div class="flex flex-col lg:flex-row lg:gap-8">
+            <div class="grow">
+                {% include "unfold/helpers/app_list_default.html" %}
+            </div>
+
+            {% include "unfold/helpers/history.html" %}
+        </div>
+    {% endif %}
+{% endblock %}

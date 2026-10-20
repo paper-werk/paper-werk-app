@@ -1,0 +1,91 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls unfold %}
+
+{% comment %} E-Rechnung einlesen: Datei, Projekt, Button.
+
+   Nur diese Felder, weil Nummer, Datum, Lieferant, Betrag und Positionen
+   aus dem Dokument gelesen werden.
+
+   Kein Block "breadcrumbs", weil Unfolds Basis-Template ihn nicht hat
+   (siehe uebernehmen.html); zurück führt "Abbrechen".
+{% endcomment %}
+
+{% block content %}
+<div class="max-w-3xl">
+  <div class="font-semibold mb-2 text-2xl text-font-important-light dark:text-font-important-dark">
+    E-Rechnung einlesen
+  </div>
+
+  <p class="mb-6 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+    Aus einer E-Rechnung entsteht eine Eingangsrechnung mit ihren Positionen.
+    Danach steht sie zum Verteilen bereit &ndash; nichts davon ist
+    festgeschrieben.
+  </p>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% comment %} Formularfehler stehen an den Feldern; Fehler beim Einlesen
+       (defekte Datei, Rechnung bereits erfasst) meldet der Admin über
+       messages darüber. {% endcomment %}
+
+    {% component "unfold/components/card.html" %}
+      {% for feld in formular %}
+        <div class="group mb-6 last:mb-0 {% if feld.errors %}errors{% endif %}">
+          <label for="{{ feld.id_for_label }}"
+                 class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark">
+            {{ feld.label }}
+            {% if feld.field.required %}
+              <span class="text-red-600 dark:text-red-500">*</span>
+            {% endif %}
+          </label>
+
+          {{ feld }}
+
+          {% if feld.help_text %}
+            <p class="mt-2 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+              {{ feld.help_text }}
+            </p>
+          {% endif %}
+
+          {% for fehler in feld.errors %}
+            <p class="mt-2 text-red-600 text-xs dark:text-red-500">{{ fehler }}</p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    {% endcomponent %}
+
+    {% comment %} Die unterstützten Formate stehen vor der Dateiauswahl.
+    {% endcomment %}
+    <div class="mt-6 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+      <p class="mb-1">
+        <strong class="font-medium text-font-important-light dark:text-font-important-dark">
+          Beides geht</strong>: das PDF einer E-Rechnung (ZUGFeRD/Factur-X)
+        oder das nackte XML. Aus dem PDF wird das eingebettete XML geholt.
+      </p>
+      <p class="mb-1">
+        Ein <strong class="font-medium text-font-important-light dark:text-font-important-dark">gew&ouml;hnliches
+        PDF</strong> &ndash; ein Scan oder eine gedruckte Rechnung &ndash;
+        tr&auml;gt nur das Bild und keine Daten. Es wird abgewiesen und
+        geh&ouml;rt von Hand erfasst oder &uuml;ber das Archiv &uuml;bernommen.
+      </p>
+      <p>
+        Die UBL-Syntax wird nicht gelesen. Viele Erzeuger k&ouml;nnen beide
+        ausgeben &ndash; dann bitte die CII-Fassung anfordern.
+      </p>
+    </div>
+
+    {% url opts|admin_urlname:'changelist' as liste_url %}
+
+    <div class="flex gap-3 justify-end mt-6">
+      {% component "unfold/components/button.html" with href=liste_url variant="default" %}
+        Abbrechen
+      {% endcomponent %}
+
+      {% component "unfold/components/button.html" with submit=1 %}
+        Einlesen
+      {% endcomponent %}
+    </div>
+  </form>
+</div>
+{% endblock %}

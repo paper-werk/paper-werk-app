@@ -1,0 +1,476 @@
+{% extends "admin/base_site.html" %}
+{% load faktura_extras unfold %}
+
+{% comment %} Auftragsakte: Abrechnungsstand eines Auftrags.
+
+   Die Projektakte zeigt das Ergebnis eines Projekts, die Auftragsakte den
+   Fortschritt eines Auftrags (auswertung/auftragsakte.py).
+
+   Aufbau wie die Projektakte: Kopf, Kennzahlen, Tabellen.
+
+   Beträge nur mit {% templatetag openblock %} if darf_zahlen_sehen {% templatetag closeblock %}, wie in der Projektakte;
+   Mengen und Stunden sind ohne dieses Recht sichtbar.
+{% endcomment %}
+
+{% block nav-global %}{% include "admin/blaettern.html" %}{% endblock %}
+
+{% block content %}
+<div>
+
+  {# ---- Kopf ---- #}
+  <div class="flex flex-wrap gap-4 items-start justify-between mb-6">
+    <div>
+      <div class="font-semibold text-2xl text-font-important-light dark:text-font-important-dark">
+        {{ auftrag.nummer|default:"Entwurf" }}
+        {% if auftrag.betreff %}&middot; {{ auftrag.betreff }}{% endif %}
+      </div>
+      <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        {% comment %} Das Projekt verlinkt auf seine Akte. {% endcomment %}
+        {% if projektakte_url %}
+          <a href="{{ projektakte_url }}" class="text-primary-600 hover:underline dark:text-primary-500">
+            {{ auftrag.projekt }}
+          </a>
+          &middot;
+        {% endif %}
+        {% if kunde_url %}
+          <a href="{{ kunde_url }}" class="text-primary-600 hover:underline dark:text-primary-500">
+            {{ empfaenger }}
+          </a>
+        {% else %}
+          {{ empfaenger }}
+        {% endif %}
+        &middot; {{ auftrag.auftragsbezeichnung }}
+        &middot; {{ auftrag.get_status_display }}
+        {% if auftrag.belegdatum %}&middot; {{ auftrag.belegdatum|date:"d.m.Y" }}{% endif %}
+      </div>
+    </div>
+    <a href="{{ formular_url }}"
+       class="bg-primary-600 border border-transparent font-medium px-3 py-2 rounded-default text-sm text-white hover:bg-primary-700">
+      Auftrag bearbeiten
+    </a>
+  </div>
+
+  {% if darf_zahlen_sehen and kennzahlen %}
+    {# ---- Die Zahlen ---- #}
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+      {% for kennzahl in kennzahlen %}
+        {% component "admin/_kennzahl.html" with titel=kennzahl.titel icon=kennzahl.icon warnung=kennzahl.warnung %}
+          <div class="pw-kennzahl-wert">{{ kennzahl.wert }}</div>
+          <div class="pw-kennzahl-text">{{ kennzahl.hinweis }}</div>
+        {% endcomponent %}
+      {% endfor %}
+    </div>
+
+    {% if ist_ueberzogen %}
+      <div class="border border-red-200 dark:border-red-900 flex gap-3 items-start mb-6 p-4 rounded-default">
+        <span class="material-symbols-outlined text-red-600 dark:text-red-500">warning</span>
+        <div>
+          <div class="font-medium text-red-600 dark:text-red-500">
+            {{ fortschritt }} % des Auftrags berechnet
+          </div>
+          <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Es ist mehr abgerechnet als beauftragt. Beim Versenden wird je
+            Position gewarnt, festgeschrieben wird nur mit Bestätigung
+            &ndash; über die Summe hinweg kann es auch sonst vorkommen, etwa
+            nach einer Preisänderung. Ein Nachtrag gehört geprüft.
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# ---- Abrechnungsstand je Position ---- #}
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Abrechnungsstand" %}
+      {% if positionen %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Pos.</th>
+                <th class="font-medium pb-2 pr-4 text-left">Bezeichnung</th>
+                <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Beauftragt</th>
+                <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Abgerechnet</th>
+                <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Offen</th>
+                <th class="font-medium pb-2 pr-4 text-left w-40">Stand</th>
+                {% if darf_zahlen_sehen %}
+                  <th class="font-medium pb-2 text-right whitespace-nowrap">Netto</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in positionen %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4 whitespace-nowrap">{{ zeile.position.position }}</td>
+                  <td class="py-2 pr-4 text-font-important-light dark:text-font-important-dark">
+                    {{ zeile.position.bezeichnung }}
+                    {% if zeile.optional %}<span class="block text-font-subtle-light text-xs dark:text-font-subtle-dark">optional, nicht im Auftragswert</span>{% endif %}
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap">
+                    {{ zeile.position.menge|menge }} {{ zeile.position.einheit }}
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap font-medium {% if zeile.ueberzogen %}text-red-600 dark:text-red-500{% else %}text-font-important-light dark:text-font-important-dark{% endif %}">
+                    {{ zeile.abgerechnet|menge }}
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap">
+                    {{ zeile.offen|menge }}
+                  </td>
+                  <td class="py-2 pr-4">
+                    {% comment %} Balken für den Vergleich zwischen Zeilen, Zahl für
+                       den genauen Wert, auch über 100 %, wo der Balken
+                       begrenzt ist. {% endcomment %}
+                    <div class="flex gap-2 items-center">
+                      <div class="bg-base-100 grow overflow-hidden rounded-default dark:bg-base-800">
+                        <div class="h-1.5 rounded-default {% if zeile.ueberzogen %}bg-red-600 dark:bg-red-500{% else %}bg-primary-600 dark:bg-primary-500{% endif %}"
+                             style="width: {{ zeile.anteil }}%"></div>
+                      </div>
+                      <span class="shrink-0 text-xs w-10 text-right {% if zeile.ueberzogen %}text-red-600 dark:text-red-500{% else %}text-font-subtle-light dark:text-font-subtle-dark{% endif %}">
+                        {{ zeile.prozent }} %
+                      </span>
+                    </div>
+                  </td>
+                  {% if darf_zahlen_sehen %}
+                    <td class="py-2 text-right whitespace-nowrap font-medium text-font-important-light dark:text-font-important-dark">
+                      {% if zeile.optional %}({{ zeile.netto|geld }} €){% else %}{{ zeile.netto|geld }} €{% endif %}
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+            {% if darf_zahlen_sehen %}
+              <tfoot>
+                <tr class="font-semibold text-font-important-light dark:text-font-important-dark">
+                  <th colspan="6" class="pr-4 pt-3 text-right" scope="row">Auftragswert netto</th>
+                  <th class="pt-3 text-right whitespace-nowrap">{{ beauftragt|geld }} €</th>
+                </tr>
+              </tfoot>
+            {% endif %}
+          </table>
+        </div>
+
+        <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Gezählt wird, was auf einer festgeschriebenen Rechnung steht.
+          Abschlagsrechnungen zählen nicht mit &ndash; sie sind steuerlich
+          Anzahlungen, und die Schlussrechnung führt dieselbe Leistung noch
+          einmal auf.
+        </p>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Dieser Auftrag hat noch keine Positionen.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+
+  {# ---- Leistungen: Zeiten und Fremdleistungen je Position ---- #}
+  <div class="mb-6">
+    {% include "admin/faktura/_zuordnung.html" %}
+  </div>
+
+  {% comment %} ---- Abnahmen ----
+     Der Leistungsfall mit dem steuerlichen Leistungsdatum. Aus einer
+     Abnahme entsteht die Schlussrechnung, aus einer
+     Teilabnahme die Teilschlussrechnung; beides nur hier.
+     {% endcomment %}
+  {% if abnahmen or abnahme_neu_url %}
+    <div class="mb-6">
+      {% component "unfold/components/card.html" with title="Abnahmen" %}
+        {% if abnahmen %}
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-font-subtle-light dark:text-font-subtle-dark">
+                  <th class="pb-2 pr-4 font-medium">Abnahme</th>
+                  <th class="pb-2 pr-4 font-medium">Abgenommen am</th>
+                  <th class="pb-2 pr-4 font-medium">Leistungsdatum</th>
+                  <th class="pb-2 pr-4 font-medium">Stand</th>
+                  <th class="pb-2 font-medium">Rechnung</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for zeile in abnahmen %}
+                  <tr class="border-t border-base-200 dark:border-base-800">
+                    <td class="py-2 pr-4">
+                      <a href="{{ zeile.url }}" class="text-primary-600 dark:text-primary-500">
+                        {{ zeile.abnahme.bezeichnung|default:zeile.abnahme.get_art_display }}
+                      </a>
+                      {% if zeile.abnahme.bezeichnung %}
+                        <span class="text-xs text-font-subtle-light dark:text-font-subtle-dark">{{ zeile.abnahme.get_art_display }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="py-2 pr-4 whitespace-nowrap">{{ zeile.abnahme.abgenommen_am|date:"d.m.Y"|default:"–" }}</td>
+                    <td class="py-2 pr-4 whitespace-nowrap">{{ zeile.abnahme.steuerliches_leistungsdatum|date:"d.m.Y"|default:"–" }}</td>
+                    <td class="py-2 pr-4">{{ zeile.stand }}</td>
+                    <td class="py-2">
+                      {% if zeile.rechnung %}
+                        <a href="{{ zeile.rechnung_url }}" class="text-primary-600 dark:text-primary-500">{{ zeile.rechnung }}</a>
+                      {% else %}–{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch keine Abnahme erfasst.
+          </p>
+        {% endif %}
+        {% if abnahme_neu_url %}
+          <p class="mt-4">
+            <a href="{{ abnahme_neu_url }}" class="font-medium text-primary-600 dark:text-primary-500">
+              Abnahme erfassen
+            </a>
+            <span class="text-xs text-font-subtle-light dark:text-font-subtle-dark">
+              &ndash; Gesamtabnahme für die Schlussrechnung, Teilabnahme für eine
+              gesondert abgenommene Teilleistung.
+            </span>
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  {# ---- Fortschritt und Auftragsklammer ---- #}
+  <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+    {% if darf_zahlen_sehen and beauftragt %}
+      <div class="lg:w-1/3">
+        {% component "unfold/components/card.html" with title="Fortschritt" %}
+          <div class="flex flex-row mb-2">
+            <h3 class="text-font-important-light text-sm dark:text-font-important-dark">Abgerechnet</h3>
+            <strong class="bg-base-100 font-medium ml-auto px-1.5 py-1 rounded-default text-xs dark:bg-base-800 {% if ist_ueberzogen %}text-red-600 dark:text-red-500{% else %}text-font-important-light dark:text-font-important-dark{% endif %}">
+              {{ fortschritt }} %
+            </strong>
+          </div>
+          {% comment %} Eigener Balken, weil unfold/components/progress.html bei
+             0 % nichts rendert und "noch nichts abgerechnet" wie "keine
+             Angabe" erschiene (wie in der Projektakte). {% endcomment %}
+          <div class="bg-base-100 flex flex-row overflow-hidden rounded-default dark:bg-base-800">
+            <div class="h-1.5 rounded-default {{ ueberzogen_klasse|default:'bg-primary-600 dark:bg-primary-500' }}"
+                 style="width: {{ balken_berechnet }}%"></div>
+          </div>
+          <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Anteil am Auftragswert von {{ beauftragt|geld }} €.
+            {% if offene_zeilen %}
+              {{ offene_zeilen }} erfasste Zeilen sind noch auf keiner Rechnung.
+            {% endif %}
+          </p>
+        {% endcomponent %}
+      </div>
+    {% endif %}
+
+    {% if klammer %}
+      {# ---- Auftrag und Nachträge ---- #}
+      <div class="grow min-w-0">
+        {% component "unfold/components/card.html" with title="Auftrag und Nachträge" %}
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <tbody>
+              {% for glied in klammer %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4 whitespace-nowrap">{{ glied.beleg.belegdatum|date:"d.m.Y" }}</td>
+                  <td class="py-2 pr-4 font-medium text-font-important-light dark:text-font-important-dark">
+                    {{ glied.bezeichnung }}
+                  </td>
+                  <td class="py-2 pr-4 whitespace-nowrap">
+                    {% comment %} Der aktuelle Auftrag ist markiert und nicht
+                       verlinkt. {% endcomment %}
+                    {% if glied.ist_dieser %}
+                      <span class="font-medium text-font-important-light dark:text-font-important-dark">
+                        {{ glied.beleg.nummer|default:"Entwurf" }}
+                      </span>
+                      <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                        &middot; angezeigt
+                      </span>
+                    {% else %}
+                      <a href="{{ glied.url }}"
+                         class="text-primary-600 hover:underline dark:text-primary-500">
+                        {{ glied.beleg.nummer|default:"Entwurf" }}
+                      </a>
+                    {% endif %}
+                  </td>
+                  <td class="py-2 pr-4">{{ glied.beleg.betreff }}</td>
+                  {% if darf_zahlen_sehen %}
+                    <td class="py-2 text-right whitespace-nowrap">{{ glied.netto|geld }} €</td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Die Zahlen dieser Seite gelten für den angezeigten Auftrag allein.
+            Was das ganze Projekt zusammenfasst, steht in der Projektakte.
+          </p>
+        {% endcomponent %}
+      </div>
+    {% endif %}
+  </div>
+
+  {# ---- Rechnungen auf diesen Auftrag ---- #}
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Rechnungen auf diesen Auftrag" %}
+      {% if rechnungen %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Datum</th>
+                <th class="font-medium pb-2 pr-4 text-left">Art</th>
+                <th class="font-medium pb-2 pr-4 text-left">Nummer</th>
+                <th class="font-medium pb-2 pr-4 text-left">Status</th>
+                {% if darf_zahlen_sehen %}
+                  <th class="font-medium pb-2 text-right whitespace-nowrap">Anteil netto</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in rechnungen %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4 whitespace-nowrap">
+                    {{ zeile.beleg.belegdatum|date:"d.m.Y"|default:"&ndash;" }}
+                  </td>
+                  <td class="py-2 pr-4">{{ zeile.bezeichnung }}</td>
+                  <td class="py-2 pr-4 font-medium whitespace-nowrap">
+                    {% if zeile.url %}
+                      <a href="{{ zeile.url }}"
+                         class="text-primary-600 hover:underline dark:text-primary-500">
+                        {{ zeile.beleg.nummer|default:"Entwurf" }}
+                      </a>
+                    {% else %}
+                      {{ zeile.beleg.nummer|default:"&ndash;" }}
+                    {% endif %}
+                  </td>
+                  <td class="py-2 pr-4">
+                    {{ zeile.beleg.get_status_display }}
+                    {% if not zeile.zaehlt %}
+                      <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                        &middot; zählt nicht
+                      </span>
+                    {% endif %}
+                  </td>
+                  {% if darf_zahlen_sehen %}
+                    <td class="py-2 text-right whitespace-nowrap font-medium text-font-important-light dark:text-font-important-dark">
+                      {{ zeile.netto|geld }} €
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Der Betrag ist der Anteil, der auf diesen Auftrag entfällt &ndash;
+          nicht die Rechnungssumme. Eine Rechnung darf Positionen mehrerer
+          Aufträge tragen. &bdquo;Zählt nicht&ldquo; heißt: Entwurf, Abschlag
+          oder storniert &ndash; die Leistung ist damit noch nicht endgültig
+          berechnet.
+        </p>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Auf diesen Auftrag wurde noch nichts berechnet.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+
+  {# ---- Erfasste Leistung auf diesem Auftrag ---- #}
+  <div class="flex flex-col gap-6 lg:flex-row">
+    <div class="lg:w-1/3">
+      {% component "unfold/components/card.html" with title="Wer daran gearbeitet hat" %}
+        {% if personen %}
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Person</th>
+                <th class="font-medium pb-2 pr-4 text-right">Zeit</th>
+                <th class="font-medium pb-2 text-right">Zeilen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in personen %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4">{{ zeile.name }}</td>
+                  <td class="py-2 pr-4 text-right font-medium text-font-important-light dark:text-font-important-dark">
+                    {{ zeile.zeit }}
+                  </td>
+                  <td class="py-2 text-right">{{ zeile.zeilen }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Auf diesen Auftrag ist noch nichts kontiert.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Zuletzt erfasst" %}
+        {% if zeilen %}
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+              <thead>
+                <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                  <th class="font-medium pb-2 pr-4 text-left">Datum</th>
+                  <th class="font-medium pb-2 pr-4 text-left">Person</th>
+                  <th class="font-medium pb-2 pr-4 text-left">Position</th>
+                  <th class="font-medium pb-2 pr-4 text-right">Umfang</th>
+                  <th class="font-medium pb-2 text-left">Abgerechnet in</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for zeile in zeilen %}
+                  <tr class="border-b border-base-200 dark:border-base-800">
+                    <td class="py-2 pr-4 whitespace-nowrap">{{ zeile.datum|date:"d.m.Y" }}</td>
+                    <td class="py-2 pr-4">{{ zeile.benutzer }}</td>
+                    <td class="py-2 pr-4">{{ zeile.leistungsbezeichnung }}</td>
+                    <td class="py-2 pr-4 text-right whitespace-nowrap">
+                      {{ zeile.dauer_anzeige }}{{ zeile.umfang }}
+                    </td>
+                    <td class="py-2">
+                      {% comment %} Link auf den Beleg, in dem die Zeile berechnet
+                         ist. Verworfen: ein Haken ohne Angabe des Belegs.
+                      {% endcomment %}
+                      {% if zeile.abgerechneter_beleg %}
+                        {{ zeile.abgerechneter_beleg.nummer|default:"Entwurf" }}
+                      {% elif not zeile.abrechenbar %}
+                        <span class="text-font-subtle-light dark:text-font-subtle-dark">
+                          nicht abrechenbar
+                        </span>
+                      {% else %}
+                        <span class="text-font-subtle-light dark:text-font-subtle-dark">
+                          offen
+                        </span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if weitere_zeilen %}
+            <p class="mt-3 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+              und {{ weitere_zeilen }} weitere von {{ zeilen_gesamt }}
+            </p>
+          {% endif %}
+
+          {% comment %} Link auf die Erfassungsliste, weil Filter, Sortierung,
+             Leistungsnachweis und Abrechnen dort implementiert sind (wie
+             in der Projektakte). {% endcomment %}
+          <a href="{{ erfassung_url }}"
+             class="inline-block mt-4 text-primary-600 text-sm hover:underline dark:text-primary-500">
+            Alle Zeilen dieses Auftrags ansehen &rarr;
+          </a>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Auf die Positionen dieses Auftrags wurde noch nichts erfasst.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,565 @@
+/* Ergänzungen zum Admin-Stil von Unfold.
+ *
+ * Farbe und Form des Buttons stehen als Klassenliste am Link (Begründung im
+ * Widget faktura/widgets/textfeld_mit_vorlagen.html), nicht hier, weil
+ * Djangos base.css mit ``--button-fg`` nicht mehr geladen wird.
+ */
+
+/* Feld und Button untereinander.
+ *
+ * Der Admin setzt jedes Feld in einen Flex-Container ohne Umbruch, in dem
+ * ein Button nach dem Textfeld daneben stünde. Das Widget fasst beide in
+ * "textvorlagen-feld" zusammen, nach außen ein Element, innen eine
+ * Spalte. */
+.textvorlagen-feld {
+    display: flex;
+    flex-direction: column;
+    /* Ohne volle Breite des Buttons in der Spalte. */
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.textvorlagen-knopf {
+    /* Ohne Unterstreichung des Links als Button. */
+    text-decoration: none;
+    /* Kleiner als ein Submit-Button, weil er zum Feld gehört. */
+    font-size: 0.8125rem;
+}
+
+/* Auswahlmenü: Texte dürfen mehrzeilig sein. */
+.textvorlagen-liste td {
+    white-space: normal;
+    max-width: 34em;
+}
+
+/* Datumsfelder: Unfold setzt ``w-full`` auf das Eingabefeld. Die drei
+ * Felder im Abschnitt Termin erhalten die Breite eines Datums; über ihre
+ * IDs, damit andere Datumsfelder unverändert bleiben. */
+#id_belegdatum,
+#id_leistungsdatum,
+#id_leistungsdatum_bis,
+#id_steuerliches_leistungsdatum,
+#id_zahlungsziel_tage {
+    width: 13rem !important;
+    max-width: 13rem !important;
+}
+
+/* Zwei Felder in einer Zeile (Betreff und Bestellnummer, Empfänger und
+ * E-Mail, Belegdatum und Leistungsdatum) stehen oben bündig. Unfold
+ * zentriert vertikal (lg:items-center); neben mehrzeiliger Anschrift oder
+ * langem Hilfetext stand das andere Feld dadurch nicht bei seinem Label. */
+@media (width >= 64rem) {
+    .field-row > .field-line {
+        align-items: flex-start;
+    }
+}
+
+/* Tab "E-Rechnung" in zwei Spalten: Ein einzelnes Feld nimmt die linke
+ * Hälfte wie die PLZ neben dem Ort, damit alle Felder an derselben Kante
+ * enden. Selektor über Unfolds Klasse "fieldset-<name>". */
+@media (width >= 64rem) {
+    .fieldset-e-rechnung .field-row > .field-line:only-child {
+        flex: 0 0 50%;
+        max-width: 50%;
+        border-bottom-width: 0;
+    }
+
+    /* Gestrichelte Linie an der ganzen Zeile, damit sie nicht in der Mitte
+     * endet. */
+    .fieldset-e-rechnung .field-row:not(.last):has(> .field-line:only-child) {
+        border-bottom: 1px dashed var(--color-base-200);
+    }
+
+    .dark .fieldset-e-rechnung .field-row:not(.last):has(> .field-line:only-child) {
+        border-bottom-color: var(--color-base-800);
+    }
+}
+
+/* Django fügt die Kalenderbuttons nach dem Input in dessen Wrapper ein,
+ * der eine volle Spalte ist; nach dem Verkleinern des Inputs stand der
+ * Button am Spaltenrand. Diese drei Wrapper erhalten die passende Breite
+ * und eine Reihe mit Abstand. */
+div:has(> #id_belegdatum),
+div:has(> #id_leistungsdatum),
+div:has(> #id_leistungsdatum_bis),
+div:has(> #id_steuerliches_leistungsdatum) {
+    width: fit-content !important;
+    max-width: none !important;
+    flex-direction: row;
+    align-items: center;
+}
+
+div:has(> #id_belegdatum) > .datetimeshortcuts,
+div:has(> #id_leistungsdatum) > .datetimeshortcuts,
+div:has(> #id_leistungsdatum_bis) > .datetimeshortcuts,
+div:has(> #id_steuerliches_leistungsdatum) > .datetimeshortcuts {
+    position: static !important;
+    margin-left: 0.5rem;
+}
+
+/* ── Die Positionen eines Belegs ────────────────────────────────────────
+ *
+ * Die Aufteilung folgt dem PDF: links die Positionsnummer in eigener
+ * Spalte, daneben die Bezeichnung, darunter bündig der Langtext, Zahlen
+ * rechts. Gegliedert über Abstände und Ausrichtung, um mit wenigen Farben
+ * auszukommen; hervorgehoben nur die Position mit :focus-within. Regeln:
+ * docs/belegansicht.md.
+ *
+ * Aufbau: Eine Position ist ein tbody.form-group mit bis zu drei Zeilen
+ * (Katalogsuche, Positionszeile, Langtext und Zeitraum), siehe
+ * templates/unfold/helpers/edit_inline/tabular_group.html. Selektor ist
+ * .positionszeile, damit andere Inlines unverändert bleiben. Verworfen:
+ * .hat-erste-zeile, das der Mahnung (ohne Katalogsuche) fehlt.
+ *
+ * Unfolds Stile liegen in @layer, diese Datei nicht. Deshalb schlagen die
+ * Regeln hier Unfolds Hilfsklassen ohne !important. */
+
+/* Gruppierung über Abstand: innerhalb einer Position keine Linie und
+ * wenig Abstand, zwischen Positionen mehr Abstand und eine Linie.
+ *
+ * Die Linie am tbody, weil Tailwind border-collapse setzt und ein tbody
+ * damit einen Rahmen haben kann. Verworfen: der erste tr, vor dem je nach
+ * Zustand die Fehlerzeile oder Unfolds leere Titelzeile mit den Hidden
+ * Inputs steht. */
+tbody.form-group:has(> tr.positionszeile) > tr > td {
+    border-bottom-width: 0;
+}
+
+tbody.form-group:has(> tr.positionszeile) + tbody.form-group:has(> tr.positionszeile) {
+    border-top: 1px solid var(--color-base-200);
+}
+
+.dark tbody.form-group:has(> tr.positionszeile) + tbody.form-group:has(> tr.positionszeile) {
+    /* Unfolds Farbpaar für den Dark Mode, weil base-300 dort zu hell ist. */
+    border-top-color: var(--color-base-800);
+}
+
+/* Einheitlicher Abstand zwischen Suche, Bezeichnung, Langtext, Trennlinie
+ * und nächster Position.
+ *
+ * Jede Zeile einer Position hat oben und unten einen halben Abstand,
+ * zwischen zwei Zeilen also einen ganzen. Die erste und letzte sichtbare
+ * Zeile erhalten an der Trennlinie einen halben dazu; welche das ist,
+ * hängt vom Zustand ab (neue Zeile mit Suche, gespeicherte, mit oder ohne
+ * Langtext, Lieferschein), daher die Regeln unten.
+ *
+ * Die Grundregel steht in :where() mit Spezifität 0, damit jede Ausnahme
+ * gilt. Unfolds Titelzeile (nur Hidden Inputs) bleibt ohne Höhe. */
+:root {
+    --pw-abstand: 0.75rem;
+}
+
+:where(tbody.form-group:has(> tr.positionszeile) > :is(tr.form-row, tr.form-row-zusatzzeile)) > td {
+    padding-top: calc(var(--pw-abstand) / 2);
+    padding-bottom: calc(var(--pw-abstand) / 2);
+}
+
+/* Erste sichtbare Zeile: die Suche einer neuen Position, ohne Suche
+ * (gespeichert, readonly) die Positionszeile. */
+tr.form-row-erste-zeile > td,
+tbody.form-group.original > tr.form-row-erste-zeile:not(:has(.errors)) + tr.form-row.positionszeile > td,
+tr.form-row-erste-zeile:not(:has(.zusatzzeile-feld)) + tr.form-row.positionszeile > td {
+    padding-top: var(--pw-abstand);
+}
+
+/* Letzte sichtbare Zeile: Langtext und Zeitraum, ohne diese
+ * (Lieferschein, leerer Langtext readonly) die Positionszeile. */
+tr.form-row-zweite-zeile > td,
+tbody.form-group:has(> tr.positionszeile):not(:has(> tr.form-row-zweite-zeile .zusatzzeile-feld)) > tr.form-row.positionszeile > td {
+    padding-bottom: var(--pw-abstand);
+}
+
+/* Beim Bearbeiten vertikal mittig, weil alle Felder gleich hoch sind und
+ * die Summe als Text in der Mitte steht; auf der Grundlinie verschoben
+ * sich die Felder nach unten. Readonly auf der Grundlinie, weil die Nummer
+ * mit align-middle höher stand als die Bezeichnung. */
+tr.form-row.positionszeile > td {
+    vertical-align: middle;
+}
+
+tr.form-row.positionszeile:not(:has(input:not([type="hidden"]), select)) > td {
+    vertical-align: baseline;
+}
+
+/* ── Die Zusatzzeilen: Katalogsuche oben, Langtext unten ───────────────
+ *
+ * Zwei Zellen: Die erste (.pw-rueckgrat) bleibt unter "Pos." leer, der
+ * Inhalt beginnt in der zweiten unter der Bezeichnung. Padding wie in der
+ * Positionszeile (pl-3 in der ersten, px-1.5 in den übrigen Zellen). */
+tr.form-row-zusatzzeile > td.pw-rueckgrat {
+    padding-left: 0.75rem;
+    padding-right: 0;
+    vertical-align: top;
+}
+
+tr.form-row-zusatzzeile > td.pw-zusatzinhalt {
+    padding-left: 0.375rem;
+    padding-right: 0.75rem;
+    vertical-align: top;
+}
+
+/* Unterhalb von lg stapelt Unfold die Zellen ohne Tabellenkopf; dort
+ * entfällt die leere Zelle. */
+@media (width < 64rem) {
+    tr.form-row-zusatzzeile > td.pw-rueckgrat {
+        display: none;
+    }
+}
+
+.pw-zusatzfelder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.pw-zusatzbeschriftung {
+    font-size: 0.75rem;
+    color: var(--color-font-important-light);
+}
+
+.dark .pw-zusatzbeschriftung {
+    color: var(--color-font-important-dark);
+}
+
+.zusatzzeile-feld {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Langtext und Zeitraum in einer Zeile: der Langtext in der Spalte der
+ * Bezeichnung und gleich breit, rechts daneben unten bündig die beiden
+ * Datumsfelder, auch bei mehrzeiligem Langtext. */
+tr.form-row-zweite-zeile > td.pw-textspalte {
+    padding-right: 0.375rem;
+}
+
+tr.form-row-zweite-zeile > td.pw-zusatzinhalt {
+    vertical-align: bottom;
+}
+
+.form-row-zweite-zeile .pw-zusatzrest .pw-zusatzfelder {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+/* Label links neben dem Datumsfeld, BT-Nummer klein darunter, damit die
+ * Zeile nicht höher als ein Feld ist. Verworfen: Label über dem Feld, das
+ * die Zeile streckte. Die min-width lässt den Zeitraum bei wenig Platz
+ * umbrechen; ohne sie schrumpfte ein Datumsfeld auf 0 px. */
+.form-row-zweite-zeile :is(.field-leistung_von, .field-leistung_bis) {
+    flex: 1 1 0;
+    min-width: 11rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-row-zweite-zeile :is(.field-leistung_von, .field-leistung_bis) > .pw-zusatzbeschriftung {
+    flex: none;
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.form-row-zweite-zeile :is(.field-leistung_von, .field-leistung_bis) .pw-bt-neben {
+    display: block;
+}
+
+/* Am Zuschlag stehen Prozent und "auf" in der Spalte der Bezeichnung
+ * nebeneinander, darunter der Langtext; wie der Rechenweg im PDF. */
+.form-row-zweite-zeile .pw-textspalte .pw-zusatzfelder {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.form-row-zweite-zeile .pw-textspalte .field-langtext {
+    flex: 1 1 100%;
+}
+
+.form-row-zweite-zeile .pw-textspalte :is(.field-zuschlag_prozent, .field-zuschlag_auf) {
+    flex: 1 1 calc(50% - 0.75rem);
+    min-width: 0;
+}
+
+/* Unfold setzt min-w-56 am Wrapper und min-w-52 am Datumsfeld; in der
+ * schmalen Zelle überlappten die beiden Felder und den rechten Rand. */
+.form-row-zweite-zeile :is(.field-leistung_von, .field-leistung_bis) > :not(.pw-zusatzbeschriftung),
+.form-row-zweite-zeile :is(.field-leistung_von, .field-leistung_bis) input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Langtext ohne Label, weil Position und Platzhalter ihn bezeichnen. */
+.form-row-zweite-zeile .field-langtext > .pw-zusatzbeschriftung {
+    display: none;
+}
+
+/* Eine Zeile hoch, wächst mit dem Text. Ohne Unfolds max-w-4xl, das in
+ * der Tabelle das Feld vor dem Spaltenende beendete. */
+.form-row-zweite-zeile textarea {
+    width: 100%;
+    max-width: none;
+    field-sizing: content;
+    min-height: 2.5rem;
+    resize: none;
+}
+
+/* Readonly: gedämpfter Text unter der Bezeichnung. */
+.form-row-zweite-zeile .field-langtext .readonly {
+    color: var(--color-base-500);
+    max-width: none;
+    padding: 0;
+}
+
+/* Ohne Inhalt entfällt die Zeile, damit eine Position ohne Langtext am
+ * festgeschriebenen Beleg keine leere Zeile hat. Die Katalogsuche fehlt
+ * dort. */
+tr.form-row-zusatzzeile:not(:has(.zusatzzeile-feld)) {
+    display: none;
+}
+
+/* ── Katalogsuche nur, wo sie gebraucht wird ────────────────────────────
+ *
+ * Nur über neuen Zeilen, nicht an gespeicherten Positionen
+ * (tbody.original), die durch Löschen und Neuwahl ersetzt werden. Mit
+ * Validierungsfehler bleibt sie sichtbar. */
+tbody.form-group.original > tr.form-row-erste-zeile:not(:has(.errors)) {
+    display: none;
+}
+
+/* Ohne Label "Aus dem Katalog", weil der Platzhalter es enthält. */
+.erste-zeile-feld > .pw-zusatzbeschriftung {
+    display: none;
+}
+
+/* Breit für lange Bezeichnungen, nicht über die ganze Tabelle, damit
+ * rechts Platz für weitere Angaben bleibt. */
+.erste-zeile-feld {
+    max-width: 42rem;
+}
+
+/* Breite der Zeile, weil Select2 sonst die Breite des Felds bei der
+ * Initialisierung übernimmt. */
+.erste-zeile-feld .select2-container {
+    width: 100% !important;
+}
+
+/* ── Position mit Fokus ─────────────────────────────────────────────────
+ *
+ * Einzige Hervorhebung: helle Fläche und Balken links bei :focus-within,
+ * damit erkennbar ist, zu welcher Position das Feld gehört.
+ *
+ * first-of-type, weil in der Positionszeile Hidden Inputs vor der ersten
+ * Zelle stehen. */
+tbody.form-group:has(> tr.positionszeile):focus-within > tr > td {
+    background: color-mix(in oklab, var(--color-primary-500) 5%, transparent);
+}
+
+tbody.form-group:has(> tr.positionszeile):focus-within > tr > td:first-of-type {
+    box-shadow: inset 3px 0 0 var(--color-primary-600);
+}
+
+.dark tbody.form-group:has(> tr.positionszeile):focus-within > tr > td {
+    background: color-mix(in oklab, var(--color-primary-400) 8%, transparent);
+}
+
+.dark tbody.form-group:has(> tr.positionszeile):focus-within > tr > td:first-of-type {
+    box-shadow: inset 3px 0 0 var(--color-primary-400);
+}
+
+/* ── Spaltenköpfe ───────────────────────────────────────────────────────
+ *
+ * BT-Nummer klein unter dem Label, Pflichtsternchen direkt dahinter
+ * (tabular_heading.html). Oben bündig, damit die Labels auf einer Linie
+ * stehen. Pos. und Bezeichnung linksbündig, Zahlen rechtsbündig, jeweils
+ * Kopf, Nummer und Wert. */
+.pw-bt {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 400;
+    color: var(--color-base-400);
+}
+
+/* BT-Nummer nach dem Label der Datumsfelder. */
+.pw-bt-neben {
+    font-size: 0.6875rem;
+    font-weight: 400;
+    color: var(--color-base-400);
+}
+
+table:has(tr.positionszeile) > thead th {
+    vertical-align: top;
+}
+
+table:has(tr.positionszeile) > thead th:is(.column-menge, .column-einheit, .column-einzelpreis, .column-steuersatz, .column-zeilensumme) {
+    text-align: right;
+}
+
+table:has(tr.positionszeile) > thead th:is(.column-menge, .column-einheit, .column-einzelpreis, .column-steuersatz, .column-zeilensumme) > span {
+    justify-content: flex-end;
+}
+
+/* ── Spaltenbreiten der Positionszeile ──────────────────────────────────
+ *
+ * Die Bezeichnung erhält die restliche Breite, die anderen Spalten die
+ * Breite ihres Inhalts. Ohne Unfolds min-w-20, das hier zu breit ist.
+ * Gemessen bei 1280 und 1366 px: unter 6,5rem werden "6.000" und "19 %"
+ * abgeschnitten. */
+tr.form-row.positionszeile > td :is(input, select) {
+    min-width: 0;
+}
+
+/* Breit genug für eine Ordnungszahl aus dem Leistungsverzeichnis wie
+ * "01.01.0010". */
+tr.form-row.positionszeile > td.field-position    { width: 6.5rem; }
+
+/* min-width, weil die Tabelle schmale Spalten zugunsten der Bezeichnung
+ * verkleinert und die Nummer lesbar bleiben muss. */
+tr.form-row.positionszeile > td.field-position input {
+    min-width: 6.5rem;
+}
+tr.form-row.positionszeile > td.field-menge       { width: 6.5rem; }
+tr.form-row.positionszeile > td.field-einheit     { width: 5.5rem; }
+tr.form-row.positionszeile > td.field-einzelpreis { width: 7rem; }
+tr.form-row.positionszeile > td.field-steuersatz  { width: 6.5rem; }
+
+/* min-width auch für die Menge. Regression: Im Auftrag mit Spalte
+ * "Abgerechnet" erschien bei 1366 px "40.000" als "40.0". */
+tr.form-row.positionszeile > td.field-menge input {
+    min-width: 5.5rem;
+}
+
+tr.form-row.positionszeile > td.field-zeilensumme {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* "0 von 40 Std abgerechnet" darf umbrechen, damit die Menge Platz
+ * behält. */
+tr.form-row.positionszeile > td.field-stand {
+    width: 8rem;
+    min-width: 8rem;
+}
+
+tr.form-row.positionszeile > td.field-bezeichnung {
+    min-width: 14rem;
+}
+
+/* Unfold begrenzt Textfelder mit max-w-2xl (672 px) am Wrapper. Die
+ * Bezeichnung füllt die ganze Spalte, daher ohne Grenze an Wrapper und
+ * Feld. */
+tr.form-row.positionszeile > td.field-bezeichnung :is(div, input) {
+    max-width: none;
+}
+
+/* ── Inhalt der Positionszeile ──────────────────────────────────────── */
+
+/* Positionsnummer. */
+tr.form-row.positionszeile > td.field-position :is(input, .readonly) {
+    font-weight: 600;
+}
+
+/* Rechtsbündig wie im PDF: Menge, Einheit, Preis, USt. und Betrag, mit
+ * tabellarischen Ziffern. Der Wrapper um Feld oder Readonly-Wert ist ein
+ * Flex-Container, in dem text-align allein nicht wirkt. */
+tr.form-row.positionszeile > td:is(.field-menge, .field-einheit, .field-einzelpreis, .field-steuersatz, .field-zeilensumme) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+tr.form-row.positionszeile > td:is(.field-menge, .field-einheit, .field-einzelpreis, .field-steuersatz, .field-zeilensumme) > div {
+    justify-content: flex-end;
+}
+
+tr.form-row.positionszeile > td:is(.field-menge, .field-einheit, .field-einzelpreis) input {
+    text-align: right;
+}
+
+/* Im Select rechtsbündig vor Unfolds Pfeil. */
+tr.form-row.positionszeile > td.field-steuersatz select {
+    text-align: right;
+    text-align-last: right;
+}
+
+/* Menge und Preis ohne Spinner, weil sie in schmalen Spalten Platz
+ * kosten; das Feld bleibt type="number" (Komma, keine Buchstaben). Pos.
+ * ist ein Textfeld ohne Spinner. */
+tr.form-row.positionszeile > td:is(.field-menge, .field-einzelpreis) input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+tr.form-row.positionszeile > td:is(.field-menge, .field-einzelpreis) input[type="number"]::-webkit-inner-spin-button,
+tr.form-row.positionszeile > td:is(.field-menge, .field-einzelpreis) input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Summe der Zeile. */
+tr.form-row.positionszeile > td.field-zeilensumme {
+    font-weight: 600;
+    padding-left: 1rem;
+}
+
+/* Löschen-Icon gedämpft, rot bei :hover. */
+tr.form-row.positionszeile > td.delete .material-symbols-outlined {
+    color: var(--color-base-400);
+}
+
+tr.form-row.positionszeile > td.delete :hover > .material-symbols-outlined {
+    color: var(--color-red-600);
+}
+
+.dark tr.form-row.positionszeile > td.delete :hover > .material-symbols-outlined {
+    color: var(--color-red-500);
+}
+
+/* Checkbox "Optional" (Angebot und Auftrag) rechts in der Zusatzzeile,
+ * Label links daneben wie bei den Datumsfeldern, damit die Zeile nicht
+ * höher als ein Feld wird. */
+.form-row-zweite-zeile .field-optional {
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-row-zweite-zeile .field-optional > .pw-zusatzbeschriftung {
+    font-size: 0.6875rem;
+    white-space: nowrap;
+}
+
+/* ── Zeilenart: links neben der Katalogsuche ────────────────────────────
+ *
+ * Beide stehen in der ersten Zeile einer neuen Position und entfallen
+ * nach dem Speichern mit ihr (Regel oben). Zeilenart schmal, die Suche
+ * mit der restlichen Breite. */
+.form-row-erste-zeile .pw-zusatzfelder {
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.form-row-erste-zeile .field-zeilenart {
+    flex: none;
+    width: 9rem;
+}
+
+.form-row-erste-zeile .field-katalog {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ── Felder ohne Bedeutung für die Zeilenart ───────────────────────────
+ *
+ * Definiert in Zeilenart.felder_ohne_bedeutung; das Formular setzt sie
+ * disabled, zeilenart.js und der Filter ``lesewert`` setzen diese Klasse.
+ * In der Positionszeile wird nur der Inhalt ausgeblendet, damit Spalten
+ * und Trennlinie bleiben; in den Zusatzzeilen das ganze Feld. */
+td.pw-ohne-bedeutung > * {
+    visibility: hidden;
+}
+
+.zusatzzeile-feld.pw-ohne-bedeutung {
+    display: none;
+}

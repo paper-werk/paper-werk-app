@@ -1,0 +1,19 @@
+/* Höhe der Rechteauswahl in Gruppen und Benutzern.
+ *
+ * Djangos filter_horizontal rendert zwei <select multiple>, deren Höhe aus
+ * dem size-Attribut kommt, das SelectFilter2.js übernimmt; ohne Angabe
+ * zeigt der Browser vier Zeilen, bei rund zweihundert Rechten zu wenig.
+ *
+ * Über CSS, weil size Zeilen zählt und die Fensterhöhe nicht
+ * berücksichtigt. Verworfen: size am Widget (FilteredSelectMultiple).
+ *
+ * min(): 60 % der Fensterhöhe, höchstens 32rem, damit die Buttons darunter
+ * sichtbar bleiben. */
+.selector select {
+    min-height: min(60vh, 32rem);
+}
+
+/* Das Suchfeld behält seine Höhe, die die Flex-Spalte sonst streckt. */
+.selector .selector-filter input {
+    min-height: 0;
+}

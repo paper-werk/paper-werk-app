@@ -1,0 +1,119 @@
+{% comment %}
+Unfolds Template (django-unfold 0.104.1) mit einer Erweiterung: Felder aus
+``erste_zeile_felder`` oder ``zweite_zeile_felder`` des Inlines stehen in
+einer eigenen Tabellenzeile über die volle Breite über bzw. unter der
+Positionszeile.
+
+Verwendet für die Belegposition: oben die Katalogsuche, die Platz für lange
+Bezeichnungen braucht, unten der Langtext, weil ein mehrzeiliger Text neben
+Menge, Einheit und Preis die übrigen Spalten schmal und die Zeile hoch macht.
+
+Hier und nicht als ``template`` am Inline, weil der Weg über
+``tabular.html`` und ``tabular_table.html`` führt und drei Kopien nötig
+wären, zwei davon unverändert. Ein Inline ohne ``zweite_zeile_felder``
+rendert unverändert, weil alle Ergänzungen an diesen dann leeren Variablen
+hängen.
+
+Als Kopie muss die Datei nach jedem Unfold-Update mit dem Original
+abgeglichen werden; Abweichungen nur an den sechs mit "PAPER-WERK"
+markierten Stellen. Die Zusatzzeilen in ``paperwerk_zusatzzeile.html``.
+
+Zum Rahmen unter der Positionszeile und zum Umnummerieren beim Löschen
+einer Zeile siehe faktura_admin.css und faktura/js/zweite_zeile.js.
+{% endcomment %}
+{% load i18n faktura_extras %}
+
+{% comment %}
+``default`` ist nötig: Fehlt das Attribut, ergibt sich None, und
+"not in None" ist in Djangos if-Tag ohne Fehler False; alle Spalten
+verschwänden.
+
+Mehrzeilige Kommentare verwenden
+{% templatetag openblock %} comment {% templatetag closeblock %}, weil die
+Kurzform mit Raute nur innerhalb einer Zeile gilt; über mehrere Zeilen wird
+sie als Text ausgegeben und enthaltene Tags ausgeführt.
+{% endcomment %}
+{% with zweite_zeile_felder=inline_admin_formset.opts.zweite_zeile_felder|default:"" erste_zeile_felder=inline_admin_formset.opts.erste_zeile_felder|default:"" %}
+<tbody class="form-group relative {% if nested_inline %}group/nested{% else %}group/parent{% endif %} {% if forloop.revcounter == 2 and inline_admin_formset.has_add_permission %}last{% endif %} {% if inline_admin_form.original or inline_admin_form.show_url %}original{% else %}template{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form{% endif %}" {% if inline_admin_formset.opts.ordering_field %}x-sort:item{% endif %}>
+    {% include "unfold/helpers/edit_inline/tabular_error.html" %}
+
+    {% include "unfold/helpers/edit_inline/tabular_title.html" %}
+
+    {# PAPER-WERK (1): die erste Zeile, über der Positionszeile. #}
+    {% if erste_zeile_felder %}
+        {% include "unfold/helpers/edit_inline/paperwerk_zusatzzeile.html" with felder=erste_zeile_felder art="erste" %}
+    {% endif %}
+
+    {# PAPER-WERK (2): zusätzliche Klassen, an denen das CSS Trennlinie und Spaltenbreiten erkennt. ``positionszeile`` an jeder Belegposition, auch ohne Katalogsuche darüber (Mahnung). #}
+    <tr class="form-row has-[.delete:checked]:[&+.form-delete]:table-row {% if zweite_zeile_felder %}hat-zweite-zeile{% endif %} {% if erste_zeile_felder %}hat-erste-zeile{% endif %} {% if inline_admin_formset.opts.positionszeile %}positionszeile{% endif %}">
+        {% spaceless %}
+            {% for fieldset in inline_admin_form %}
+                {% for line in fieldset %}
+                    {% for field in line %}
+                        {% if not field.is_readonly and field.field.is_hidden %}
+                            {{ field.field }}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        {% endspaceless %}
+
+        {% for fieldset in inline_admin_form %}
+            {% for line in fieldset %}
+                {% for field in line %}
+                    {# PAPER-WERK (3): was oben oder unten steht, steht hier nicht. #}
+                    {% if field.field.name not in zweite_zeile_felder and field.field.name not in erste_zeile_felder %}
+                        {% if field.is_readonly or not field.field.is_hidden %}
+                            <td{% if field.field.name %} class="min-h-[62.5px] align-middle border-b max-md:border-b border-base-200 {% if nested_inline %}lg:group-[.last]/nested:border-b-0{% elif not inline_admin_form.form.nested_formsets %}lg:group-[.last]/parent:border-b-0{% endif %} dark:border-base-800 field-{{ field.field.name }} group field-tabular {% if field.field.errors|length > 0 %} errors{% endif %}{% if inline_admin_form.original %} p-3 lg:py-3{% else %} py-3{% endif %} font-normal px-1.5 first:pl-3 last:pr-3 text-left {% if field.field.is_hidden %} hidden!{% endif %} {% if inline_admin_formset.opts.ordering_field and field.field.name == inline_admin_formset.opts.ordering_field and inline_admin_formset.opts.hide_ordering_field %}hidden!{% endif %}"{% endif %}>
+                                {# PAPER-WERK (6): Zahlen zum Lesen wie auf dem Blatt ("40", "1.450,00", "19 %"); leer heißt Unfolds Anzeige. #}
+                                {% with value=field|lesewert %}
+                                    {% include "unfold/helpers/edit_inline/tabular_field.html" %}
+                                {% endwith %}
+                            </td>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        {% endfor %}
+
+        {% include "unfold/helpers/edit_inline/tabular_delete.html" %}
+    </tr>
+
+    {% comment %} PAPER-WERK (5): Die Zeile "wird gelöscht" steht direkt hinter
+       der Positionszeile, im Original nach allen Zeilen. Unfold blendet sie
+       über die Klasse an der Positionszeile ein
+       ("has-[.delete:checked]:[&+.form-delete]"); "+" ist der Adjacent
+       Sibling Combinator. Regression: Mit der zweiten Zeile dazwischen griff
+       die Regel nicht; der Löschen-Button setzte die Checkbox ohne sichtbare
+       Rückmeldung. Das Overlay liegt absolut über dem ganzen tbody und
+       deckt Katalog- und Langtextzeile mit ab. {% endcomment %}
+    {% if inline_admin_form.original %}
+        <tr class="hidden form-delete">
+            <td colspan="100%">
+                {% include "unfold/helpers/edit_inline/inline_delete_undo.html" %}
+            </td>
+        </tr>
+    {% endif %}
+
+    {# PAPER-WERK (4): die zweite Zeile, unter der Positionszeile. #}
+    {% if zweite_zeile_felder %}
+        {% include "unfold/helpers/edit_inline/paperwerk_zusatzzeile.html" with felder=zweite_zeile_felder art="zweite" %}
+    {% endif %}
+
+    {% if inline_admin_form.form.nested_formsets %}
+        <tr class="form-nested">
+            <td class="bg-striped border-b border-base-200 relative dark:border-base-800 group-[.last]/parent:border-b-0" colspan="100%">
+                <div class="flex flex-col p-3 gap-3 shadow-inner">
+                    {% for nested_formset in inline_admin_form.form.nested_formsets %}
+                        {% if nested_formset.inline_type == "tabular" %}
+                            {% include "unfold/helpers/edit_inline/tabular_table.html" with inline_admin_formset=nested_formset nested_inline=True %}
+                        {% elif nested_formset.inline_type == "stacked" %}
+                            {% include "unfold/helpers/edit_inline/stacked_list.html" with inline_admin_formset=nested_formset nested_inline=True %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </td>
+        </tr>
+    {% endif %}
+</tbody>
+{% endwith %}

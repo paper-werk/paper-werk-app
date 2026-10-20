@@ -1,0 +1,28 @@
+{% extends 'unfold/layouts/unauthenticated.html' %}
+{% comment %}
+Der Anbieter (Microsoft) antwortet nicht. Gezeigt von
+core.anmeldung.anbieter_erreichbar anstelle eines Serverfehlers.
+
+Verweist auf das Anmeldeformular mit Benutzername und Passwort.
+{% endcomment %}
+
+{% block title %}Anmeldung nicht möglich | {{ marke }}{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/unauthenticated_title.html" with title='Anmeldung gerade nicht möglich' subtitle=marke %}
+
+    <div class="flex flex-col gap-4 text-sm">
+        <p>
+            {{ anbieter }} ist im Moment nicht erreichbar. Das liegt nicht an
+            {{ marke }} und nicht an Ihrem Konto.
+        </p>
+        <p>
+            Versuchen Sie es in ein paar Minuten noch einmal. Wenn es eilt,
+            melden Sie sich mit Benutzername und Passwort an, sofern Sie eines
+            haben &ndash; sonst hilft die Person, die {{ marke }} bei Ihnen betreut.
+        </p>
+        <p>
+            <a href="{{ anmeldung }}" class="text-primary-600 dark:text-primary-500 underline">Zurück zur Anmeldung</a>
+        </p>
+    </div>
+{% endblock %}

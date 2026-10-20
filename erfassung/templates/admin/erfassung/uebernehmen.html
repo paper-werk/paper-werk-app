@@ -1,0 +1,192 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls faktura_extras unfold %}
+
+{% comment %} Vorschau der Übernahme vor dem ersten Schreibzugriff.
+
+   Die Übernahme ist der einzige schreibende Vorgang der Erfassung, und ihr
+   Ergebnis ist aus der Auswahl nicht erkennbar (Gruppierung je Leistung,
+   Aufrundung auf die Viertelstunde, ausgelassene Zeilen). Abbrechen ändert
+   nichts.
+
+   Kein Block "breadcrumbs", weil Unfolds Basis-Template ihn nicht hat;
+   zurück führt "Abbrechen".
+{% endcomment %}
+
+{% block content %}
+<div class="max-w-5xl">
+  <div class="font-semibold mb-2 text-2xl text-font-important-light dark:text-font-important-dark">
+    In Rechnung übernehmen
+  </div>
+
+  {% if vorschau.projekt %}
+    <p class="mb-6 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+      Projekt:
+      <strong class="font-medium text-font-important-light dark:text-font-important-dark">
+        {{ vorschau.projekt }}
+      </strong>
+    </p>
+  {% endif %}
+
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Das wird daraus" %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+          <thead>
+            <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+              <th class="font-medium pb-2 pr-4 text-left" scope="col">Leistung</th>
+              <th class="font-medium pb-2 pr-4 text-right" scope="col">Zeilen</th>
+              <th class="font-medium pb-2 pr-4 text-right" scope="col">Erfasst</th>
+              <th class="font-medium pb-2 pr-4 text-right" scope="col">Berechnet</th>
+              <th class="font-medium pb-2 pr-4 text-left" scope="col">Einheit</th>
+              <th class="font-medium pb-2 pr-4 text-right" scope="col">Einzelpreis</th>
+              <th class="font-medium pb-2 text-right" scope="col">Summe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in vorschau.positionen %}
+              <tr class="border-b border-base-200 dark:border-base-800">
+                <td class="py-2 pr-4">{{ p.bezeichnung }}</td>
+                <td class="py-2 pr-4 text-right">{{ p.zeilen|length }}</td>
+                {% comment %} Erfasste Zeit neben der gerundeten Menge, weil die
+                   Aufrundung bei kurzen Einsätzen bis zu 50 % zu Lasten des
+                   Kunden ausmacht. {% endcomment %}
+                <td class="py-2 pr-4 text-right">{% if p.minuten %}{{ p.rohzeit }}{% endif %}</td>
+                <td class="py-2 pr-4 text-right font-medium text-font-important-light dark:text-font-important-dark">
+                  {{ p.menge|menge }}
+                </td>
+                <td class="py-2 pr-4">{{ p.einheit }}</td>
+                <td class="py-2 pr-4 text-right">{{ p.einzelpreis|geld }}</td>
+                <td class="py-2 text-right">{{ p.summe|geld }}</td>
+              </tr>
+            {% endfor %}
+            {% comment %} Fremdleistungen unter den eigenen Leistungen, in derselben
+               Reihenfolge wie auf der Rechnung. {% endcomment %}
+            {% if vorschau.fremdpositionen %}
+              {% if vorschau.positionen %}
+                <tr>
+                  <td colspan="7" class="pt-4 pb-1 text-font-subtle-light text-xs uppercase tracking-wide dark:text-font-subtle-dark">
+                    Zugekauft
+                  </td>
+                </tr>
+              {% endif %}
+              {% for p in vorschau.fremdpositionen %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4">{{ p.bezeichnung }}</td>
+                  <td class="py-2 pr-4 text-right">{{ p.zeilen|length }}</td>
+                  <td class="py-2 pr-4 text-right"></td>
+                  <td class="py-2 pr-4 text-right font-medium text-font-important-light dark:text-font-important-dark">
+                    {{ p.menge|menge }}
+                  </td>
+                  <td class="py-2 pr-4">{{ p.einheit }}</td>
+                  <td class="py-2 pr-4 text-right">{{ p.einzelpreis|geld }}</td>
+                  <td class="py-2 text-right">{{ p.summe|geld }}</td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+          <tfoot>
+            <tr class="font-semibold text-font-important-light dark:text-font-important-dark">
+              <th colspan="6" class="pt-3 pr-4 text-right" scope="row">Summe netto</th>
+              <th class="pt-3 text-right">{{ vorschau.netto|geld }} EUR</th>
+            </tr>
+            {% comment %} Der Einkaufspreis steht nicht auf der Rechnung, aber in
+               der Vorschau, damit der Aufschlag vor dem Schreiben sichtbar
+               ist. {% endcomment %}
+            {% if vorschau.fremdpositionen %}
+              <tr class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                <th colspan="6" class="pr-4 pt-1 text-right font-normal" scope="row">
+                  davon zugekauft, Einkauf
+                </th>
+                <td class="pt-1 text-right">{{ vorschau.fremdkosten|geld }} EUR</td>
+              </tr>
+            {% endif %}
+          </tfoot>
+        </table>
+      </div>
+
+      <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+        Die Zeit wird <strong>je Leistung auf die Summe</strong> aufgerundet, auf
+        eine Viertelstunde &ndash; nicht je Zeile. Der Preis kommt aus dem
+        Leistungskatalog, Stand heute.
+      </p>
+    {% endcomponent %}
+  </div>
+
+  {% if vorschau.uebergangen %}
+    {% comment %} Ausgelassene Zeilen werden einzeln aufgeführt. {% endcomment %}
+    <div class="mb-6">
+      {% component "unfold/components/card.html" with title="Diese Zeilen kommen nicht mit" %}
+        {% comment %} Farben aus unfold/helpers/messages/warning.html, damit der
+           Hinweis wie eine Django-Meldung aussieht. {% endcomment %}
+        <ul class="flex flex-col gap-2">
+          {% for zeile, grund in vorschau.uebergangen %}
+            <li class="bg-orange-100 leading-[18px] px-3 py-2.5 rounded-default text-orange-700 text-sm dark:bg-orange-500/20 dark:text-orange-400">
+              {{ zeile }} &ndash; {{ zeile.beschreibung }} ({{ grund }})
+            </li>
+          {% endfor %}
+        </ul>
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  <form method="post">{% csrf_token %}
+    {% for kennung in auswahl %}
+      <input type="hidden" name="_selected_action" value="{{ kennung }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="{{ aktion }}">
+    <input type="hidden" name="index" value="0">
+    <input type="hidden" name="bestaetigt" value="ja">
+
+    {% component "unfold/components/card.html" with title="Wohin" %}
+      <label for="ziel" class="block font-semibold mb-2 text-font-important-light text-sm dark:text-font-important-dark">
+        Rechnung
+      </label>
+      {% comment %} Entwürfe dieses Projekts und Sammelrechnungen dieses
+         Kunden ohne Projekt; keine festgeschriebenen und keine anderer
+         Empfänger. Label über entwurfsname(), weil str(beleg) nur
+         "Rechnung (Entwurf 10)" ergibt.
+
+         Die Klassen kommen aus dem Kontext
+         (core/adminhilfen.AUSWAHL_KLASSEN). {% endcomment %}
+      <select name="ziel" id="ziel" class="{{ select_klassen }}">
+        {% comment %} Neue gewöhnliche, Abschlags- oder Schlussrechnung
+           (erfassung/admin/gemeinsam.NEUE_ZIELE). Ohne
+           Teilschlussrechnung, weil sie nur aus einer Teilabnahme
+           entsteht. {% endcomment %}
+        {% for wert, beschriftung, art in neue_ziele %}
+          <option value="{{ wert }}">{{ beschriftung }}</option>
+        {% endfor %}
+        {% for entwurf, name in entwuerfe %}
+          <option value="{{ entwurf.pk }}">An {{ name }} anhängen</option>
+        {% empty %}
+          {# Ohne Ziel ein Hinweis statt eines leeren Felds. #}
+        {% endfor %}
+      </select>
+
+      {% if not entwuerfe %}
+        <p class="mt-2 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Für dieses Projekt und diesen Kunden gibt es zurzeit
+          keinen Rechnungsentwurf, an den angehängt werden könnte.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+
+    {% comment %} Die URL zuerst in eine Variable, weil ein url-Tag kein
+       Argument von component sein kann (wie in Unfolds Button-Leiste).
+
+       Ohne templatetag, weil in einem comment-Block nichts ausgewertet
+       wird, anders als in einem einzeiligen {# #}-Kommentar. {% endcomment %}
+    {% url opts|admin_urlname:'changelist' as liste_url %}
+
+    <div class="flex gap-3 justify-end mt-6">
+      {% component "unfold/components/button.html" with href=liste_url variant="default" %}
+        Abbrechen
+      {% endcomponent %}
+
+      {% component "unfold/components/button.html" with submit=1 %}
+        Übernehmen
+      {% endcomponent %}
+    </div>
+  </form>
+</div>
+{% endblock %}

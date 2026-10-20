@@ -1,0 +1,115 @@
+/* Anpassungen an Unfold.
+ *
+ * Unfold bindet seine Styles nach den konfigurierten STYLES ein; die
+ * !important-Deklarationen sind nötig, weil sonst Unfolds Utility-Klassen
+ * gewinnen.
+ *
+ * Nur für Markup, das Unfold erzeugt. Überschriften in eigenen Templates
+ * (templates/admin/*.html) erhalten ihre Farbe im Template.
+ */
+
+/* Der Überschriften-Balken von Formular-Fieldsets und Inlines im
+ * Betriebsblau. Beide entstehen aus unfold/helpers/inline_heading.html und
+ * tragen dort die Klasse bg-base-100; im Dark Mode schaltet Unfold .dark am
+ * <html>-Tag. */
+
+/* --- LIGHT MODE --- */
+.module h2.bg-base-100 {
+    background-color: var(--color-primary-200);
+    color: var(--color-base-900); /* dunkler Text auf hellem Blau */
+}
+
+/* --- DARK MODE --- */
+html.dark .module h2.bg-base-100 {
+    background-color: var(--color-primary-500);
+    color: var(--color-base-100); /* heller Text auf dunklem Blau */
+}
+
+/* --- Maximale Breite des Inhalts --- */
+
+/* Unfold begrenzt #content.container stufenweise auf höchstens 96rem
+ * (1536 px). Auf breiten Monitoren brechen dann Tabellen mit acht Spalten
+ * um, und die Kennzahlkarten der Projektakte stehen in zwei Zeilen.
+ *
+ * 110rem (1760 px) erlaubt sechs Kennzahlkarten nebeneinander. Volle Breite
+ * nur für Listen, die sie brauchen (list_fullwidth am ModelAdmin,
+ * {% block is_fullwidth %}1{% endblock %} im Template); für Karten und
+ * Fließtext erschwerte sie den Vergleich von Zahl und Label.
+ *
+ * Ab 96rem, weil darunter Unfolds Stufen gelten und der Container mit dem
+ * Fenster wächst (width:100%); geändert wird nur die oberste Grenze.
+ *
+ * !important, weil unfold/css/styles.css nach den STYLES eingebunden wird
+ * (skeleton.html) und die Regel dieselbe Spezifität hat. */
+@media (min-width: 96rem) {
+    .container {
+        max-width: 110rem !important;
+    }
+}
+
+/* --- Zahlen und Daten in den Listen --- */
+
+/* Geldspalten haben ``formatting='price'`` (Unfold setzt ``text-right``).
+ * Zusätzlich kein Umbruch, damit "4.693,12 EUR" nicht wie zwei Angaben
+ * wirkt, und tabellarische Ziffern, damit die Einerstellen untereinander
+ * stehen.
+ *
+ * ``nowrap`` setzt Unfold an Datumszellen, definiert die Klasse aber nicht
+ * (Unfold 0.108.0). Kein Umbruch auch für Belegnummern
+ * ("Rechnung RE-2026-0029") und "nicht versendet". */
+#result_list td.text-right,
+#result_list td.nowrap,
+#result_list td.field-faelligkeit,
+#result_list td.field-bezeichnung,
+#result_list td.field-bezeichnung_akte,
+#result_list td.field-versandstand {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Kennzahlkarten (templates/admin/_kennzahl.html) --- */
+
+/* Hier, weil nicht alle Seiten mit Karten _eigene_stile.html einbinden.
+ * Betrag ohne Umbruch, damit "106.539,90 €" in einer Zeile bleibt. Rot
+ * über die Zusatzklasse pw-rot. */
+.pw-kennzahl-wert {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 600;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-font-important-light);
+}
+.pw-kennzahl-text {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--color-font-subtle-light);
+}
+.pw-kennzahl-wert.pw-rot,
+.pw-kennzahl-text.pw-rot {
+    color: oklch(57.7% .245 27.325);   /* Tailwind red-600 */
+}
+.pw-kennzahl-text.pw-rot { font-weight: 500; }
+html.dark .pw-kennzahl-wert { color: var(--color-font-important-dark); }
+html.dark .pw-kennzahl-text { color: var(--color-font-subtle-dark); }
+html.dark .pw-kennzahl-wert.pw-rot,
+html.dark .pw-kennzahl-text.pw-rot {
+    color: oklch(63.7% .237 25.331);   /* Tailwind red-500 */
+}
+
+/* --- Mehrere Felder in einer Formularzeile ---
+ *
+ * Ein Tupel in den fieldsets, etwa ('empfaenger_plz', 'empfaenger_ort'),
+ * steht nebeneinander, jedes Feld gleich breit. Unfold bis 0.104 setzte
+ * dafür "grid lg:grid-cols-N" (fieldset_row_classes), 0.108 nicht mehr;
+ * hier so viele Spalten wie Felder (Test "E-Rechnung in zwei Spalten"). */
+.field-row:has(> .field-line + .field-line) {
+    display: grid;
+}
+
+@media (width >= 64rem) {
+    .field-row:has(> .field-line + .field-line) {
+        grid-auto-columns: minmax(0, 1fr);
+        grid-auto-flow: column;
+    }
+}

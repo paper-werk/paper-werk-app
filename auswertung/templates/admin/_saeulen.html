@@ -1,0 +1,26 @@
+{% comment %} Monatsverlauf als Säulen aus ``darstellung.saeulen``.
+
+   Erwartet ``saeulen`` (Achse und Säulen) und ``beschreibung`` (für
+   Bildschirmleser). Die Stile stehen in _eigene_stile.html (pw-saeulen),
+   die einbindende Seite muss sie laden.
+
+   Der Wert steht an jeder Säule als Tooltip und an der höchsten zusätzlich
+   darüber, weil die Höhe bei zwölf Säulen sonst nur ungefähr ablesbar
+   ist. {% endcomment %}
+<div class="pw-saeulen" role="img" aria-label="{{ beschreibung }}">
+  <div class="pw-flaeche">
+    {% for schritt in saeulen.achse %}
+      <div class="pw-linie" style="bottom: {{ schritt.hoehe }}%"><span>{{ schritt.text }}</span></div>
+    {% endfor %}
+    {% for saeule in saeulen.saeulen %}
+      <div class="pw-spalte" title="{{ saeule.monat }}: {{ saeule.text }}">
+        <div class="pw-saeule{% if saeule.spitze %} pw-spitze{% endif %}" style="height: {{ saeule.hoehe }}%">
+          {% if saeule.spitze %}<span class="pw-wert">{{ saeule.text }}</span>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="pw-monate">
+    {% for saeule in saeulen.saeulen %}<span>{{ saeule.kurz }}</span>{% endfor %}
+  </div>
+</div>

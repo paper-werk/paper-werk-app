@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dieselbe Rechnung in der UBL-Syntax - muss abgewiesen werden.
+
+     XRechnung erlaubt zwei Syntaxen fuer denselben Inhalt: UBL 2.1 (diese
+     Datei) und UN/CEFACT CII (die anderen Beispiele). Gelesen wird hier
+     nur CII - dieselbe Syntax, die paper-werk auch schreibt und die in
+     jedem ZUGFeRD-PDF steckt.
+
+     Erwartet: rote Meldung "Das ist eine E-Rechnung in der UBL-Syntax",
+     mit dem Hinweis, beim Lieferanten die CII-Fassung anzufordern. Nichts
+     wird angelegt.
+
+     Wenn diese Datei im Betrieb haeufiger auftaucht als gedacht, ist das
+     das Signal, den zweiten Lesezweig doch zu bauen. -->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_3.0</cbc:CustomizationID>
+  <cbc:ID>BLI-2026-4714</cbc:ID>
+  <cbc:IssueDate>2026-08-30</cbc:IssueDate>
+  <cbc:DueDate>2026-09-29</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>04011000-12345-67</cbc:BuyerReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PostalAddress>
+        <cbc:StreetName>Laborweg 4</cbc:StreetName>
+        <cbc:CityName>Altdorf</cbc:CityName>
+        <cbc:PostalZone>84032</cbc:PostalZone>
+        <cac:Country><cbc:IdentificationCode>DE</cbc:IdentificationCode></cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Bodenlabor Isartal GmbH</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Ingenieurbuero Muster GmbH</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">127.78</cbc:TaxAmount>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">672.50</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">672.50</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">800.28</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="EUR">800.28</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">8</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">340.00</cbc:LineExtensionAmount>
+    <cac:Item><cbc:Name>Paket B: Schwermetalle nach LAGA</cbc:Name></cac:Item>
+    <cac:Price><cbc:PriceAmount currencyID="EUR">42.50</cbc:PriceAmount></cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

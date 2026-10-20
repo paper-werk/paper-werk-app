@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# uv / Virtualenv
+.venv/
+
+# Umgebung / Secrets
+.env
+.env.*
+!.env.example
+
+# Django
+/staticfiles/
+/media/
+*.log
+
+# Werkzeuge
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Betriebssystem / IDE
+.DS_Store
+
+# Reste aus der Tutorial-Zeit
+db.sqlite3
+
+# Private Arbeitsunterlagen neben dem Projekt.
+privat/
+
+# Die Sperrdateien von Excel und LibreOffice.
+#
+# Sie entstehen, solange eine Mappe geöffnet ist, und tragen den Namen
+# der Datei mit ~$ davor. Wer sie versehentlich eincheckt, verteilt den
+# eigenen Benutzernamen und eine Datei, die beim nächsten Öffnen wieder
+# verschwindet.
+~$*
+
+# Node, nur für den Tailwind-Build (stile/eingang.css); das Ergebnis ist eingecheckt.
+node_modules/
+pruefen.log
+pruefen.log.roh
+
+# Berichte von sicherheit.sh, sie hängen am GitHub-Release
+/sicherheit-[0-9]*.md
+
+# Editor-Einstellungen sind Sache jedes Einzelnen.
+.vscode/

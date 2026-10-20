@@ -1,0 +1,76 @@
+{% extends "admin/base_site.html" %}
+{% load unfold %}
+
+{% comment %} Zwischenseite "Festschreiben".
+
+   Aufgebaut wie nachlass.html und versenden.html (Card und
+   Button-Komponente).
+
+   Eine Seite und kein Unfold-Dialog, weil der Dialog per htmx als Fragment
+   in ein Modal geladen wird, aktion_erst_speichern.js aber nach dem
+   Speichern per Redirect die URL der Aktion aufruft; das Fragment erschiene
+   ohne Basis-Template. Die Zwischenseite erbt das Layout und funktioniert
+   mit dem Redirect.
+{% endcomment %}
+
+{% block content %}
+  <div class="max-w-3xl">
+    <div class="font-semibold mb-6 text-2xl text-font-important-light dark:text-font-important-dark">
+      Festschreiben
+    </div>
+
+    <div class="mb-6">
+      {% component "unfold/components/card.html" %}
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          Betrifft
+          <strong class="text-font-important-light dark:text-font-important-dark">{{ beleg }}</strong>
+          {% if beleg.empfaenger_kurz %}an {{ beleg.empfaenger_kurz }} {% endif %}&uuml;ber {{ summe }}&nbsp;EUR.
+        </p>
+
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          {% if beleg.nummer %}
+            Der Beleg beh&auml;lt seine Nummer
+            <strong class="text-font-important-light dark:text-font-important-dark">{{ beleg.nummer }}</strong>
+          {% else %}
+            Der Beleg bekommt jetzt seine
+            <strong class="text-font-important-light dark:text-font-important-dark">Nummer</strong>
+          {% endif %}
+          und ist danach nicht mehr &auml;nderbar.
+          {% if entsperrbar %}
+            &Uuml;ber &bdquo;Wieder &ouml;ffnen&ldquo; l&auml;sst er sich
+            zur&uuml;ckholen &ndash; die Nummer bleibt ihm dabei.
+          {% endif %}
+        </p>
+
+        {% comment %} Der Satz über das Dokument unterscheidet Auftrag und
+           Angebot (BelegTyp.mit_dokument()). {% endcomment %}
+        {% if mit_dokument %}
+          <p class="text-font-default-light text-sm dark:text-font-default-dark">
+            Sein PDF wird dabei eingefroren und im Archiv abgelegt.
+          </p>
+        {% else %}
+          <p class="text-font-default-light text-sm dark:text-font-default-dark">
+            Ein Dokument entsteht dabei nicht. Die
+            <strong class="text-font-important-light dark:text-font-important-dark">Auftragsbest&auml;tigung</strong>
+            erzeugt der Knopf &bdquo;PDF anzeigen&ldquo;, wann immer sie
+            gebraucht wird.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="flex gap-3 justify-end">
+        {% component "unfold/components/button.html" with href=zurueck variant="default" %}
+          Abbrechen
+        {% endcomponent %}
+
+        {% component "unfold/components/button.html" with submit=1 name="festschreiben" %}
+          Festschreiben
+        {% endcomponent %}
+      </div>
+    </form>
+  </div>
+{% endblock %}

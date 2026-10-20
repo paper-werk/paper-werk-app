@@ -1,0 +1,154 @@
+{% load static faktura_extras erfassung_extras %}<!doctype html>
+{% comment %} Der Leistungsnachweis.
+
+   **Ohne Preise**, weil der Kunde Stunden bestätigt und die Bewertung mit
+   der Rechnung kommt; deshalb hat auch die Erfassungszeile keinen Preis.
+
+   Zur Rechnung (``a.beleg``) zusätzlich die weiterberechneten
+   Fremdleistungen, ohne Preis, weil der Einkaufspreis die Spanne zeigte. Je
+   Zeile der berechnete Umfang: Std nur bei Zeitleistungen, sonst Menge.
+   Datum mit Jahr, weil eine Probenahme im Vorjahr liegen kann.
+
+   Seitengeometrie, Briefkopf, Fußzeile und Anschriftfeld kommen von faktura.
+   Nur die Tabelle und der Unterschriftsblock sind eigen (nachweis.css).
+{% endcomment %}
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Leistungsnachweis</title>
+  <link rel="stylesheet" href="{% static 'faktura/pdf/beleg.css' %}">
+  <link rel="stylesheet" href="{% static 'erfassung/pdf/nachweis.css' %}">
+</head>
+<body class="beleg nachweis">
+
+{% include 'faktura/pdf/_briefkopf.html' %}
+{% include 'faktura/pdf/_fusszeile.html' %}
+{% include 'faktura/pdf/_anschriftfeld.html' with anschrift=anschrift %}
+
+{# ---- Informationsblock rechts neben dem Anschriftfeld ---- #}
+<section id="infoblock">
+  <table>
+    {% if a.beleg %}
+      <tr><th>Zur Rechnung</th><td>{{ a.beleg.nummer|default:"Entwurf" }}</td></tr>
+    {% endif %}
+    {% if a.projekt %}
+      <tr><th>Projekt</th><td>{{ a.projekt.nummer }}</td></tr>
+      <tr><th>Projekt</th><td>{{ a.projekt.bezeichnung }}</td></tr>
+    {% endif %}
+    {% if a.von %}
+      <tr><th>Zeitraum</th>
+          <td>{% if a.von == a.bis %}{{ a.von|date:"d.m.Y" }}
+              {% else %}{{ a.von|date:"d.m.Y" }} &ndash; {{ a.bis|date:"d.m.Y" }}
+              {% endif %}</td></tr>
+    {% endif %}
+    <tr><th>Erstellt am</th><td>{{ erzeugt_am|date:"d.m.Y" }}</td></tr>
+  </table>
+</section>
+
+<main id="inhalt">
+  <h1>Leistungsnachweis</h1>
+
+  {% if not a.zeilen and not a.fremdleistungen %}
+    <p>F&uuml;r den gew&auml;hlten Umfang liegen keine Erfassungen vor.</p>
+  {% endif %}
+  {% if a.zeilen %}
+
+  <table class="positionen nachweiszeilen{% if a.beleg %} zur-rechnung{% endif %}">
+    <thead>
+      <tr>
+        <th class="datum">Datum</th>
+        <th class="person">Person</th>
+        {% if mit_uhrzeit %}
+          <th class="uhrzeit">Von</th>
+          <th class="uhrzeit">Bis</th>
+        {% endif %}
+        <th class="dauer">Std</th>
+        <th class="umfang">Umfang</th>
+        <th class="leistung">Leistung</th>
+        <th class="bezeichnung">Beschreibung</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% comment %} Zeit- und Mengenzeilen gemischt in der Reihenfolge der
+         gewählten Ansicht, nach Tagen geordnet statt in zwei Tabellen.
+         Mengenzeilen (etwa Kilometer) ohne Uhrzeiten, wie in der
+         Erfassungsliste. {% endcomment %}
+      {% for zeile in a.zeilen %}
+        <tr{% if not zeile.abrechenbar %} class="ohne-berechnung"{% endif %}>
+          <td class="datum">{% if a.beleg %}{{ zeile.datum|date:"d.m.Y" }}{% else %}{{ zeile.datum|date:"d.m." }}{% endif %}</td>
+          <td class="person">{{ zeile.benutzer|person }}</td>
+          {% if mit_uhrzeit %}
+            <td class="uhrzeit">{{ zeile.von|time:"H:i"|default_if_none:"" }}</td>
+            <td class="uhrzeit">{{ zeile.bis|time:"H:i"|default_if_none:"" }}</td>
+          {% endif %}
+          <td class="dauer">{% if zeile.ist_zeitleistung or not a.beleg %}{{ zeile.dauer_anzeige }}{% endif %}</td>
+          <td class="umfang">{{ zeile.umfang }}</td>
+          <td class="leistung">{{ zeile.leistungsbezeichnung }}</td>
+          <td class="bezeichnung">{{ zeile.beschreibung }}{% if not zeile.abrechenbar %}<span class="vermerk">ohne Berechnung</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% comment %} Die Summe zählt nur die Zeit; Mengen stehen je Einheit
+     darunter. {% endcomment %}
+  <table class="summen nachweissummen">
+    {% if a.minuten or not a.beleg %}
+      <tr><th>Summe der Stunden</th><td>{{ a.zeitsumme }}</td></tr>
+    {% endif %}
+    {% if a.hat_unberechnetes %}
+      <tr class="ohne-berechnung">
+        <th>davon ohne Berechnung</th><td>{{ a.summe_ohne_berechnung }}</td></tr>
+    {% endif %}
+    {% for m in a.mengen %}
+      <tr><th>{{ m.einheit }}</th><td>{{ m.menge|menge }}</td></tr>
+    {% endfor %}
+  </table>
+
+  {% endif %}
+
+  {% if a.fremdleistungen %}
+  <table class="positionen nachweiszeilen fremdzeilen">
+    <thead>
+      <tr>
+        <th class="datum">Datum</th>
+        <th class="bezeichnung">Leistung</th>
+        <th class="umfang">Menge</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in a.fremdleistungen %}
+        <tr>
+          <td class="datum">{{ f.leistungsdatum|date:"d.m.Y" }}</td>
+          <td class="bezeichnung">{{ f.bezeichnung }}</td>
+          <td class="umfang">{{ f.menge|menge }} {{ f.einheit }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% comment %} Zur Rechnung ohne Unterschriftsblock, weil der Nachweis
+     dort die Rechnung belegt und nicht abgezeichnet wird. {% endcomment %}
+  {% if not a.beleg %}
+  <section class="unterschrift">
+    <div class="feld">
+      <div class="linie"></div>
+      Ort, Datum
+    </div>
+    <div class="feld">
+      <div class="linie"></div>
+      Unterschrift Auftraggeber
+    </div>
+  </section>
+  {% endif %}
+
+  <p class="herkunft">
+    Erstellt am {{ erzeugt_am|date:"d.m.Y" }} um {{ erzeugt_am|time:"H:i" }}
+    {% if erzeugt_von %}von {{ erzeugt_von|person }}{% endif %}
+    &middot; Vorlage {{ vorlagenversion }}
+  </p>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+{% extends "admin/change_list.html" %}
+{% comment %} Summe der gefilterten Zeilen über der Liste.
+
+   Berechnet in ErfassungszeileAdmin.changelist_view über cl.queryset, also
+   über die gefilterte Menge, nicht nur die aktuelle Seite. {% endcomment %}
+{% block result_list %}
+  {% if zeitsumme %}
+    {% comment %} Eigene Klassen, weil Unfolds Stylesheet die Klasse
+       "paginator" von Django nicht enthält. {% endcomment %}
+    <p class="mb-4 text-font-default-light text-sm dark:text-font-default-dark">
+      Summe des angezeigten Zeitraums:
+      <strong class="font-semibold text-font-important-light dark:text-font-important-dark">
+        {{ zeitsumme }}
+      </strong>
+      Stunden
+    </p>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block content %}
+  {{ block.super }}
+
+  {% comment %} Aktionen, deren Ergebnis in einem neuen Tab erscheint.
+
+     Am Beleg genügt ``target="_blank"`` an der Detailaktion
+     (BelegAdmin.detail_pdf). Die Aktionsleiste hat einen Submit-Button für
+     alle Aktionen; ein ``formtarget`` daran öffnete auch das Übernehmen in
+     einem neuen Tab.
+
+     Deshalb wird das target des Formulars nach der gewählten Aktion
+     gesetzt. Die betroffenen Aktionen stehen in Python
+     (``AKTIONEN_NEUES_FENSTER``), damit es nur eine Liste gibt.
+  {% endcomment %}
+  {{ aktionen_neues_fenster|json_script:"aktionen-neues-fenster" }}
+  <script>
+    (function () {
+      var daten = document.getElementById('aktionen-neues-fenster');
+      var formular = document.getElementById('changelist-form');
+      if (!daten || !formular) { return; }
+      var neuerReiter = JSON.parse(daten.textContent);
+
+      function zielSetzen() {
+        var auswahl = formular.querySelector('select[name="action"]');
+        var gewaehlt = auswahl ? auswahl.value : '';
+        formular.target = neuerReiter.indexOf(gewaehlt) !== -1 ? '_blank' : '';
+      }
+
+      // Am Formular und nicht an der Auswahl: So greift es auch, wenn Django
+      // die Aktionsleiste ein zweites Mal unter der Liste ausgibt.
+      formular.addEventListener('change', zielSetzen);
+      zielSetzen();
+    })();
+  </script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% comment %}
+Unfolds Template (django-unfold 0.104.1), erweitert um eine Zeile: das „?“
+zur Bedienungsanleitung (hilfe/templatetags/hilfe.py) rechts in der
+Kopfleiste. Hier und nicht in den Object Tools, weil Unfold diese beim
+Anlegen nicht zeigt.
+
+Wie navigation.html eine Kopie: nach jedem Unfold-Update mit dem Original
+abgleichen; Abweichung nur an der mit "PAPER-WERK" markierten Stelle.
+{% endcomment %}
+{% load i18n static unfold hilfe %}
+
+{% if not is_popup %}
+    <div class="flex flex-row gap-3 items-center ml-auto">
+        {% if environment %}
+            {% include "unfold/helpers/label.html" with text=environment.0 type=environment.1 %}
+        {% endif %}
+
+        {% action_list %}
+
+        {% if nav_global_side %}
+            {{ nav_global_side }}
+        {% endif %}
+
+        {# PAPER-WERK #}
+        {% hilfe_verweis %}
+    </div>
+{% endif %}

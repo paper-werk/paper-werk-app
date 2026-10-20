@@ -1,0 +1,171 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls faktura_extras unfold %}
+
+{% comment %} Offene Leistungen eines Projekts, aufgerufen vom Beleg.
+
+   Gegenstück zur Aktion in der Erfassungsliste: Diese Seite füllt den
+   aktuellen Beleg, die Aktion rechnet eine Auswahl ab.
+
+   Gegliedert nach Auftrag, Auftragsposition und Person, auf allen Ebenen
+   auswählbar. Das Ergebnis bestimmt abrechnungsvorschau: eine
+   Rechnungsposition je Auftragsposition; die Personen dienen nur der
+   Auswahl.
+{% endcomment %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% comment %} Die URL kommt aus dem Kontext mit Cache-Buster ?stand=, weil
+     die Seite kein ModelAdmin-Media hat. {% endcomment %}
+  <script src="{{ skript }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl">
+  <div class="font-semibold mb-2 text-2xl text-font-important-light dark:text-font-important-dark">
+    Erbrachte Leistungen hinzufügen
+  </div>
+
+  <p class="mb-6 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+    Projekt:
+    <strong class="font-medium text-font-important-light dark:text-font-important-dark">
+      {{ beleg.projekt }}
+    </strong>
+    &nbsp;&middot;&nbsp; Ziel:
+    <strong class="font-medium text-font-important-light dark:text-font-important-dark">
+      {{ beleg.rechnungsbezeichnung|default:beleg.get_typ_display }}
+    </strong>
+  </p>
+
+  {% if not gruppen and not fremdgruppen %}
+    {% comment %} Bei leerer Liste ein Hinweis. {% endcomment %}
+    {% component "unfold/components/card.html" with title="Nichts offen" %}
+      <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        Auf diesem Projekt steht zurzeit weder eine abrechenbare Leistung
+        noch eine weiterberechenbare Fremdleistung, die nicht schon auf
+        einer Rechnung liegt.
+      </p>
+    {% endcomponent %}
+
+    <div class="flex gap-3 justify-end mt-6">
+      {% component "unfold/components/button.html" with href=zurueck variant="default" %}
+        Zurück
+      {% endcomponent %}
+    </div>
+  {% else %}
+
+  <form method="post" data-leistungsauswahl>{% csrf_token %}
+
+    {% for gruppe in gruppen %}
+      <div class="mb-6">
+        {% component "unfold/components/card.html" %}
+          <label class="flex font-semibold gap-2 items-center mb-3 text-font-important-light dark:text-font-important-dark">
+            {% comment %} Die oberste Ebene hat keine ID und schaltet nur die
+               Ebenen darunter; übernommen werden nur Zeilen. {% endcomment %}
+            <input type="checkbox" data-ebene="auftrag"
+                   class="border-base-300 rounded-sm dark:border-base-600">
+            {{ gruppe.bezeichnung }}
+            <span class="font-normal ml-auto text-font-subtle-light text-sm dark:text-font-subtle-dark">
+              {{ gruppe.summe|geld }} EUR
+            </span>
+          </label>
+
+          {% for stelle in gruppe.gruppen %}
+            <div class="border-base-200 border-t dark:border-base-800 py-3">
+              <label class="flex font-medium gap-2 items-center text-sm">
+                <input type="checkbox" data-ebene="position"
+                       class="border-base-300 ml-4 rounded-sm dark:border-base-600">
+                {{ stelle.bezeichnung }}
+                <span class="font-normal ml-auto text-font-subtle-light dark:text-font-subtle-dark">
+                  {% comment %} Erfasste Zeit neben der gerundeten Menge, wie in der
+                     Vorschau der Übernahme, weil die Aufrundung auf die
+                     Viertelstunde bei kurzen Einsätzen bis zu 50 % ausmacht.
+                     {% endcomment %}
+                  {% if stelle.ist_zeit %}{{ stelle.dauer }} &rarr; {% endif %}
+                  {{ stelle.menge|menge }} {{ stelle.einheit }}
+                  &nbsp;&middot;&nbsp; {{ stelle.summe|geld }} EUR
+                </span>
+              </label>
+
+              {% for person in stelle.personen %}
+                <label class="flex gap-2 items-center mt-2 text-sm">
+                  <input type="checkbox" data-ebene="person"
+                         class="border-base-300 ml-10 rounded-sm dark:border-base-600">
+                  <span class="text-font-subtle-light dark:text-font-subtle-dark">
+                    {{ person.name }}
+                  </span>
+                  <span class="ml-auto text-font-subtle-light dark:text-font-subtle-dark">
+                    {% if stelle.ist_zeit %}{{ person.dauer }}{% else %}{{ person.menge|menge }}{% endif %}
+                    &nbsp;&middot;&nbsp; {{ person.zeilen|length }} Zeilen
+                  </span>
+                </label>
+
+                <div class="ml-16 mt-1">
+                  {% for zeile in person.zeilen %}
+                    <label class="flex gap-2 items-center py-0.5 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                      <input type="checkbox" name="zeile" value="{{ zeile.pk }}"
+                             data-ebene="zeile"
+                             class="border-base-300 rounded-sm dark:border-base-600">
+                      <span>{{ zeile.datum|date:"d.m.Y" }}</span>
+                      <span>{{ zeile.beschreibung }}</span>
+                      <span class="ml-auto">{{ zeile.dauer_anzeige }}{{ zeile.umfang }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        {% endcomponent %}
+      </div>
+    {% endfor %}
+
+    {% comment %} Fremdleistungen in eigenem Abschnitt, geordnet nach
+       Lieferant und Rechnungsnummer der Eingangsrechnung.
+
+       Zwei Ebenen (Rechnung, Posten), weil Fremdleistungen keinen Auftrag
+       und keine Person haben. {% endcomment %}
+    {% for gruppe in fremdgruppen %}
+      <div class="mb-6">
+        {% component "unfold/components/card.html" %}
+          <label class="flex font-semibold gap-2 items-center mb-3 text-font-important-light dark:text-font-important-dark">
+            <input type="checkbox" data-ebene="auftrag"
+                   class="border-base-300 rounded-sm dark:border-base-600">
+            Fremdleistung: {{ gruppe.bezeichnung }}
+            <span class="font-normal ml-auto text-font-subtle-light text-sm dark:text-font-subtle-dark">
+              {{ gruppe.summe|geld }}&nbsp;&euro;
+            </span>
+          </label>
+
+          <div class="ml-8">
+            {% for position in gruppe.positionen %}
+              <label class="flex gap-2 items-center py-0.5 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                <input type="checkbox" name="fremdleistung" value="{{ position.pk }}"
+                       data-ebene="zeile"
+                       class="border-base-300 rounded-sm dark:border-base-600">
+                <span>{{ position.bezeichnung }}</span>
+                <span class="ml-auto">
+                  {{ position.menge|menge }}&nbsp;{{ position.einheit }}
+                  &nbsp;&middot;&nbsp; {{ position.einkauf_netto|geld }}&nbsp;&euro; Einkauf
+                  {% if position.auftragsposition %}
+                    &nbsp;&middot;&nbsp; zu {{ position.auftragsposition.beleg.nummer }} Pos. {{ position.auftragsposition.position }}
+                  {% endif %}
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        {% endcomponent %}
+      </div>
+    {% endfor %}
+
+    <div class="flex gap-3 justify-end mt-6">
+      {% component "unfold/components/button.html" with href=zurueck variant="default" %}
+        Abbrechen
+      {% endcomponent %}
+
+      {% component "unfold/components/button.html" with submit=1 %}
+        Übernehmen
+      {% endcomponent %}
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

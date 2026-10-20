@@ -1,0 +1,58 @@
+{% comment %}
+Eine Zusatzzeile einer Position; über der Positionszeile (``art="erste"``,
+die Katalogsuche) oder darunter (``art="zweite"``, Langtext und
+Leistungszeitraum). Eingebunden aus ``tabular_group.html``; ``felder`` sind
+die Namen aus ``erste_zeile_felder`` bzw. ``zweite_zeile_felder`` am Inline.
+
+Zwei Zellen: Die erste (``pw-rueckgrat``) steht leer unter "Pos.", der
+Inhalt beginnt in der zweiten unter der Bezeichnung. Die Ausrichtung ergibt
+sich aus der Tabelle, beim Bearbeiten wie im Readonly-Modus. Verworfen: ein
+padding-left, weil die Pos.-Spalte ohne Eingabefelder schmaler ist
+(``docs/belegansicht.md``).
+
+Die Katalogsuche steht nur über neuen Zeilen; an gespeicherten Positionen
+blendet faktura_admin.css sie aus. Eine gespeicherte Position wird ersetzt,
+indem sie gelöscht und in der leeren Zeile neu gewählt wird. Verworfen: ein
+Button zum Aufklappen.
+
+Leer bleibt die Zeile nur bei festgeschriebenen Belegen, wenn die
+Readonly-Felder keinen Text haben (geprüft am Wert: ``contents`` ist für
+leer "-"); die Katalogsuche fehlt dort. Das CSS blendet die Zeile dann aus,
+weil sie kein .zusatzzeile-feld enthält.
+
+Die Klassen ``form-row-zweite-zeile`` und ``zweite-zeile-feld`` (bzw.
+``erste``) verwenden CSS und zweite_zeile.js. Abstände und Trennlinie in
+faktura_admin.css; innerhalb einer Position keine Linie.
+
+Drei Zellen in der zweiten Zeile: Was im PDF unter der Bezeichnung steht,
+steht hier in deren Spalte (``zweite_zeile_links`` am Inline), der Langtext
+in der Breite der Bezeichnung, beim Zuschlag davor Prozent und "auf". Der
+Zeitraum steht in einer Zelle über die übrigen Spalten. Die Felder in
+``paperwerk_zusatzfelder.html``.
+
+Die BT-Nummer der Datumsfelder klein und grau hinter dem Label, wie unter
+den Spaltenköpfen.
+{% endcomment %}
+{% load faktura_extras %}
+<tr class="form-row-zusatzzeile form-row-{{ art }}-zeile">
+    <td class="pw-rueckgrat"></td>
+    {% if art == "zweite" %}
+        {# Langtext und Zuschlag in der Spalte der Bezeichnung, damit Langtext und Bezeichnung gleich breit sind; der Zeitraum rechts daneben. #}
+        <td class="pw-zusatzinhalt pw-textspalte">
+            <div class="pw-zusatzfelder">
+                {% include "unfold/helpers/edit_inline/paperwerk_zusatzfelder.html" with teil="links" %}
+            </div>
+        </td>
+        <td class="pw-zusatzinhalt pw-zusatzrest" colspan="100%">
+            <div class="pw-zusatzfelder">
+                {% include "unfold/helpers/edit_inline/paperwerk_zusatzfelder.html" with teil="rest" %}
+            </div>
+        </td>
+    {% else %}
+        <td class="pw-zusatzinhalt" colspan="100%">
+            <div class="pw-zusatzfelder">
+                {% include "unfold/helpers/edit_inline/paperwerk_zusatzfelder.html" with teil="alle" %}
+            </div>
+        </td>
+    {% endif %}
+</tr>

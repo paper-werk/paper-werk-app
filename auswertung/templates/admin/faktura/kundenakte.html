@@ -1,0 +1,441 @@
+{% extends "admin/base_site.html" %}
+{% load faktura_extras unfold %}
+
+{% comment %} Kundenakte: alle Angaben zu einem Auftraggeber auf einer
+   Seite.
+
+   Eigene Seite, weil Kunden häufiger nachgeschlagen als geändert werden und
+   vier Tabellen als Inlines unübersichtlich wären
+   (auswertung/kundenakte.py).
+
+   Anders als bei Projekt und Auftrag verlinkt die Liste auf diese Seite;
+   der Button oben rechts führt in die Stammdaten.
+
+   Beträge nur mit {% templatetag openblock %} if darf_zahlen_sehen {% templatetag closeblock %}, wie auf der Startseite und in
+   der Projektakte.
+{% endcomment %}
+
+{% block nav-global %}{% include "admin/blaettern.html" %}{% endblock %}
+
+{% block content %}
+{% include "admin/_eigene_stile.html" %}
+<div>
+
+  {# ---- Kopf ---- #}
+  <div class="flex flex-wrap gap-4 items-start justify-between mb-6">
+    <div>
+      <div class="font-semibold text-2xl text-font-important-light dark:text-font-important-dark">
+        {{ kunde.nummer }} &middot; {{ kunde.name }}
+      </div>
+      <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        {% if not kunde.aktiv %}
+          <span class="font-medium">inaktiv</span> &middot;
+        {% endif %}
+        {% if kunde.ort %}{{ kunde.plz }} {{ kunde.ort }}{% else %}ohne Anschrift{% endif %}
+        {% comment %} Der abweichende Rechnungsempfänger steht im Kopf, weil er
+           die Anschrift jeder Rechnung dieses Kunden bestimmt. {% endcomment %}
+        {% if rechnungsempfaenger_url %}
+          &middot; Rechnung an
+          <a href="{{ rechnungsempfaenger_url }}"
+             class="text-primary-600 hover:underline dark:text-primary-500">
+            {{ kunde.rechnungsempfaenger.name }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    <a href="{{ formular_url }}"
+       class="bg-primary-600 border border-transparent font-medium px-3 py-2 rounded-default text-sm text-white hover:bg-primary-700">
+      Stammdaten bearbeiten
+    </a>
+  </div>
+
+  {% if darf_zahlen_sehen %}
+    {# ---- Die Zahlen ---- #}
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+      {% component "admin/_kennzahl.html" with titel="Umsatz netto" icon="euro" %}
+        <div class="pw-kennzahl-wert">{{ umsatz_netto|geld }} €</div>
+        <div class="pw-kennzahl-text">Ohne Umsatzsteuer. Rechnungen, Storni und Korrekturen, ohne Entwürfe.</div>
+      {% endcomponent %}
+
+      {% comment %} Umsatz brutto neben netto, weil die offene Forderung brutto
+         ist; ohne diese Karte wirkte "Umsatz 229.172" (netto) neben "Offen
+         272.715" (brutto) widersprüchlich. {% endcomment %}
+      {% component "admin/_kennzahl.html" with titel="Umsatz brutto" icon="receipt_long" %}
+        <div class="pw-kennzahl-wert">{{ umsatz_brutto|geld }} €</div>
+        <div class="pw-kennzahl-text">Mit Umsatzsteuer, der geforderte Betrag.</div>
+      {% endcomponent %}
+
+      {% component "admin/_kennzahl.html" with titel="Offene Forderungen" icon="pending_actions" %}
+        <div class="pw-kennzahl-wert">{{ offen_betrag|geld }} €</div>
+        <div class="pw-kennzahl-text">Brutto, wie auf der Rechnung.
+          {{ offen_anzahl }} Rechnung{{ offen_anzahl|pluralize:"en" }} nicht ausgeglichen.</div>
+      {% endcomponent %}
+
+      {% comment %} Einzige Karte mit wechselnder Farbe, weil Überfälliges eine
+         Handlung verlangt. Klassennamen vollständig ausgeschrieben, weil
+         Tailwind (Unfold und eigener Build, stile/eingang.css) nur
+         vollständige Namen im Quelltext erkennt. {% endcomment %}
+      {% component "admin/_kennzahl.html" with titel="Überfällig" icon="running_with_errors" warnung=ueberfaellig_anzahl %}
+        <div class="pw-kennzahl-wert{% if ueberfaellig_anzahl %} pw-rot{% endif %}">{{ ueberfaellig_betrag|geld }} €</div>
+        <div class="pw-kennzahl-text">{% if ueberfaellig_anzahl %}
+            {{ ueberfaellig_anzahl }} Rechnung{{ ueberfaellig_anzahl|pluralize:"en" }},
+            älteste seit {{ aeltester_verzug }} Tag{{ aeltester_verzug|pluralize:"en" }}.
+          {% else %}
+            Nichts über die Frist.
+          {% endif %}</div>
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  {# ---- Stammdaten: Anschriften, Kontaktdaten, Konditionen ---- #}
+  <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+
+    <div class="lg:w-1/3">
+      {% component "unfold/components/card.html" with title="Anschriften" %}
+        {% if anschriften %}
+          {% for anschrift in anschriften %}
+            <div class="{% if not forloop.first %}border-base-200 border-t mt-4 pt-4 dark:border-base-800{% endif %}">
+              <div class="flex gap-2 items-baseline">
+                <span class="font-medium text-font-important-light text-sm dark:text-font-important-dark">
+                  {{ anschrift.verwendung }}
+                </span>
+                {% if anschrift.ist_standard %}
+                  <span class="bg-base-100 px-1.5 py-0.5 rounded-default text-font-subtle-light text-xs dark:bg-base-800 dark:text-font-subtle-dark">Standard</span>
+                {% endif %}
+                {% if anschrift.bezeichnung %}
+                  <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">{{ anschrift.bezeichnung }}</span>
+                {% endif %}
+              </div>
+              {% comment %} Zeilengetreu wie auf dem Beleg, aus Adresse.zeilen,
+                 derselben Quelle wie das Empfängerfeld. {% endcomment %}
+              <div class="mt-1 text-sm">
+                {% for zeile in anschrift.zeilen %}
+                  <div>{{ zeile }}</div>
+                {% empty %}
+                  <div class="text-font-subtle-light dark:text-font-subtle-dark">keine Angaben</div>
+                {% endfor %}
+                {% if anschrift.land != "DE" %}
+                  <div class="text-font-subtle-light dark:text-font-subtle-dark">{{ anschrift.land }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch keine Anschrift hinterlegt.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    <div class="lg:w-1/3">
+      {% component "unfold/components/card.html" with title="Kontaktdaten" %}
+        {% if kontaktdaten %}
+          {% for gruppe in kontaktdaten %}
+            <div class="{% if not forloop.first %}mt-4{% endif %}">
+              <div class="text-font-subtle-light text-xs uppercase dark:text-font-subtle-dark">
+                {{ gruppe.art }}
+              </div>
+              {% for eintrag in gruppe.eintraege %}
+                <div class="flex flex-wrap gap-2 items-baseline mt-1">
+                  {% if eintrag.verweis %}
+                    <a href="{{ eintrag.verweis }}"
+                       class="text-primary-600 text-sm hover:underline dark:text-primary-500">{{ eintrag.wert }}</a>
+                  {% else %}
+                    <span class="text-sm">{{ eintrag.wert }}</span>
+                  {% endif %}
+                  {% if eintrag.wofuer %}
+                    <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">{{ eintrag.wofuer }}</span>
+                  {% endif %}
+                  {% if eintrag.ist_standard %}
+                    <span class="bg-base-100 px-1.5 py-0.5 rounded-default text-font-subtle-light text-xs dark:bg-base-800 dark:text-font-subtle-dark">Standard</span>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch keine Telefonnummer und keine E-Mail-Adresse hinterlegt.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    <div class="lg:w-1/3">
+      {% component "unfold/components/card.html" with title="Konditionen" %}
+        <table class="text-sm w-full">
+          <tbody>
+            {% for zeile in konditionen %}
+              <tr class="align-top">
+                <th class="font-normal py-1 pr-4 text-font-subtle-light text-left whitespace-nowrap dark:text-font-subtle-dark" scope="row">
+                  {{ zeile.was }}
+                </th>
+                <td class="py-1">{{ zeile.wert }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if kunde.notiz %}
+          <div class="border-base-200 border-t mt-4 pt-4 dark:border-base-800">
+            <div class="text-font-subtle-light text-xs uppercase dark:text-font-subtle-dark">Notiz</div>
+            <div class="mt-1 text-sm whitespace-pre-line">{{ kunde.notiz }}</div>
+          </div>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  </div>
+
+  {# ---- Ansprechpartner ---- #}
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Ansprechpartner" %}
+      {% if personen %}
+        <table class="text-sm w-full">
+          <thead>
+            <tr class="border-base-200 border-b text-font-subtle-light text-left text-xs uppercase dark:border-base-800 dark:text-font-subtle-dark">
+              <th class="font-medium pb-2 pr-4" scope="col">Name</th>
+              <th class="font-medium pb-2 pr-4" scope="col">Funktion</th>
+              <th class="font-medium pb-2 pr-4" scope="col">E-Mail</th>
+              <th class="font-medium pb-2 pr-4" scope="col">Telefon</th>
+              <th class="font-medium pb-2" scope="col">Standort</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for person in personen %}
+              <tr class="border-base-200 border-b last:border-0 dark:border-base-800 {% if not person.aktiv %}text-font-subtle-light dark:text-font-subtle-dark{% endif %}">
+                <td class="py-2 pr-4">
+                  <a href="{{ person.url }}"
+                     class="text-primary-600 hover:underline dark:text-primary-500">{{ person.name }}</a>
+                  {% if person.ist_standard %}
+                    <span class="bg-base-100 ml-1 px-1.5 py-0.5 rounded-default text-font-subtle-light text-xs dark:bg-base-800 dark:text-font-subtle-dark">Hauptkontakt</span>
+                  {% endif %}
+                  {% comment %} Inaktive Ansprechpartner bleiben gekennzeichnet
+                     sichtbar, damit "z. Hd." auf alten Belegen zuordenbar
+                     ist. {% endcomment %}
+                  {% if not person.aktiv %}
+                    <span class="ml-1 text-xs">(ausgeschieden)</span>
+                  {% endif %}
+                </td>
+                <td class="py-2 pr-4">{{ person.funktion }}</td>
+                <td class="py-2 pr-4">
+                  {% if person.email %}
+                    <a href="mailto:{{ person.email }}"
+                       class="text-primary-600 hover:underline dark:text-primary-500">{{ person.email }}</a>
+                  {% endif %}
+                </td>
+                <td class="py-2 pr-4 whitespace-nowrap">
+                  {{ person.telefon }}{% if person.mobil %}{% if person.telefon %} &middot; {% endif %}{{ person.mobil }}{% endif %}
+                </td>
+                <td class="py-2">{{ person.standort }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Noch niemand hinterlegt. Ansprechpartner stehen im Formular unter
+          den Stammdaten.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+
+  {# ---- Projekte und Belege des Kunden ---- #}
+  <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+
+    <div class="{% if darf_zahlen_sehen %}lg:w-1/2{% else %}w-full{% endif %}">
+      {% component "unfold/components/card.html" with title="Projekte" %}
+        {% if projekte %}
+          <table class="text-sm w-full">
+            <thead>
+              <tr class="border-base-200 border-b text-font-subtle-light text-left text-xs uppercase dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4" scope="col">Nummer</th>
+                <th class="font-medium pb-2 pr-4" scope="col">Bezeichnung</th>
+                <th class="font-medium pb-2 text-right" scope="col">Belege</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for projekt in projekte %}
+                <tr class="border-base-200 border-b last:border-0 dark:border-base-800 {% if projekt.abgeschlossen %}text-font-subtle-light dark:text-font-subtle-dark{% endif %}">
+                  <td class="py-2 pr-4 whitespace-nowrap">
+                    <a href="{{ projekt.url }}"
+                       class="text-primary-600 hover:underline dark:text-primary-500">{{ projekt.nummer }}</a>
+                  </td>
+                  <td class="py-2 pr-4">
+                    {{ projekt.bezeichnung }}
+                    {% if projekt.abgeschlossen %}
+                      <span class="ml-1 text-xs">(abgeschlossen)</span>
+                    {% endif %}
+                  </td>
+                  <td class="py-2 text-right">{{ projekt.belegzahl }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <a href="{{ projekte_url }}"
+             class="inline-block mt-3 text-primary-600 text-sm hover:underline dark:text-primary-500">
+            Alle Projekte dieses Kunden
+          </a>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch kein Projekt angelegt.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    {% if darf_zahlen_sehen %}
+      <div class="lg:w-1/2">
+        {% component "unfold/components/card.html" with title="Letzte Belege" %}
+          {% if belege %}
+            <table class="text-sm w-full">
+              <thead>
+                <tr class="border-base-200 border-b text-font-subtle-light text-left text-xs uppercase dark:border-base-800 dark:text-font-subtle-dark">
+                  <th class="font-medium pb-2 pr-4" scope="col">Nummer</th>
+                  <th class="font-medium pb-2 pr-4" scope="col">Datum</th>
+                  <th class="font-medium pb-2 pr-4 text-right" scope="col">Brutto</th>
+                  <th class="font-medium pb-2 text-right" scope="col">Offen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for beleg in belege %}
+                  <tr class="border-base-200 border-b last:border-0 dark:border-base-800">
+                    <td class="py-2 pr-4 whitespace-nowrap">
+                      {% if beleg.url %}
+                        <a href="{{ beleg.url }}"
+                           class="text-primary-600 hover:underline dark:text-primary-500">{{ beleg.nummer }}</a>
+                      {% else %}
+                        {{ beleg.nummer }}
+                      {% endif %}
+                      <div class="text-font-subtle-light text-xs dark:text-font-subtle-dark">{{ beleg.typ }}</div>
+                    </td>
+                    <td class="py-2 pr-4 whitespace-nowrap">{{ beleg.datum|date:"d.m.Y" }}</td>
+                    <td class="py-2 pr-4 text-right whitespace-nowrap">{{ beleg.brutto|geld }} €</td>
+                    {% comment %} Strich statt "0,00 €", wie in der Rechnungsliste.
+                       {% endcomment %}
+                    <td class="py-2 text-right whitespace-nowrap">
+                      {% if beleg.offen %}{{ beleg.offen|geld }} €{% else %}–{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            <a href="{{ belege_url }}"
+               class="inline-block mt-3 text-primary-600 text-sm hover:underline dark:text-primary-500">
+              Alle Rechnungen dieses Kunden
+            </a>
+          {% else %}
+            <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+              Noch kein festgeschriebener Beleg.
+            </p>
+          {% endif %}
+        {% endcomponent %}
+      </div>
+    {% endif %}
+  </div>
+
+  {% if darf_zahlen_sehen %}
+    {% comment %} Zahlungseingänge neben den offenen Forderungen, damit das
+       Zahlungsverhalten des Kunden erkennbar ist. {% endcomment %}
+    <div class="mt-6">
+      {% component "unfold/components/card.html" with title="Zahlungseingänge" %}
+        {% if zahlungen %}
+          <table class="text-sm w-full">
+            <thead>
+              <tr class="border-base-200 border-b text-font-subtle-light text-left text-xs uppercase dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4" scope="col">Datum</th>
+                <th class="font-medium pb-2 pr-4 text-right" scope="col">Betrag</th>
+                <th class="font-medium pb-2 pr-4" scope="col">Art</th>
+                <th class="font-medium pb-2 pr-4" scope="col">Auf Rechnung</th>
+                <th class="font-medium pb-2" scope="col">Verwendungszweck</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for zahlung in zahlungen %}
+                <tr class="border-base-100 border-b last:border-0 dark:border-base-800">
+                  <td class="py-2 pr-4 whitespace-nowrap">
+                    <a href="{{ zahlung.url }}"
+                       class="text-primary-600 hover:underline dark:text-primary-500">
+                      {{ zahlung.datum|date:"d.m.Y" }}
+                    </a>
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap">{{ zahlung.betrag|geld }} &euro;</td>
+                  <td class="py-2 pr-4 whitespace-nowrap">{{ zahlung.art }}</td>
+                  <td class="py-2 pr-4">
+                    {% if zahlung.belege %}
+                      {{ zahlung.belege|join:", " }}
+                    {% else %}
+                      {% comment %} Nicht zugeordnete Zahlungen als Hinweis, nicht als
+                         Strich. {% endcomment %}
+                      <span class="text-red-600 dark:text-red-500">noch nicht zugeordnet</span>
+                    {% endif %}
+                  </td>
+                  <td class="py-2 text-font-subtle-light dark:text-font-subtle-dark">
+                    {{ zahlung.zweck|default:"" }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <a href="{{ zahlungen_url }}"
+             class="inline-block mt-3 text-primary-600 text-sm hover:underline dark:text-primary-500">
+            Alle Zahlungen dieses Kunden
+          </a>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch kein Zahlungseingang vermerkt.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  {% if eingangsrechnungen is not None %}
+    {% comment %} Beim Lieferanten: seine Rechnungen an uns, mit dem Rest, der
+       noch keinem Projekt zugeordnet ist. {% endcomment %}
+    <div class="mt-6">
+      {% component "unfold/components/card.html" with title="Eingangsrechnungen" %}
+        {% if eingangsrechnungen %}
+          <table class="text-sm w-full">
+            <thead>
+              <tr class="border-base-200 border-b text-font-subtle-light text-left text-xs uppercase dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4" scope="col">Datum</th>
+                <th class="font-medium pb-2 pr-4" scope="col">Nummer</th>
+                <th class="font-medium pb-2 pr-4 text-right" scope="col">Netto</th>
+                <th class="font-medium pb-2 text-right" scope="col">Nicht zugeordnet</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rechnung in eingangsrechnungen %}
+                <tr class="border-base-100 border-b last:border-0 dark:border-base-800">
+                  <td class="py-2 pr-4 whitespace-nowrap">{{ rechnung.datum|date:"d.m.Y" }}</td>
+                  <td class="py-2 pr-4">
+                    <a href="{{ rechnung.url }}"
+                       class="text-primary-600 hover:underline dark:text-primary-500">{{ rechnung.nummer }}</a>
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap">{{ rechnung.betrag|geld }} &euro;</td>
+                  <td class="py-2 text-right whitespace-nowrap">
+                    {% if rechnung.rest %}{{ rechnung.rest|geld }} &euro;{% else %}–{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <a href="{{ eingangsrechnungen_url }}"
+             class="inline-block mt-3 text-primary-600 text-sm hover:underline dark:text-primary-500">
+            Alle Rechnungen dieses Lieferanten
+          </a>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch keine Eingangsrechnung erfasst.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  {% comment %} Platz für eine spätere CRM-Erweiterung (Vorgänge,
+     Kontakthistorie, Wiedervorlagen). Ohne Daten wird kein leerer Abschnitt
+     angezeigt. {% endcomment %}
+</div>
+{% endblock %}

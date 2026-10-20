@@ -1,0 +1,23 @@
+{% comment %} Eine Kennzahlkarte; für Startseite, Akten, Controlling und
+   Arbeitsliste. Aufruf über Unfolds component-Tag:
+
+       {% component "admin/_kennzahl.html" with titel="Umsatz netto" icon="euro" warnung=x hinweis=y %}
+           <div class="pw-kennzahl-wert">12.345,00 €</div>
+           <div class="pw-kennzahl-text">Ohne Umsatzsteuer.</div>
+       {% endcomponent %}
+
+   Der Inhalt (Betrag und Erläuterung) kommt vom aufrufenden Template, weil
+   er dort mit Filtern und Pluralformen entsteht. Diese Datei liefert den
+   Rahmen: Titel mit kleinem Icon rechts, roter Rand bei ``warnung``, langer
+   Text als Tooltip (``hinweis``).
+
+   Verworfen: Unfolds Card mit ``icon``, weil sie das Icon groß halb über den
+   linken Rand setzt; bei vier bis sechs Karten nebeneinander ragte es über
+   die Kante, und der Betrag brach vor dem Eurozeichen um. {% endcomment %}
+<div class="bg-white border flex flex-col gap-1 min-w-0 px-4 py-3 rounded-default shadow-xs dark:bg-base-900 {% if warnung %}border-red-200 dark:border-red-900{% else %}border-base-200 dark:border-base-800{% endif %}"{% if hinweis %} title="{{ hinweis }}"{% endif %}>
+    <div class="flex gap-2 items-start justify-between text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        <span>{{ titel }}</span>
+        {% if icon %}<span class="material-symbols-outlined text-base">{{ icon }}</span>{% endif %}
+    </div>
+    {{ children }}
+</div>

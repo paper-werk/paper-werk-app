@@ -1,0 +1,88 @@
+{% extends "admin/base_site.html" %}
+{% load unfold %}
+
+{% comment %} Zwischenseite der Aktion „Zahlung vermerken", aufgebaut wie
+   nachlass.html.
+
+   Eine Zwischenseite für Datum, Teilbetrag und Skonto. Verworfen: ein
+   Button „bezahlt" mit vollem Betrag und heutigem Datum, der frühere
+   Eingänge, Raten und Skonto falsch erfasste. {% endcomment %}
+
+{% block content %}
+  <div class="max-w-3xl">
+    <div class="font-semibold mb-6 text-2xl text-font-important-light dark:text-font-important-dark">
+      Zahlung vermerken
+    </div>
+
+    <div class="mb-6">
+      {% component "unfold/components/card.html" %}
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          Die Rechnung selbst bleibt unver&auml;ndert &mdash; sie ist festgeschrieben.
+          Vermerkt wird ein <strong class="text-font-important-light dark:text-font-important-dark">Zahlungseingang</strong>,
+          der ihr zugeordnet wird; wie viel offen ist, ergibt sich daraus.
+        </p>
+        <p class="text-font-default-light text-sm dark:text-font-default-dark">
+          Eine &Uuml;berweisung, die <em>mehrere</em> Rechnungen begleicht, wird unter
+          <em>Zahlungseing&auml;nge</em> erfasst und dort verteilt.
+        </p>
+      {% endcomponent %}
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% comment %} Überträgt die Auswahl der Liste, damit der POST die Rechnung
+         enthält. {% endcomment %}
+      <input type="hidden" name="_selected_action" value="{{ rechnung.pk }}">
+      <input type="hidden" name="action" value="action_zahlung">
+
+      {% component "unfold/components/card.html" with title="Der Eingang" %}
+        <div class="gap-4 grid grid-cols-1 mb-6 sm:grid-cols-3">
+          <div>
+            <div class="text-font-subtle-light text-xs uppercase dark:text-font-subtle-dark">Rechnung</div>
+            <div class="font-semibold mt-1 text-font-important-light dark:text-font-important-dark">
+              {{ rechnung }}
+            </div>
+            <div class="mt-1 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+              {{ rechnung.empfaenger_kurz }}
+            </div>
+          </div>
+          <div>
+            <div class="text-font-subtle-light text-xs uppercase dark:text-font-subtle-dark">Brutto</div>
+            <div class="font-semibold mt-1 text-font-important-light dark:text-font-important-dark">
+              {{ brutto }}&nbsp;&euro;
+            </div>
+          </div>
+          <div>
+            <div class="text-font-subtle-light text-xs uppercase dark:text-font-subtle-dark">Noch offen</div>
+            <div class="font-semibold mt-1 text-font-important-light dark:text-font-important-dark">
+              {{ offen }}&nbsp;&euro;
+            </div>
+            {% if bereits %}
+              {% comment %} Nur bei vorhandenen Zahlungen, ohne Zeile "0,00 EUR
+                 bereits vermerkt". {% endcomment %}
+              <div class="mt-1 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                {{ bereits }}&nbsp;&euro; bereits vermerkt
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% comment %} Styling über Unfolds Widgets in ZahlungForm. {% endcomment %}
+        <div class="flex flex-col gap-6">
+          {{ form.as_div }}
+        </div>
+      {% endcomponent %}
+
+      <div class="flex gap-3 justify-end mt-6">
+        {% component "unfold/components/button.html" with href=zurueck variant="default" %}
+          Abbrechen
+        {% endcomponent %}
+
+        {% component "unfold/components/button.html" with submit=1 name="anwenden" %}
+          Zahlung vermerken
+        {% endcomponent %}
+      </div>
+    </form>
+  </div>
+{% endblock %}

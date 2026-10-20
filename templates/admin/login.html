@@ -1,0 +1,34 @@
+{% extends "admin/login.html" %}
+{% comment %}
+Unfolds Anmeldeseite, ergänzt um die Anmeldung per SSO.
+
+Das extends auf denselben Pfad ist kein Zyklus: Django sucht ab der
+nächsten Fundstelle weiter. Diese Datei liegt in DIRS und wird zuerst
+gefunden, das extends lädt Unfolds Template. Dessen Formular bleibt
+unverändert und kommt mit jedem Unfold-Update aktuell mit.
+
+Der SSO-Button steht unter dem Formular, weil die lokale Anmeldung der
+Ausweg ist, wenn der Identity Provider nicht antwortet.
+
+Per POST, weil allauth das seit 0.47 verlangt (Schutz gegen Login-CSRF);
+ein Link führte auf eine Zwischenseite mit Button "Weiter".
+{% endcomment %}
+{% load i18n unfold %}
+
+{% block login_after %}
+    {{ block.super }}
+    {% if sso_anmeldung %}
+        <div class="flex items-center gap-3 my-6 text-sm text-base-400">
+            <span class="grow border-t border-base-200 dark:border-base-800"></span>
+            oder
+            <span class="grow border-t border-base-200 dark:border-base-800"></span>
+        </div>
+        <form action="{{ sso_anmeldung.adresse }}" method="post" id="sso-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next|default:'/admin/' }}">
+            {% component "unfold/components/button.html" with submit=1 variant="secondary" class="w-full" %}
+                Anmelden mit {{ sso_anmeldung.name }}
+            {% endcomponent %}
+        </form>
+    {% endif %}
+{% endblock %}

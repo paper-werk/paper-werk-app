@@ -1,0 +1,27 @@
+{% comment %} Pflichtangaben im Geschäftsbrief für Belege und
+   Leistungsnachweis.
+
+   Auf jedem Geschäftsbrief, nicht nur auf Rechnungen. Erwartet nur
+   ``firma``. {% endcomment %}
+<footer id="fusszeile">
+  <div class="spalte">
+    <strong>{{ firma.name }}</strong>{% if firma.zusatz %}<br>{{ firma.zusatz }}{% endif %}<br>
+    {{ firma.strasse }}<br>{{ firma.plz }} {{ firma.ort }}
+  </div>
+  <div class="spalte">
+    {% if firma.telefon %}Telefon {{ firma.telefon }}<br>{% endif %}
+    {% if firma.email %}{{ firma.email }}<br>{% endif %}
+    {% if firma.web %}{{ firma.web }}{% endif %}
+  </div>
+  <div class="spalte">
+    {% if firma.bank %}{{ firma.bank }}<br>{% endif %}
+    {% if firma.iban %}IBAN {{ firma.iban }}<br>{% endif %}
+    {% if firma.bic %}BIC {{ firma.bic }}{% endif %}
+  </div>
+  <div class="spalte">
+    {% if firma.steuernummer %}Steuernummer {{ firma.steuernummer }}<br>{% endif %}
+    {% if firma.ust_id %}USt-IdNr. {{ firma.ust_id }}<br>{% endif %}
+    {% if firma.geschaeftsfuehrung %}{{ firma.geschaeftsfuehrung }}<br>{% endif %}
+    {% if firma.handelsregister %}{{ firma.registergericht }} {{ firma.handelsregister }}{% endif %}
+  </div>
+</footer>

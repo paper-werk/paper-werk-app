@@ -1,0 +1,28 @@
+{% extends "faktura/pdf/basis.html" %}
+{% comment %} Rechnungskorrektur nach § 17 UStG: nachträglicher Nachlass.
+   Der Begriff "Gutschrift" wird auf dem Beleg bewusst vermieden; im UStG
+   bezeichnet er die Abrechnung durch den Leistungsempfänger. {% endcomment %}
+
+{% block nummernbezeichnung %}Rechnungsnummer{% endblock %}
+{% block gesamtbezeichnung %}Erstattungsbetrag{% endblock %}
+
+{% block einleitung %}
+  <p>
+    wir korrigieren
+    {% if beleg.vorgaenger %}unsere Rechnung <strong>{{ beleg.vorgaenger.nummer }}</strong>
+      vom {{ beleg.vorgaenger.belegdatum|date:"d.m.Y" }}{% else %}die nachstehende Position{% endif %}
+    um den unten aufgef&uuml;hrten Betrag. Die urspr&uuml;ngliche Rechnung
+    <strong>bleibt im &Uuml;brigen bestehen</strong>.
+  </p>
+  {% if beleg.kopftext %}<p>{{ beleg.kopftext|linebreaksbr }}</p>{% endif %}
+{% endblock %}
+
+{% block zahlungshinweis %}
+  <div class="zahlung">
+    <table>
+      <tr><th>Hinweis</th>
+          <td>Entgeltminderung nach &sect;&nbsp;17 UStG. Der Betrag wird Ihnen
+              erstattet beziehungsweise mit der n&auml;chsten Rechnung verrechnet.</td></tr>
+    </table>
+  </div>
+{% endblock %}

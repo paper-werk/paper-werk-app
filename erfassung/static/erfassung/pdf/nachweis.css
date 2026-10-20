@@ -1,0 +1,63 @@
+/* Leistungsnachweis: Abweichungen vom Beleglayout.
+ *
+ * Seitengeometrie, Briefkopf, Fußzeile und Anschriftfeld kommen aus
+ * beleg.css. Hier stehen die Zeilentabelle und der Unterschriftsblock.
+ *
+ * Nur Grautöne, weil der Nachweis gedruckt, unterschrieben und oft gefaxt
+ * oder fotografiert wird; der Vermerk "ohne Berechnung" steht deshalb als
+ * Text.
+ */
+
+table.nachweiszeilen {
+  font-size: 8.5pt;
+}
+
+table.nachweiszeilen .datum   { width: 7%;  white-space: nowrap; }
+table.nachweiszeilen .person  { width: 15%; }
+table.nachweiszeilen .uhrzeit { width: 6%;  text-align: right; white-space: nowrap; }
+table.nachweiszeilen .dauer   { width: 7%;  text-align: right; white-space: nowrap; }
+table.nachweiszeilen .umfang  { width: 10%; text-align: right; white-space: nowrap; }
+table.nachweiszeilen .leistung { width: 18%; }
+table.nachweiszeilen.zur-rechnung .datum { width: 10%; }
+
+/* Zeilen ohne Berechnung werden gekennzeichnet und nicht ausgegraut,
+ * weil sie erbrachte Arbeit nachweisen. */
+table.nachweiszeilen tr.ohne-berechnung .vermerk,
+table.nachweissummen tr.ohne-berechnung th {
+  font-style: italic;
+}
+
+table.nachweiszeilen .vermerk::before { content: " \2013 "; }
+table.nachweiszeilen .vermerk { white-space: nowrap; }
+
+/* Fremdleistungen zur Rechnung, ohne Überschrift unter den Stunden. */
+table.fremdzeilen        { margin-top: 8mm; }
+table.fremdzeilen .datum  { width: 10%; }
+table.fremdzeilen .umfang { width: 12%; }
+
+table.nachweissummen th { text-align: left; }
+table.nachweissummen td { text-align: right; white-space: nowrap; }
+
+/* Unterschriftsblock mit `page-break-inside: avoid`, damit die Linien
+ * nicht auf zwei Seiten verteilt werden. */
+.unterschrift {
+  display: flex;
+  gap: 12mm;
+  margin-top: 16mm;
+  page-break-inside: avoid;
+  font-size: 8pt;
+}
+
+.unterschrift .feld { flex: 1; }
+
+.unterschrift .linie {
+  border-bottom: 0.4pt solid #000;
+  height: 12mm;
+  margin-bottom: 1mm;
+}
+
+.herkunft {
+  margin-top: 8mm;
+  font-size: 7pt;
+  color: #555;
+}

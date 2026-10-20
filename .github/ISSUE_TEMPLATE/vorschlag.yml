@@ -1,0 +1,23 @@
+name: Vorschlag
+description: Eine neue Funktion oder eine Änderung am Verhalten.
+labels: ["vorschlag"]
+body:
+  - type: textarea
+    id: anlass
+    attributes:
+      label: Anlass
+      description: Welcher Ablauf im Betrieb geht heute nicht oder nur umständlich?
+    validations:
+      required: true
+  - type: textarea
+    id: vorschlag
+    attributes:
+      label: Vorschlag
+      description: Wie sollte es aussehen? Bei Berechnungen bitte mit einem Rechenbeispiel.
+    validations:
+      required: true
+  - type: textarea
+    id: rechtliches
+    attributes:
+      label: Steuerliche oder rechtliche Grundlage
+      description: Falls es eine gibt, etwa ein Paragraph des UStG, eine Regel der EN 16931 oder der GoBD.

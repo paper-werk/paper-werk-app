@@ -1,0 +1,17 @@
+{% comment %}
+Unter der Übersicht der Ansprechpartner am Kunden. Angelegt wird auf der
+Seite des Ansprechpartners mit vorbelegtem Kunden, weil ein neuer Kunde noch
+keinen Primärschlüssel hat.
+{% endcomment %}
+<div class="border-t border-base-200 flex items-center p-3 dark:border-base-800">
+    {% if original.pk %}
+        <a href="{% url 'admin:faktura_ansprechpartner_add' %}?kontakt={{ original.pk }}" class="flex items-center font-medium -ml-1.5 -my-1.5 select-none text-primary-600 dark:text-primary-500">
+            <span class="flex items-center justify-center h-[38px] w-[38px]">
+                <span class="material-symbols-outlined bg-primary-600 flex items-center justify-center rounded-full text-base text-white h-[18px] w-[18px]">add</span>
+            </span>
+            <span>Ansprechpartner hinzufügen</span>
+        </a>
+    {% else %}
+        <span class="text-font-subtle-light dark:text-font-subtle-dark">Erst den Kontakt sichern, dann lassen sich Ansprechpartner hinzufügen.</span>
+    {% endif %}
+</div>

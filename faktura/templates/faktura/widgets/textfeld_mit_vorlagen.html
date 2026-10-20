@@ -1,0 +1,68 @@
+{% comment %} Textfeld mit einer Vorlagenauswahl in der Kopfzeile.
+
+   Das Feld selbst ist Djangos Widget, eingebunden, damit Attribute,
+   Pflichtkennzeichnung und Styling denen der übrigen Textfelder im Admin
+   entsprechen.
+
+   Das Dropdown hängt per x-teleport am body, weil die Feldgruppe
+   overflow-hidden setzt und es sonst abgeschnitten würde. Klassen und
+   x-anchor wie in unfold/helpers/display_dropdown.html.
+
+   Da das Dropdown damit außerhalb des Felds im DOM liegt, trägt jeder
+   Eintrag die ID des Zielfelds als ``data-ziel``; textbaustein_einfuegen.js
+   liest sie. Verworfen: ein Popup-Fenster, das das Ziel über
+   ``window.name`` fand.
+
+   Ohne Textbausteine kein Dropdown.
+{% endcomment %}
+{% if widget.attrs.id and widget.vorlagen %}
+  <div class="textvorlagen-feld" x-data="{ vorlagenOffen: false }">
+    <div class="flex justify-end mb-1.5">
+      <button type="button"
+              x-ref="vorlagenKnopf{{ widget.attrs.id }}"
+              x-on:click="vorlagenOffen = !vorlagenOffen"
+              class="bg-white border border-base-200 cursor-pointer flex font-medium gap-1 items-center px-2.5 py-1.5 rounded-default shadow-xs text-important text-xs whitespace-nowrap hover:bg-base-100/80 dark:bg-transparent dark:border-base-700 dark:hover:bg-base-800/80">
+        {% comment %} Beschriftung "Textvorlagen"; das Modell heißt Textbaustein.
+           {% endcomment %}
+        <span class="material-symbols-outlined text-sm!">notes</span>
+        Textvorlagen
+        <span class="material-symbols-outlined text-sm!">expand_more</span>
+      </button>
+    </div>
+
+    {% include "django/forms/widgets/textarea.html" %}
+
+    <template x-teleport="body">
+      <div x-show="vorlagenOffen"
+           x-cloak
+           x-transition
+           x-anchor.bottom-end.offset.4="$refs.vorlagenKnopf{{ widget.attrs.id }}"
+           x-on:click.outside="vorlagenOffen = false"
+           x-on:click="vorlagenOffen = false"
+           style="max-height: 20rem"
+           class="bg-white border border-base-200 flex flex-col overflow-y-auto py-1 rounded-default scrollbar-default shadow-lg text-sm w-96 z-50 dark:bg-base-800 dark:border-base-700">
+        {% for vorlage in widget.vorlagen %}
+          {% comment %} <button>, weil der Eintrag eine Aktion auslöst und keine
+             Navigation. type="button" ist nötig, weil ein Klick sonst das
+             Belegformular absendet. {% endcomment %}
+          <button type="button"
+                  data-vorlage
+                  data-ziel="{{ widget.attrs.id }}"
+                  data-text="{{ vorlage.text }}"
+                  class="cursor-pointer flex flex-col gap-0.5 items-start mx-1 px-3 py-2 rounded-default text-left hover:bg-base-100 dark:hover:bg-base-700">
+            <span class="font-medium text-important">{{ vorlage.name }}</span>
+            {% comment %} Vorschau einzeilig gekürzt, nur zum Wiedererkennen des
+               Bausteins. {% endcomment %}
+            <span class="text-font-subtle-light text-xs truncate w-full dark:text-font-subtle-dark">
+              {{ vorlage.text }}
+            </span>
+          </button>
+        {% endfor %}
+      </div>
+    </template>
+  </div>
+{% else %}
+  {% comment %} Ohne id des Felds oder ohne Textbausteine nur das Textfeld.
+     {% endcomment %}
+  {% include "django/forms/widgets/textarea.html" %}
+{% endif %}

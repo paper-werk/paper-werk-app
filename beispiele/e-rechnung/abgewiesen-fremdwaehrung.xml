@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Eine Rechnung in Schweizer Franken - muss abgewiesen werden.
+
+     Der gefaehrlichste der drei Absagefaelle, und deshalb steht er hier:
+     Das Datenmodell hat KEIN Waehrungsfeld und rechnet ueberall in Euro.
+     Ohne die Pruefung wuerden aus 672,50 Franken still 672,50 Euro - ein
+     Fehler, der nirgends auffaellt, weil die Zahl ja stimmt.
+
+     Erwartet: rote Meldung "Die Rechnung ist in CHF ausgestellt". Nichts
+     wird angelegt. -->
+<rsm:CrossIndustryInvoice
+    xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
+    xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+    xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+  <rsm:ExchangedDocumentContext>
+    <ram:GuidelineSpecifiedDocumentContextParameter>
+      <ram:ID>urn:cen.eu:en16931:2017</ram:ID>
+    </ram:GuidelineSpecifiedDocumentContextParameter>
+  </rsm:ExchangedDocumentContext>
+  <rsm:ExchangedDocument>
+    <ram:ID>CH-2026-0042</ram:ID>
+    <ram:TypeCode>380</ram:TypeCode>
+    <ram:IssueDateTime>
+      <udt:DateTimeString format="102">20260818</udt:DateTimeString>
+    </ram:IssueDateTime>
+  </rsm:ExchangedDocument>
+  <rsm:SupplyChainTradeTransaction>
+    <ram:ApplicableHeaderTradeAgreement>
+      <ram:SellerTradeParty>
+        <ram:Name>Bodenlabor Zuerich AG</ram:Name>
+        <ram:PostalTradeAddress>
+          <ram:PostcodeCode>8005</ram:PostcodeCode>
+          <ram:CityName>Zuerich</ram:CityName>
+          <ram:CountryID>CH</ram:CountryID>
+        </ram:PostalTradeAddress>
+      </ram:SellerTradeParty>
+      <ram:BuyerTradeParty>
+        <ram:Name>Ingenieurbuero Muster GmbH</ram:Name>
+      </ram:BuyerTradeParty>
+    </ram:ApplicableHeaderTradeAgreement>
+    <ram:ApplicableHeaderTradeDelivery/>
+    <ram:ApplicableHeaderTradeSettlement>
+      <ram:InvoiceCurrencyCode>CHF</ram:InvoiceCurrencyCode>
+      <ram:ApplicableTradeTax>
+        <ram:CalculatedAmount>51.78</ram:CalculatedAmount>
+        <ram:TypeCode>VAT</ram:TypeCode>
+        <ram:BasisAmount>672.50</ram:BasisAmount>
+        <ram:CategoryCode>S</ram:CategoryCode>
+        <ram:RateApplicablePercent>7.70</ram:RateApplicablePercent>
+      </ram:ApplicableTradeTax>
+      <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+        <ram:LineTotalAmount>672.50</ram:LineTotalAmount>
+        <ram:TaxBasisTotalAmount>672.50</ram:TaxBasisTotalAmount>
+        <ram:TaxTotalAmount currencyID="CHF">51.78</ram:TaxTotalAmount>
+        <ram:GrandTotalAmount>724.28</ram:GrandTotalAmount>
+        <ram:DuePayableAmount>724.28</ram:DuePayableAmount>
+      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+    </ram:ApplicableHeaderTradeSettlement>
+  </rsm:SupplyChainTradeTransaction>
+</rsm:CrossIndustryInvoice>

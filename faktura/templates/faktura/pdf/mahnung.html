@@ -1,0 +1,98 @@
+{% extends "faktura/pdf/basis.html" %}
+{% load faktura_extras %}{% comment %} Eigenes {% load %}, weil das des Eltern-Templates nicht
+   vererbt wird; ohne es schlägt erst das Rendern des PDFs mit "Invalid
+   filter: zeilensumme" fehl. {% endcomment %}
+{% comment %} Mahnung.
+
+   Der Ton richtet sich nach der Mahnstufe.
+
+   Die Mahnung überschreibt die meisten Blöcke, weil Menge, Einheit,
+   Einzelpreis und Steuersatz zur Rechnung gehören. Angegeben werden
+   Rechnung, Fälligkeit, offener Betrag und Frist.
+
+   Regression: Die Belegart stand dreimal untereinander (Überschrift,
+   Betreff, Kopftext), die Aufstellung zeigte "1 pausch" und "0 % USt.",
+   eine Summenzeile "zzgl. 0 % USt. auf 119,00 EUR = 0,00 EUR", und das
+   Fälligkeitsdatum fehlte. {% endcomment %}
+
+{% block nummernbezeichnung %}Mahnungsnummer{% endblock %}
+{% block gesamtbezeichnung %}Offener Gesamtbetrag{% endblock %}
+
+{% comment %} Bezeichnung aus MAHNTEXT im Code, damit es nur eine Liste
+   gibt. Regression: Eine if-Kette hier wich ab ("Letzte Mahnung vor Abgabe
+   an das Inkasso" und "Letzte Mahnung"). {% endcomment %}
+{% block ueberschrift %}
+  <span class="mahnstufe">{{ beleg.mahntext }}</span>
+  {% if beleg.nummer %} {{ beleg.nummer }}{% endif %}
+{% endblock %}
+
+{% comment %} Ohne eigene Einleitung; der Text je Mahnstufe kommt aus den
+   Textbausteinen in den Kopftext (``mahnung_erstellen``) und ist am Beleg
+   änderbar. {% endcomment %}
+
+{% comment %} Aufstellung mit Bezeichnung und Betrag. Datum und
+   Fälligkeit der Rechnung stehen in der vom Service gesetzten Bezeichnung,
+   weil eine eigene Spalte bei der Mahngebühr leer bliebe.
+
+   Spalte "Pos." immer, auch bei einer Zeile, wie in der Maske. Verworfen:
+   "Pos." erst ab zwei Zeilen, was von der Maske abwich.
+   {% endcomment %}
+{% block positionen %}
+  <table class="positionen mahnaufstellung">
+    <thead>
+      <tr>
+        <th class="pos" style="width: {{ pos_breite }}">Pos.</th>
+        <th class="bezeichnung">Offene Forderung</th>
+        <th class="summe">Betrag<span class="waehrung">EUR</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for position in positionen %}
+        <tr>
+          <td class="pos">{{ position.position }}</td>
+          <td class="bezeichnung">{{ position.bezeichnung }}</td>
+          <td class="summe">{{ position|zeilensumme|geld }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% comment %} Ohne Netto- und Steuerzeile, weil die Mahnung keine
+   Umsatzsteuer ausweist (berechnete Leistung, Mahngebühr als
+   Schadenersatz); "zzgl. 0 % USt. = 0,00 EUR" sähe wie ein Steuerausweis
+   aus. {% endcomment %}
+{% block summen %}
+  <table class="summen">
+    <tr class="gesamt">
+      <th>Offener Gesamtbetrag</th>
+      <td>{{ summen.brutto|geld }} EUR</td>
+    </tr>
+  </table>
+{% endblock %}
+
+{% block zahlungshinweis %}
+  <div class="zahlung">
+    <table>
+      {% comment %} ``zahlbar_bis``, damit auch die Vorschau des Entwurfs die
+         Frist zeigt, auf die der Text verweist. {% endcomment %}
+      {% if beleg.zahlbar_bis %}
+        <tr><th>Zahlbar bis</th><td><strong>{{ beleg.zahlbar_bis|date:"d.m.Y" }}</strong></td></tr>
+      {% endif %}
+      {% if firma.iban %}
+        <tr><th>IBAN</th><td>{{ firma.iban }}{% if firma.bic %} &nbsp;&middot;&nbsp; BIC {{ firma.bic }}{% endif %}</td></tr>
+      {% endif %}
+      {% comment %} Beide Nummern im Verwendungszweck: die der Rechnung für die
+         Zuordnung der Zahlung, die der Mahnung, damit erkennbar ist, ob die
+         Gebühr mitbezahlt wurde. Am Entwurf ohne Nummer der Mahnung.
+         {% endcomment %}
+      {% if beleg.vorgaenger %}
+        <tr><th>Verwendungszweck</th><td>{{ beleg.vorgaenger.nummer }}{% if beleg.nummer %} {{ beleg.nummer }}{% endif %}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+{% endblock %}
+
+{% comment %} Ohne eigenen Schlusstext; verwendet wird der Fußtext des
+   Belegs wie in der Basis, weil ein fester Text nicht zu jeder Mahnstufe
+   passt. {% endcomment %}

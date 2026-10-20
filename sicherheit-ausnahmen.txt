@@ -1,0 +1,14 @@
+# Bewusst hingenommene Sicherheitslücken, gelesen von sicherheit.sh.
+#
+# Eine Zeile je Lücke: zuerst die ID, wie pip-audit sie meldet (PYSEC-...,
+# GHSA-... oder CVE-...), dann hinter einem # Paket und Version, Begründung,
+# Datum und das Kürzel dessen, der entschieden hat. Beispiel:
+#
+#   GHSA-xxxx-xxxx-xxxx  # paketname 1.2.3: betrifft nur Funktion X, die das Projekt nicht nutzt. 2026-01-31 XY
+#
+# Gibt es ein Update, das Paket aktualisieren statt die Lücke einzutragen.
+# Wieder austragen, sobald die Lücke behoben ist; sicherheit.sh meldet das
+# nicht von selbst.
+#
+# Gilt nur für die Python-Prüfung; npm audit kennt keine Ausnahmen, und im
+# Betrieb gibt es keine npm-Pakete.

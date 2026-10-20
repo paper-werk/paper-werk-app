@@ -1,0 +1,493 @@
+{% extends "admin/base_site.html" %}
+{% load faktura_extras unfold %}
+
+{% comment %} Projektakte: alle Angaben zu einem Projekt auf einer Seite.
+
+   Eigene Seite, weil Inlines Formulare sind und hunderte Erfassungszeilen
+   als Formsets nicht bedienbar wären (auswertung/projektakte.py).
+
+   Beträge nur mit {% if darf_zahlen_sehen %}, wie auf der Startseite,
+   damit Benutzer ohne dieses Recht keine Marge sehen.
+{% endcomment %}
+
+{% block nav-global %}{% include "admin/blaettern.html" %}{% endblock %}
+
+{% block content %}
+{% include "admin/_eigene_stile.html" %}
+<div>
+
+  {# ---- Kopf ---- #}
+  <div class="flex flex-wrap gap-4 items-start justify-between mb-6">
+    <div>
+      <div class="font-semibold text-2xl text-font-important-light dark:text-font-important-dark">
+        {{ projekt.nummer }} &middot; {{ projekt.bezeichnung }}
+      </div>
+      <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        {% comment %} Der Auftraggeber verlinkt auf seine Stammdaten. {% endcomment %}
+        {% if kunde_url %}
+          <a href="{{ kunde_url }}" class="text-primary-600 hover:underline dark:text-primary-500">
+            {{ projekt.kunde }}
+          </a>
+        {% else %}
+          {{ projekt.kunde }}
+        {% endif %}
+        {% if projekt.abgeschlossen %}
+          &middot; <span class="font-medium">abgeschlossen</span>
+        {% endif %}
+      </div>
+    </div>
+    <a href="{{ formular_url }}"
+       class="bg-primary-600 border border-transparent font-medium px-3 py-2 rounded-default text-sm text-white hover:bg-primary-700">
+      Projekt bearbeiten
+    </a>
+  </div>
+
+  {% if darf_zahlen_sehen and kennzahlen %}
+    {# ---- Die Zahlen ---- #}
+    {% comment %} Die Spaltenzahl folgt der Zahl der Karten, weil der
+       Stundensatz nur bei erfassten Stunden erscheint. Regression: Mit fest
+       fünf Spalten stand die sechste Karte allein in der zweiten Zeile.
+
+       Sechs Karten stehen bei lg in 3 + 3 und ab xl in einer Reihe, weil bei
+       1024 px sechs Karten zu je 160 px für "Effektiver Stundensatz" mit
+       Betrag und Hinweis zu schmal wären.
+
+       Klassennamen vollständig ausgeschrieben, weil Tailwind (Unfold und
+       eigener Build, stile/eingang.css) nur vollständige Namen im Quelltext
+       erkennt. tests/test_stilklassen.py prüft, dass jede Klasse definiert
+       ist. {% endcomment %}
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 {% if kennzahlen|length > 5 %}lg:grid-cols-3 xl:grid-cols-6{% else %}lg:grid-cols-5{% endif %}">
+      {% for kennzahl in kennzahlen %}
+        {% component "admin/_kennzahl.html" with titel=kennzahl.titel icon=kennzahl.icon warnung=kennzahl.warnung %}
+          <div class="pw-kennzahl-wert">{{ kennzahl.wert }}</div>
+          <div class="pw-kennzahl-text">{{ kennzahl.hinweis }}</div>
+        {% endcomponent %}
+      {% endfor %}
+    </div>
+
+    {% comment %} Leistung über dem Auftrag wird nicht vom Ergebnis
+       abgezogen, weil offen ist, ob nach Aufwand oder pauschal abgerechnet
+       wird; angezeigt wird nur der Betrag (wie auf der Startseite).
+       {% endcomment %}
+    {% if ergebnis.ist_ueberzogen %}
+      <div class="border border-red-200 dark:border-red-900 flex gap-3 items-start mb-6 p-4 rounded-default">
+        <span class="material-symbols-outlined text-red-600 dark:text-red-500">warning</span>
+        <div>
+          <div class="font-medium text-red-600 dark:text-red-500">
+            {{ ergebnis.ueberschreitung|geld }} € über dem Auftrag
+          </div>
+          <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Geleistet wurde für mehr, als beauftragt ist. Ob das bezahlt wird,
+            entscheidet der Vertrag &ndash; nach Aufwand ja, pauschal nicht.
+            Ein Nachtrag gehört geprüft.
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# ---- Woraus der Auftrag besteht ---- #}
+  {% if auftraege|length > 1 %}
+    {% comment %} Erst ab dem ersten Nachtrag, weil ein einzelner Hauptauftrag
+       bereits als Kennzahl erscheint; mit Nachträgen zeigt die Tabelle die
+       Zusammensetzung der Summe. {% endcomment %}
+    <div class="mb-6">
+      {% component "unfold/components/card.html" with title="Auftrag und Nachträge" %}
+        <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+          <tbody>
+            {% for auftrag in auftraege %}
+              <tr class="border-b border-base-200 dark:border-base-800">
+                <td class="py-2 pr-4 whitespace-nowrap">{{ auftrag.beleg.belegdatum|date:"d.m.Y" }}</td>
+                <td class="py-2 pr-4 font-medium">
+                  <a href="{{ auftrag.akte_url }}"
+                     class="text-primary-600 hover:underline dark:text-primary-500">
+                    {{ auftrag.bezeichnung }}
+                  </a>
+                </td>
+                <td class="py-2 pr-4">
+                  <a href="{{ auftrag.url }}"
+                     class="text-primary-600 hover:underline dark:text-primary-500">
+                    {{ auftrag.beleg.nummer }}
+                  </a>
+                </td>
+                <td class="py-2 pr-4">{{ auftrag.beleg.betreff }}</td>
+                <td class="py-2 text-right whitespace-nowrap">{{ auftrag.netto|geld }} €</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="font-semibold text-font-important-light dark:text-font-important-dark">
+              <th colspan="4" class="pr-4 pt-3 text-right" scope="row">Beauftragt insgesamt</th>
+              <th class="pt-3 text-right whitespace-nowrap">{{ ergebnis.beauftragt|geld }} €</th>
+            </tr>
+          </tfoot>
+        </table>
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  {# ---- Wie weit ist das Projekt ---- #}
+  <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+    {% if darf_zahlen_sehen and ergebnis.beauftragt %}
+      <div class="lg:w-1/3">
+        {% component "unfold/components/card.html" with title="Auftrag" %}
+          {% comment %} Zwei Balken übereinander zum Vergleich von berechneter und
+             erbrachter Leistung; ein langer unterer und kurzer oberer
+             Balken zeigen nicht berechnete Leistung. {% endcomment %}
+          {% comment %} Eigene Balken, weil unfold/components/progress.html
+             {% templatetag openblock %} if items or value {% templatetag closeblock %} prüft und bei 0 % nichts rendert;
+             "noch nichts fakturiert" erschiene sonst wie "keine Angabe".
+             Optik wie die Komponente. {% endcomment %}
+          <div class="mb-4">
+            <div class="flex flex-row mb-2">
+              <h3 class="text-font-important-light text-sm dark:text-font-important-dark">Fakturiert</h3>
+              <strong class="bg-base-100 font-medium ml-auto px-1.5 py-1 rounded-default text-font-important-light text-xs dark:bg-base-800 dark:text-font-important-dark">
+                {{ ergebnis.fortschritt }} %
+              </strong>
+            </div>
+            <div class="bg-base-100 flex flex-row overflow-hidden rounded-default dark:bg-base-800">
+              <div class="bg-primary-600 h-1.5 rounded-default dark:bg-primary-500"
+                   style="width: {{ balken_fakturiert }}%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex flex-row mb-2">
+              <h3 class="text-font-important-light text-sm dark:text-font-important-dark">Geleistet</h3>
+              <strong class="bg-base-100 font-medium ml-auto px-1.5 py-1 rounded-default text-xs dark:bg-base-800 {% if ergebnis.ist_ueberzogen %}text-red-600 dark:text-red-500{% else %}text-font-important-light dark:text-font-important-dark{% endif %}">
+                {{ ergebnis.ausschoepfung }} %
+              </strong>
+            </div>
+            <div class="bg-base-100 flex flex-row overflow-hidden rounded-default dark:bg-base-800">
+              <div class="h-1.5 rounded-default {{ ueberzogen_klasse|default:'bg-primary-600 dark:bg-primary-500' }}"
+                   style="width: {{ balken_geleistet }}%"></div>
+            </div>
+          </div>
+          <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Anteile am beauftragten Wert von {{ ergebnis.beauftragt|geld }} €.
+          </p>
+        {% endcomponent %}
+      </div>
+    {% endif %}
+
+    {# ---- Monatsverlauf ---- #}
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Erfasste Stunden je Monat" %}
+        {% include "admin/_saeulen.html" with saeulen=verlauf_saeulen beschreibung="Erfasste Stunden je Monat, die letzten zwölf Monate" %}
+        <p class="mt-3 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Alle erfassten Zeilen, auch die nicht abrechenbaren.
+          {% if verlauf_spitze %}Stärkster Monat: {{ verlauf_spitze }}{% endif %}
+        </p>
+      {% endcomponent %}
+    </div>
+  </div>
+
+  {% if darf_zahlen_sehen and wasserfall %}
+    {# ---- Kostenstruktur ---- #}
+    {% comment %} Ring und Staffel zeigen dieselben Werte: der Ring die
+       Anteile am Leistungswert, die Staffel die Abzüge Schritt für Schritt.
+       {% endcomment %}
+    <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+
+      {% if kostenstruktur %}
+        <div class="lg:w-2/5">
+          {% component "unfold/components/card.html" with title="Wohin der Leistungswert fließt" %}
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {% comment %} Canvas direkt im Template, weil Unfold nur bar, line und
+                 cohort als Komponenten liefert. Aufbau wie dort: app.js
+                 findet die Klasse "chart", data-type geht an Chart.js,
+                 var(--...) in den Farben wird beim Zeichnen aufgelöst. Die
+                 Standardoptionen blenden für "doughnut" die Achsen aus.
+              {% endcomment %}
+              <div class="mx-auto relative shrink-0 size-40">
+                <canvas class="chart" data-type="doughnut"
+                        data-value="{{ kostenstruktur }}"></canvas>
+              </div>
+
+              {% comment %} Die Legende enthält die Beträge, weil der Grünton auf
+                 Weiß knapp unter dem nötigen Kontrast liegt und Farbe
+                 allein nicht ausreicht. {% endcomment %}
+              <div class="flex flex-col gap-2 grow text-sm">
+                {% for zeile in kostenlegende %}
+                  <div class="flex gap-2 items-baseline">
+                    <span class="mt-1 rounded-full shrink-0 size-2.5"
+                          style="background: {{ zeile.farbe }}"></span>
+                    <span class="text-font-subtle-light dark:text-font-subtle-dark">
+                      {{ zeile.titel }}
+                    </span>
+                    <span class="grow"></span>
+                    <span class="font-medium text-font-important-light whitespace-nowrap dark:text-font-important-dark"
+                          style="font-variant-numeric: tabular-nums">
+                      {{ zeile.wert }}
+                    </span>
+                    {% if zeile.anteil is not None %}
+                      <span class="text-font-subtle-light text-xs w-9 text-right dark:text-font-subtle-dark"
+                            style="font-variant-numeric: tabular-nums">
+                        {{ zeile.anteil }} %
+                      </span>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            {% if not ergebnis.traegt %}
+              <p class="mt-4 text-red-600 text-xs dark:text-red-500">
+                Die Kosten übersteigen den Leistungswert um
+                {{ ergebnis.ergebnis|geld }} €. Der Ring zeigt deshalb nur,
+                wie sich die Kosten aufteilen &ndash; einen negativen Anteil
+                an einem Ganzen gibt es nicht.
+              </p>
+            {% endif %}
+          {% endcomponent %}
+        </div>
+      {% endif %}
+
+      {# ---- Die Staffel ---- #}
+      <div class="grow min-w-0">
+        {% component "unfold/components/card.html" with title="Vom Leistungswert zum Ergebnis" %}
+          <div class="pw-staffel">
+            {% for stufe in wasserfall %}
+              <div class="pw-stufe">
+                <div class="text-sm {% if stufe.art == 'abzug' %}text-font-subtle-light dark:text-font-subtle-dark{% else %}font-medium text-font-important-light dark:text-font-important-dark{% endif %}">
+                  {{ stufe.titel }}
+                </div>
+                <div class="pw-spur">
+                  {% comment %} Der Startpunkt jedes Abzugs ist das Ende des
+                     vorherigen Balkens (Wasserfall). {% endcomment %}
+                  <div class="pw-balken"
+                       style="left: {{ stufe.start }}%; width: {{ stufe.breite }}%; background: {{ stufe.farbe }}"></div>
+                </div>
+                <div class="pw-betrag text-sm {% if stufe.art == 'abzug' %}text-font-subtle-light dark:text-font-subtle-dark{% else %}font-semibold text-font-important-light dark:text-font-important-dark{% endif %}">
+                  {{ stufe.betrag|geld }} €
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Deckungsbeitrag I ist der Leistungswert nach Zukauf
+            {% if staffel.db1_quote is not None %}({{ staffel.db1_quote }} %){% endif %},
+            Deckungsbeitrag II zusätzlich nach eigener Arbeit
+            {% if staffel.db2_quote is not None %}({{ staffel.db2_quote }} %){% endif %}.
+            Was dieses Programm nicht kennt &ndash; Miete, Geräte,
+            Versicherung, Verwaltung &ndash; ist darin noch nicht abgezogen.
+            Deshalb heißt die Zahl Deckungsbeitrag und nicht Gewinn.
+          </p>
+        {% endcomponent %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# ---- Leistungen: Zeiten und Fremdleistungen je Auftragsposition ---- #}
+  <div class="mb-6">
+    {% include "admin/faktura/_zuordnung.html" %}
+  </div>
+
+  {# ---- Belege ---- #}
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Belege" %}
+      {% if belege %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Datum</th>
+                <th class="font-medium pb-2 pr-4 text-left">Art</th>
+                <th class="font-medium pb-2 pr-4 text-left">Nummer</th>
+                <th class="font-medium pb-2 pr-4 text-left">Betreff</th>
+                <th class="font-medium pb-2 pr-4 text-left">Status</th>
+                {% if darf_zahlen_sehen %}
+                  <th class="font-medium pb-2 text-right whitespace-nowrap">Betrag netto</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in belege %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4 whitespace-nowrap">
+                    {{ zeile.beleg.belegdatum|date:"d.m.Y"|default:"&ndash;" }}
+                  </td>
+                  <td class="py-2 pr-4">{{ zeile.beleg.get_typ_display }}</td>
+                  <td class="py-2 pr-4 font-medium whitespace-nowrap">
+                    {% comment %} Die Nummer verlinkt über das Proxy-Modell auf den Beleg
+                       (faktura.admin.adresse_im_admin). Ein Entwurf ohne
+                       Nummer zeigt Belegtyp und ID, damit er verlinkt
+                       bleibt. {% endcomment %}
+                    {% if zeile.url %}
+                      <a href="{{ zeile.url }}"
+                         class="text-primary-600 hover:underline dark:text-primary-500">
+                        {{ zeile.beleg.nummer|default:"Entwurf" }}
+                      </a>
+                    {% else %}
+                      <span class="text-font-important-light dark:text-font-important-dark">
+                        {{ zeile.beleg.nummer|default:"&ndash;" }}
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="py-2 pr-4">{{ zeile.beleg.betreff }}</td>
+                  <td class="py-2 pr-4">{{ zeile.beleg.get_status_display }}</td>
+                  {% if darf_zahlen_sehen %}
+                    <td class="py-2 text-right whitespace-nowrap {% if zeile.netto %}font-medium text-font-important-light dark:text-font-important-dark{% endif %}">
+                      {% comment %} Beim Lieferschein leer, ohne 0,00 EUR, weil er keinen
+                         Wert hat. {% endcomment %}
+                      {% if zeile.netto is None %}&ndash;{% else %}{{ zeile.netto|geld }} €{% endif %}
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Zu diesem Projekt gibt es noch keinen festgeschriebenen Beleg.
+          Entwürfe stehen hier nicht &ndash; sie sind eine Absicht, kein Beleg.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+
+  <div class="flex flex-col gap-6 lg:flex-row">
+
+    {# ---- Eigene Leistung ---- #}
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Erfasste Leistung" %}
+        {% if aufwand_person %}
+          <table class="mb-4 w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Person</th>
+                <th class="font-medium pb-2 pr-4 text-right">Zeit</th>
+                <th class="font-medium pb-2 text-right">Zeilen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in aufwand_person %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4">{{ zeile.name }}</td>
+                  <td class="py-2 pr-4 text-right font-medium text-font-important-light dark:text-font-important-dark">
+                    {{ zeile.zeit }}
+                  </td>
+                  <td class="py-2 text-right">{{ zeile.zeilen }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Leistung</th>
+                <th class="font-medium pb-2 pr-4 text-right">Zeit</th>
+                <th class="font-medium pb-2 text-right">Menge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in aufwand_leistung %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4">{{ zeile.name }}</td>
+                  <td class="py-2 pr-4 text-right">{{ zeile.zeit }}</td>
+                  <td class="py-2 text-right">{{ zeile.umfang }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% comment %} Ohne Einzelzeilen; Link auf die Erfassungsliste, weil
+             Filter, Sortierung, Leistungsnachweis und Abrechnen dort
+             implementiert sind. {% endcomment %}
+          <a href="{{ erfassung_url }}"
+             class="inline-block mt-4 text-primary-600 text-sm hover:underline dark:text-primary-500">
+            Alle Zeilen ansehen &rarr;
+          </a>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Auf dieses Projekt ist noch nichts kontiert.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    {# ---- Zugekauftes ---- #}
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Zugekaufte Leistung" %}
+        {% if fremdleistungen %}
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+              <thead>
+                <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                  <th class="font-medium pb-2 pr-4 text-left">Eingangsrechnung</th>
+                  <th class="font-medium pb-2 pr-4 text-left">Position</th>
+                  <th class="font-medium pb-2 pr-4 text-right">Menge</th>
+                  {% if darf_zahlen_sehen %}
+                    <th class="font-medium pb-2 pr-4 text-right">Einkauf</th>
+                  {% endif %}
+                  {% comment %} Ohne Spalte "Verkauf", weil der Verkaufspreis erst an der
+                     Rechnungsposition entsteht. {% endcomment %}
+                  <th class="font-medium pb-2 text-right">Abgerechnet</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for position in fremdleistungen %}
+                  <tr class="border-b border-base-200 dark:border-base-800">
+                    <td class="py-2 pr-4 whitespace-nowrap">
+                      <a href="{% url 'admin:erfassung_eingangsrechnung_change' position.rechnung_id %}"
+                         class="text-primary-600 hover:underline dark:text-primary-500">
+                        {{ position.rechnung.lieferant.name }} {{ position.rechnung.nummer }}
+                      </a>
+                    </td>
+                    <td class="py-2 pr-4">
+                      {{ position.bezeichnung }}
+                      {% if not position.weiterberechenbar %}
+                        <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                          &middot; selbst getragen
+                        </span>
+                      {% endif %}
+                    </td>
+                    <td class="py-2 pr-4 text-right">
+                      {{ position.menge|menge }} {{ position.einheit }}
+                    </td>
+                    {% if darf_zahlen_sehen %}
+                      <td class="py-2 pr-4 text-right">
+                        {{ position.einkauf_netto|geld }} €
+                      </td>
+                    {% endif %}
+                    <td class="py-2 text-right">
+                      {% with beleg=position.abgerechneter_beleg %}
+                        {% if position.rechnungsadresse %}
+                          <a href="{{ position.rechnungsadresse }}"
+                             class="text-primary-600 hover:underline dark:text-primary-500">{{ beleg }}</a>
+                        {% elif beleg %}
+                          {{ beleg }}
+                        {% else %}
+                          <span class="text-font-subtle-light dark:text-font-subtle-dark">{{ position.zustand_anzeige }}</span>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if weitere_fremdleistungen %}
+            <p class="mt-3 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+              und {{ weitere_fremdleistungen }} weitere
+            </p>
+          {% endif %}
+
+          <a href="{{ fremdleistung_url }}"
+             class="inline-block mt-4 text-primary-600 text-sm hover:underline dark:text-primary-500">
+            Alle Positionen ansehen &rarr;
+          </a>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Für dieses Projekt wurde nichts zugekauft.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  </div>
+</div>
+{% endblock %}

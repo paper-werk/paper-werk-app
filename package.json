@@ -1,0 +1,16 @@
+{
+  "name": "paper-werk-app-stile",
+  "private": true,
+  "description": "Baut core/static/core/css/paperwerk.css - siehe stile/eingang.css",
+  "scripts": {
+    "css": "tailwindcss -i stile/eingang.css -o core/static/core/css/paperwerk.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3"
+  },
+  "//": "overrides: Tailwind 4.3.3 pinnt @parcel/watcher 2.5.1, das über micromatch braces mit GHSA-vfj7-8cjw-p6xm mitbringt. Ab 2.5.4 braucht @parcel/watcher beides nicht mehr; den Watcher nutzt nur --watch, npm run css nicht. Entfernen, sobald Tailwind selbst eine Version ab 2.5.4 verlangt.",
+  "overrides": {
+    "@parcel/watcher": "2.6.0"
+  }
+}

@@ -1,0 +1,236 @@
+{% load static faktura_extras %}<!doctype html>
+{% comment %} Grundgerüst aller Belege.
+
+   Jede Belegart erbt hiervon und überschreibt nur, was bei ihr anders ist.
+   Der Lieferschein zum Beispiel ersetzt den Block "positionen" durch eine
+   Tabelle ohne Preise und lässt "summen" ganz weg.
+
+   Die Seitengeometrie steht in beleg.css, nicht hier. {% endcomment %}
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>{{ beleg }}</title>
+  <link rel="stylesheet" href="{% static 'faktura/pdf/beleg.css' %}">
+</head>
+<body class="{% block belegklasse %}beleg{% endblock %}">
+
+{% if wasserzeichen %}
+  {% comment %} Wasserzeichen quer über die Seite, damit ein Entwurf nicht
+     als Rechnung versendet wird. {% endcomment %}
+  <div class="wasserzeichen">Entwurf</div>
+{% endif %}
+
+{% include 'faktura/pdf/_briefkopf.html' %}
+
+{% include 'faktura/pdf/_fusszeile.html' %}
+
+{% include 'faktura/pdf/_anschriftfeld.html' with anschrift=beleg.empfaenger %}
+
+{# ---- Informationsblock rechts neben dem Anschriftfeld ---- #}
+<section id="infoblock">
+  <table>
+    {% block infozeilen %}
+      {% comment %} Nummer über dem Datum; beide entstehen beim Festschreiben.
+         Im Entwurf steht "noch offen", damit erkennbar ist, dass der Beleg
+         eine Nummer erhält. {% endcomment %}
+      <tr><th>{% block nummernbezeichnung %}Belegnummer{% endblock %}</th>
+          <td>{% if beleg.nummer %}{{ beleg.nummer }}
+              {% else %}<em>noch offen</em>{% endif %}</td></tr>
+      {% comment %} Das Belegdatum entsteht beim Festschreiben; im Entwurf ein
+         Platzhalter statt einer leeren Zeile. {% endcomment %}
+      <tr><th>Datum</th>
+          <td>{% if beleg.belegdatum %}{{ beleg.belegdatum|date:"d.m.Y" }}
+              {% else %}<em>noch offen</em>{% endif %}</td></tr>
+      {% comment %} Das Label hängt von der Belegart ab: Leistungsdatum bei der
+         Rechnung (Pflichtangabe nach § 14 UStG), Lieferdatum beim
+         Lieferschein, geplanter Ausführungszeitraum beim Angebot; daher ein
+         Block wie bei der Nummernbezeichnung.
+
+         Bei Rechnung, Storno und Korrektur steht das Leistungsdatum (BT-72)
+         in einem eigenen Feld; das Feldpaar ist dort der Zeitraum und
+         erscheint nur, wenn er mehr als einen Tag umfasst.
+         {% endcomment %}
+      {% if beleg.steuerliches_leistungsdatum %}
+        <tr><th>Leistungsdatum</th>
+            <td>{{ beleg.steuerliches_leistungsdatum|date:"d.m.Y" }}</td></tr>
+      {% endif %}
+      {% if beleg.leistungsdatum and not beleg.steuerliches_leistungsdatum or beleg.leistungszeitraum %}
+        <tr><th>{% block leistungsbezeichnung %}{% if beleg.leistungsdatum_bis %}Leistungszeitraum{% else %}Leistungsdatum{% endif %}{% endblock %}</th>
+            <td>{{ beleg.leistungsdatum|date:"d.m.Y" }}{% if beleg.leistungsdatum_bis %} &ndash; {{ beleg.leistungsdatum_bis|date:"d.m.Y" }}{% endif %}</td></tr>
+      {% endif %}
+      {% comment %} Kundennummer nur bei Zuordnung zu einem Kunden, weil ein
+         Beleg auch einem Projekt oder keinem zugeordnet sein kann; ohne
+         leere Zeile "Kundennummer:". Ebenso unten für eine manuell
+         eingetragene Anschrift.
+         {% endcomment %}
+      {% if beleg.kunde %}
+        <tr><th>Kundennummer</th><td>{{ beleg.kunde.nummer }}</td></tr>
+      {% endif %}
+      {% comment %} Projekt im Infoblock, weil der Empfänger die Belege eines
+         Vorhabens darüber zuordnet. Nummer und Bezeichnung, weil die Nummer
+         allein oft nicht verständlich und die Bezeichnung allein nicht
+         eindeutig ist.
+         {% endcomment %}
+      {% if beleg.projekt %}
+        <tr><th>Projekt</th>
+            <td>{{ beleg.projekt.nummer }}<br>{{ beleg.projekt.bezeichnung }}</td></tr>
+      {% endif %}
+      {% if beleg.bestellnummer %}
+        <tr><th>Ihre Bestellung</th><td>{{ beleg.bestellnummer }}</td></tr>
+      {% endif %}
+    {% endblock %}
+  </table>
+</section>
+
+{# ---- Inhalt ---- #}
+<main>
+  <h1>{% block ueberschrift %}{{ bezeichnung }}{% if beleg.nummer %} {{ beleg.nummer }}{% endif %}{% endblock %}</h1>
+
+  {% if beleg.betreff %}<p class="betreff">{{ beleg.betreff }}</p>{% endif %}
+
+  {% comment %} Ohne feste Anrede und Grußformel; diese stehen im Kopf- und
+     Fußtext (am Beleg oder als Textbaustein). Vor und nach den Positionen
+     stehen nur diese Texte und bei einzelnen Belegarten der gesetzliche
+     Pflichthinweis. {% endcomment %}
+  {% block einleitung %}
+    {% if beleg.kopftext %}<p>{{ beleg.kopftext|linebreaksbr }}</p>{% endif %}
+  {% endblock %}
+
+  {% block positionen %}
+    <table class="positionen">
+      <thead>
+        {% comment %}
+          Währung in der Kopfzeile, weil alle Beträge eines Belegs dieselbe
+          Währung haben und "EUR" in jeder Zeile 16 mm Breite der
+          Bezeichnung kostete. Zweizeilig, damit die Spalte schmal bleibt.
+        {% endcomment %}
+        <tr>
+          {% comment %} Breite aus pdf.pos_breite; "table-layout: fixed" übernimmt
+             sie aus der ersten Zeile, die Bezeichnung erhält die restliche
+             Breite. {% endcomment %}
+          <th class="pos" style="width: {{ pos_breite }}">Pos.</th>
+          <th class="bezeichnung">Bezeichnung</th>
+          <th class="menge">Menge</th>
+          <th class="einheit">Einheit</th>
+          {% if mit_preisen %}
+            <th class="preis">Einzelpreis<span class="waehrung">EUR</span></th>
+            <th class="steuer">USt.</th>
+            <th class="summe">Gesamt<span class="waehrung">EUR</span></th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for position in positionen %}
+          {% comment %} Titel und Text (Zeilenart): ohne
+             Menge und Preis, über die ganze Breite. Der Titel fett mit
+             Nummer, der Text ohne. {% endcomment %}
+          {% if position.zeilenart == "titel" %}
+            <tr class="titelzeile{% if position.langtext %} mit-langtext{% endif %}">
+              <td class="pos">{{ position.position }}</td>
+              <td class="bezeichnung" colspan="{% if mit_preisen %}6{% else %}3{% endif %}">{{ position.bezeichnung }}</td>
+            </tr>
+          {% elif position.zeilenart == "text" %}
+            <tr class="textzeile">
+              <td class="pos"></td>
+              <td class="text" colspan="{% if mit_preisen %}6{% else %}3{% endif %}">{{ position.bezeichnung }}{% if position.langtext %}<br>{{ position.langtext|linebreaksbr }}{% endif %}</td>
+            </tr>
+          {% else %}
+          <tr class="{% if position.langtext %}mit-langtext{% endif %}{% if position.zeilenart == "zuschlag" %} zuschlagszeile{% endif %}">
+            <td class="pos">{{ position.position }}</td>
+            <td class="bezeichnung">
+              {{ position.bezeichnung }}
+              {% comment %} Optionale Position ohne Anteil an der Summe (R-178).
+                 Betrag in Klammern, bei Menge 0 ohne Betrag; dann gilt der
+                 Einzelpreis, beim Zuschlag der Satz.
+                 {% endcomment %}
+              {% if position.optional %}<div class="optional">Optionale Position, nicht in der Summe enthalten</div>{% endif %}
+              {% comment %} Der Zuschlag zeigt Satz und Basis ("3 % auf 9.500,00"),
+                 damit der Betrag nachvollziehbar ist; Menge und Einzelpreis
+                 wären "1 x 285,00" (R-180).
+                 {% endcomment %}
+              {% if position.zeilenart == "zuschlag" %}<div class="rechenweg">{{ position.rechenweg }}</div>{% endif %}
+            </td>
+            {% if position.zeilenart == "zuschlag" %}
+              <td class="menge"></td>
+              <td class="einheit"></td>
+            {% else %}
+              <td class="menge">{{ position.menge|menge }}</td>
+              <td class="einheit">{{ position.einheit }}</td>
+            {% endif %}
+            {% if mit_preisen %}
+              <td class="preis">{% if position.zeilenart != "zuschlag" %}{{ position.einzelpreis|geld }}{% endif %}</td>
+              <td class="steuer">{{ position.steuersatz_dezimal|prozent }}</td>
+              <td class="summe">{% if not position.optional %}{{ position|zeilensumme|geld }}{% elif position.menge and position.zeilenart != "zuschlag" %}({{ position|zeilensumme|geld }}){% endif %}</td>
+            {% endif %}
+          </tr>
+          {% endif %}
+          {% comment %} Langtext zeilengetreu in eigener Zeile von der Bezeichnung
+             bis zum Gesamtpreis, weil Langtexte aus dem Leistungsverzeichnis
+             oft mehrere Absätze haben. Kein Seitenumbruch zwischen beiden
+             Zeilen (beleg.css, "break-before: avoid"), wohl aber im
+             Langtext. Bei der Zeilenart Text steht er in der Zeile selbst. {% endcomment %}
+          {% if position.langtext and position.zeilenart != "text" %}
+            <tr class="langtextzeile">
+              <td class="pos"></td>
+              <td class="langtext" colspan="{% if mit_preisen %}6{% else %}3{% endif %}">{{ position.langtext|linebreaksbr }}</td>
+            </tr>
+          {% endif %}
+          {% comment %} Nach der letzten Zeile eines Titels seine Summe,
+             innere Titel zuerst (R-181). Nur mit Preisen. {% endcomment %}
+          {% if mit_preisen %}
+            {% for abschluss in position.titelabschluesse %}
+              <tr class="titelsumme">
+                <td class="pos"></td>
+                <td class="bezeichnung" colspan="5">{{ abschluss.text }}</td>
+                <td class="summe">{{ abschluss.netto|geld }}</td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endblock %}
+
+  {% block summen %}
+    {% if mit_preisen %}
+      <table class="summen">
+        <tr><th>Summe netto</th><td>{{ summen.netto|geld }} EUR</td></tr>
+        {% for anteil in summen.anteile %}
+          <tr>
+            <th>zzgl. {{ anteil.satz|prozent }} USt. auf {{ anteil.netto|geld }} EUR</th>
+            <td>{{ anteil.steuer|geld }} EUR</td>
+          </tr>
+        {% endfor %}
+        <tr class="gesamt">
+          <th>{% block gesamtbezeichnung %}Rechnungsbetrag{% endblock %}</th>
+          <td>{{ summen.brutto|geld }} EUR</td>
+        </tr>
+      </table>
+
+      {% comment %} Der Vermerk des Steuerfalls (§ 13b, EU, Drittland) hat
+         Vorrang vor dem der Kleinunternehmerregelung, wie im XML
+         (facturx._kategorie). Mit der USt-IdNr. des Kunden, weil § 14a UStG
+         sie bei Reverse Charge und innergemeinschaftlicher Lieferung auf der
+         Rechnung verlangt. {% endcomment %}
+      {% if beleg.steuervermerk %}
+        <p class="hinweis">
+          {{ beleg.steuervermerk }}
+          {% if beleg.empfaenger_ust_id %}<br>USt-IdNr. des Leistungsempf&auml;ngers: {{ beleg.empfaenger_ust_id }}{% endif %}
+        </p>
+      {% elif firma.kleinunternehmer %}
+        <p class="hinweis">
+          Kein Ausweis von Umsatzsteuer, da Kleinunternehmer gem&auml;&szlig; &sect;&nbsp;19 UStG.
+        </p>
+      {% endif %}
+    {% endif %}
+  {% endblock %}
+
+  {% block zahlungshinweis %}{% endblock %}
+
+  {% block schlusstext %}
+    {% if beleg.fusstext %}<p>{{ beleg.fusstext|linebreaksbr }}</p>{% endif %}
+  {% endblock %}
+</main>
+
+</body>
+</html>

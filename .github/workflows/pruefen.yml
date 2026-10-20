@@ -1,0 +1,104 @@
+# Der Prüflauf bei jedem Push und Pull Request, mit denselben Schritten wie
+# ./pruefen.sh. Die Datenbank kommt als Dienst, die Systempakete für
+# WeasyPrint dieselben wie im Dockerfile.
+name: Prüfen
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: paperwerk
+          POSTGRES_PASSWORD: paperwerk
+          POSTGRES_DB: paperwerk
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U paperwerk"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DJANGO_SECRET_KEY: nur-fuer-die-ci
+      DATABASE_URL: postgres://paperwerk:paperwerk@localhost:5432/paperwerk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Systempakete für WeasyPrint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 libffi8 \
+            shared-mime-info fonts-dejavu-core fonts-crosextra-carlito
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Abhängigkeiten
+        run: |
+          uv sync
+          uv run playwright install --with-deps chromium
+
+      - name: ruff
+        run: uv run ruff check .
+
+      - name: Django-Prüfungen
+        run: |
+          uv run python manage.py check
+          uv run python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        run: uv run pytest -q
+
+  nur_kern:
+    # Beweist, dass core, faktura und erfassung ohne die weglassbaren Apps
+    # (auswertung) starten und rechnen; siehe
+    # paperwerk/settings/kern.py.
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: paperwerk
+          POSTGRES_PASSWORD: paperwerk
+          POSTGRES_DB: paperwerk
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U paperwerk"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DJANGO_SECRET_KEY: nur-fuer-die-ci
+      DATABASE_URL: postgres://paperwerk:paperwerk@localhost:5432/paperwerk
+      DJANGO_SETTINGS_MODULE: paperwerk.settings.kern
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Systempakete für WeasyPrint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 libffi8 \
+            shared-mime-info fonts-dejavu-core fonts-crosextra-carlito
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Abhängigkeiten
+        run: uv sync
+
+      - name: Django-Prüfungen
+        run: |
+          uv run python manage.py check
+          uv run python manage.py makemigrations --check --dry-run
+
+      - name: Tests (nur Kern)
+        run: uv run pytest -q core faktura erfassung

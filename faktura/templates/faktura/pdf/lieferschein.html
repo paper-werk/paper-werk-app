@@ -1,0 +1,19 @@
+{% extends "faktura/pdf/basis.html" %}
+{% comment %} Lieferschein ohne Preise, weil er der Ware beiliegt und oft
+   an eine andere Stelle geht als die Rechnung (Lager, Baustelle, Empfang).
+   Ohne Block "summen". {% endcomment %}
+
+{% block nummernbezeichnung %}Lieferscheinnummer{% endblock %}
+{% comment %} Das Lieferdatum belegt das Leistungsdatum der späteren
+   Rechnung. {% endcomment %}
+{% block leistungsbezeichnung %}Lieferdatum{% endblock %}
+
+{% comment %} Ohne festen Einleitungstext; verwendet wird der Kopftext des
+   Belegs. Der Prüfhinweis unten bleibt. {% endcomment %}
+
+{% block summen %}{% endblock %}
+
+{% block zahlungshinweis %}
+  <p class="hinweis">Bitte pr&uuml;fen Sie die Lieferung bei Erhalt.
+  Die Berechnung erfolgt getrennt.</p>
+{% endblock %}

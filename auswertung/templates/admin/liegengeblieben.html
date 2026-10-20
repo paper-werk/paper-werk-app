@@ -1,0 +1,159 @@
+{% extends "admin/base_site.html" %}
+{% load faktura_extras unfold %}
+
+{% comment %} Liegenliste: erbrachte Leistung ohne Rechnung.
+
+   Nach Betrag sortiert, mit dem Alter des ältesten Postens und einem Link
+   zur Bearbeitung (auswertung/liegengeblieben.py).
+{% endcomment %}
+
+{% block content %}
+{% include "admin/_eigene_stile.html" %}
+<div>
+
+  <div class="font-semibold mb-2 text-2xl text-font-important-light dark:text-font-important-dark">
+    Nicht abgerechnet
+  </div>
+  <p class="mb-6 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+    Erbrachte Leistung, die auf keiner gültigen Rechnung steht &ndash; und
+    fremde Rechnungen, die keinem Projekt zugeordnet sind.
+  </p>
+
+  {# ---- Kennzahlen ---- #}
+  <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-3">
+    {% component "admin/_kennzahl.html" with titel="Eigene Leistung" icon="pending_actions" %}
+      <div class="pw-kennzahl-wert">{{ summe_eigene|geld }} €</div>
+      <div class="pw-kennzahl-text">Erfasste Stunden und Mengen ohne Beleg.</div>
+    {% endcomponent %}
+
+    {% component "admin/_kennzahl.html" with titel="Zugekaufte Leistung" icon="science" %}
+      <div class="pw-kennzahl-wert">{{ summe_fremde|geld }} €</div>
+      <div class="pw-kennzahl-text">Weiterberechenbar, noch nicht weiterberechnet.</div>
+    {% endcomponent %}
+
+    {% component "admin/_kennzahl.html" with titel="Nicht zugeordnet" icon="report" warnung=summe_nicht_zugeordnet %}
+      <div class="pw-kennzahl-wert{% if summe_nicht_zugeordnet %} pw-rot{% endif %}">{{ summe_nicht_zugeordnet|geld }} €</div>
+      <div class="pw-kennzahl-text">Aus {{ offene_rechnungen|length }} Eingangsrechnung{{ offene_rechnungen|length|pluralize:"en" }},
+        auf keinem Projekt.</div>
+    {% endcomponent %}
+  </div>
+
+  {# ---- Je Projekt ---- #}
+  <div class="mb-8">
+    {% component "unfold/components/card.html" with title="Erbracht und nicht berechnet" %}
+      {% if posten %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Projekt</th>
+                <th class="font-medium pb-2 pr-4 text-left">Kunde</th>
+                <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Eigene Leistung</th>
+                <th class="font-medium pb-2 pr-4 text-right whitespace-nowrap">Zugekauft</th>
+                <th class="font-medium pb-2 pr-4 text-right">Gesamt</th>
+                <th class="font-medium pb-2 pr-4 text-left whitespace-nowrap">Liegt seit</th>
+                <th class="font-medium pb-2 text-left"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in posten %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-3 pr-4">
+                    <a href="{% url 'projektakte' zeile.projekt.pk %}"
+                       class="font-medium text-primary-600 hover:underline dark:text-primary-500">
+                      {{ zeile.projekt.nummer }}
+                    </a>
+                    <div class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+                      {{ zeile.projekt.bezeichnung }}
+                    </div>
+                  </td>
+                  <td class="py-3 pr-4">{{ zeile.projekt.kunde }}</td>
+                  <td class="py-3 pr-4 text-right whitespace-nowrap">{{ zeile.eigene|geld }} €</td>
+                  <td class="py-3 pr-4 text-right whitespace-nowrap">{{ zeile.fremde|geld }} €</td>
+                  <td class="py-3 pr-4 text-right font-semibold whitespace-nowrap text-font-important-light dark:text-font-important-dark">
+                    {{ zeile.gesamt|geld }} €
+                  </td>
+                  {% comment %} Betrag und Alter zusammen ergeben die Priorität. Ab
+                     60 Tagen rot (Liegenposten.ist_alt). {% endcomment %}
+                  <td class="py-3 pr-4 whitespace-nowrap {% if zeile.ist_alt %}font-medium text-red-600 dark:text-red-500{% endif %}">
+                    {% if zeile.seit %}
+                      {{ zeile.seit|date:"d.m.Y" }}
+                      <span class="text-xs">({{ zeile.tage }} Tage)</span>
+                    {% else %}&ndash;{% endif %}
+                  </td>
+                  <td class="py-3 whitespace-nowrap">
+                    <a href="{{ erfassung_url }}?projekt__id__exact={{ zeile.projekt.pk }}"
+                       class="text-primary-600 text-xs hover:underline dark:text-primary-500">
+                      abrechnen &rarr;
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="font-semibold text-font-important-light dark:text-font-important-dark">
+                <th colspan="4" class="pr-4 pt-3 text-right" scope="row">Summe</th>
+                <th class="pt-3 pr-4 text-right whitespace-nowrap">{{ summe_gesamt|geld }} €</th>
+                <th colspan="2"></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Nichts offen &ndash; jede erfasste Leistung steht auf einer Rechnung.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+
+  {# ---- Fremde Rechnungen ohne Zuordnung ---- #}
+  <div>
+    {% component "unfold/components/card.html" with title="Eingangsrechnungen ohne vollständige Zuordnung" %}
+      {% if offene_rechnungen %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Datum</th>
+                <th class="font-medium pb-2 pr-4 text-left">Lieferant</th>
+                <th class="font-medium pb-2 pr-4 text-left">Nummer</th>
+                <th class="font-medium pb-2 pr-4 text-right">Betrag</th>
+                <th class="font-medium pb-2 pr-4 text-right">Zugeordnet</th>
+                <th class="font-medium pb-2 text-right">Rest</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rechnung in offene_rechnungen %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-3 pr-4 whitespace-nowrap">{{ rechnung.datum|date:"d.m.Y" }}</td>
+                  <td class="py-3 pr-4">{{ rechnung.lieferant.name }}</td>
+                  <td class="py-3 pr-4">
+                    <a href="{% url 'admin:erfassung_eingangsrechnung_change' rechnung.pk %}"
+                       class="font-medium text-primary-600 hover:underline dark:text-primary-500">
+                      {{ rechnung.nummer }}
+                    </a>
+                  </td>
+                  <td class="py-3 pr-4 text-right whitespace-nowrap">{{ rechnung.betrag_netto|geld }} €</td>
+                  <td class="py-3 pr-4 text-right whitespace-nowrap">{{ rechnung.zugeordnet|geld }} €</td>
+                  <td class="py-3 text-right font-semibold whitespace-nowrap text-red-600 dark:text-red-500">
+                    {{ rechnung.rest|geld }} €
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Ein negativer Rest heißt: Es wurde mehr verteilt, als der Lieferant
+          fordert &ndash; meist ein Zahlendreher, und genauso zu klären.
+        </p>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Jede erfasste Eingangsrechnung ist vollständig auf Projekte verteilt.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% load faktura_extras %}
+{% include "admin/_eigene_stile.html" %}
+
+{% comment %} Summenzeile unter der Belegliste.
+
+   Summiert die gefilterte Menge, nicht nur die aktuelle Seite, und nur
+   Wertbelege (ohne Lieferscheine).
+
+   Nur mit Recht auf Beträge und nur bei nicht leerer Liste.
+{% endcomment %}
+
+{% if belegsumme %}
+  <div class="bg-base-50 border border-base-200 flex flex-wrap gap-x-8 gap-y-2 items-baseline mt-4 px-4 py-3 rounded-default dark:bg-base-800 dark:border-base-700">
+    <span class="font-medium text-font-important-light text-sm dark:text-font-important-dark">
+      {{ belegsumme.anzahl }} Beleg{{ belegsumme.anzahl|pluralize:"e" }}
+      {% if belegsumme.uebersprungen %}
+        <span class="font-normal text-font-subtle-light dark:text-font-subtle-dark">
+          ({{ belegsumme.uebersprungen }} ohne Wert)
+        </span>
+      {% endif %}
+    </span>
+
+    <span class="grow"></span>
+
+    <span class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+      Netto
+      <span class="font-medium ml-1 text-font-important-light dark:text-font-important-dark"
+            style="font-variant-numeric: tabular-nums">
+        {{ belegsumme.netto|geld }} €
+      </span>
+    </span>
+
+    <span class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+      Steuer
+      <span class="font-medium ml-1 text-font-important-light dark:text-font-important-dark"
+            style="font-variant-numeric: tabular-nums">
+        {{ belegsumme.steuer|geld }} €
+      </span>
+    </span>
+
+    <span class="text-sm">
+      <span class="text-font-subtle-light dark:text-font-subtle-dark">Brutto</span>
+      <span class="font-semibold ml-1 text-font-important-light dark:text-font-important-dark"
+            style="font-variant-numeric: tabular-nums">
+        {{ belegsumme.brutto|geld }} €
+      </span>
+    </span>
+  </div>
+{% endif %}

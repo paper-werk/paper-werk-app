@@ -1,0 +1,38 @@
+{% comment %}
+Die Felder einer Zusatzzeile, eingebunden aus ``paperwerk_zusatzzeile.html``.
+``teil`` wählt aus ``felder``: "alle", "links" (die in
+``zweite_zeile_links`` am Inline: Zuschlag und Langtext) oder "rest" (alle
+übrigen, der Leistungszeitraum).
+{% endcomment %}
+{% load faktura_extras %}
+{% with links=inline_admin_formset.opts.zweite_zeile_links|default:"" %}
+{% for fieldset in inline_admin_form %}
+    {% for line in fieldset %}
+        {% for field in line %}
+            {% if field.field.name in felder %}
+            {% if teil == "alle" or teil == "links" and field.field.name in links or teil == "rest" and field.field.name not in links %}
+                {% if not field.is_readonly or field|hat_lesewert %}
+                    <div class="zusatzzeile-feld {{ art }}-zeile-feld field-{{ field.field.name }}{% if field.field.errors|length > 0 %} errors{% endif %}">
+                        <span class="pw-zusatzbeschriftung">{{ field.field.label|capfirst|ohne_bt }}{% with bt=field.field.label|nur_bt %}{% if bt %} <span class="pw-bt-neben">{{ bt }}</span>{% endif %}{% endwith %}</span>
+
+                        {% if field.is_readonly %}
+                            {% include "unfold/helpers/field_readonly_value.html" %}
+                        {% else %}
+                            {{ field.field }}
+
+                            {% if field.field.errors|length > 0 %}
+                                <div class="mt-2 text-red-600 text-xs dark:text-red-500">
+                                    {% for error in field.field.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
+{% endwith %}

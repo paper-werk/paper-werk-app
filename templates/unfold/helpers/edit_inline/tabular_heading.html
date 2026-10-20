@@ -1,0 +1,45 @@
+{% comment %}
+Unfolds Template (django-unfold 0.104.1) mit zwei Änderungen, beide mit
+"PAPER-WERK" markiert:
+
+1. Felder, die ``tabular_group.html`` in die erste oder zweite Zeile
+   verschiebt, erhalten keine Spaltenüberschrift, weil die Überschriften
+   sonst gegenüber den Zellen um eine Spalte verschoben wären.
+2. Die BT-Nummer steht klein unter dem Label, das Pflichtsternchen direkt
+   dahinter, auch an Spalten, die erst ``clean()`` verlangt
+   (``pflichtspalten`` am Inline). Die Köpfe umbrechen nur an der BT-Nummer
+   (``whitespace-nowrap``); "Einzelpreis netto (BT-146)" in einer Zeile
+   machte die Tabelle bei 1366 px Fensterbreite zu breit.
+
+Begründung des Orts und Hinweis zur Pflege in tabular_group.html.
+{% endcomment %}
+{% load i18n faktura_extras %}
+
+<thead class="hidden relative lg:table-header-group">
+    <tr>
+        {% for field in inline_admin_formset.fields %}
+            {# PAPER-WERK (1): hier field.name statt field.field.name; fields liefert Wörterbücher. #}
+            {% if field.name not in inline_admin_formset.opts.zweite_zeile_felder|default:"" and field.name not in inline_admin_formset.opts.erste_zeile_felder|default:"" %}
+                {% if not field.widget.is_hidden %}
+                    <th class="column-{{ field.name }}{% if field.required %} required{% endif %} align-middle border-b border-base-200 dark:border-base-800 font-semibold px-1.5 first:pl-3 last:pr-3 py-2 text-left text-font-important-light text-sm whitespace-nowrap dark:text-font-important-dark {% if inline_admin_formset.opts.ordering_field and field.name == inline_admin_formset.opts.ordering_field and inline_admin_formset.opts.hide_ordering_field %}hidden{% endif %}">
+                        <span class="flex flex-row items-center">
+                            {# PAPER-WERK (2): Sternchen direkt hinter der Beschriftung, BT-Nummer als zweite Zeile darunter. #}
+                            <span>
+                                {{ field.label|capfirst|ohne_bt }}{% if field.required or field.name in inline_admin_formset.opts.pflichtspalten|default:"" %}<span class="text-red-600 dark:text-red-500">*</span>{% endif %}{% with bt=field.label|nur_bt %}{% if bt %}<span class="pw-bt">{{ bt }}</span>{% endif %}{% endwith %}
+                            </span>
+
+                            {% if field.help_text %}
+                                <span class="cursor-help material-symbols-outlined ml-2 text-icon" title="{{ field.help_text|striptags }}">help</span>
+                            {% endif %}
+                        </span>
+                    </th>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% if inline_admin_formset.formset.can_delete and inline_admin_formset.has_delete_permission %}
+            <th class="align-middle border-b border-base-200 dark:border-base-800 font-semibold px-3 py-2 text-left text-font-important-light text-sm whitespace-nowrap lg:w-px dark:text-font-important-dark">
+            </th>
+        {% endif %}
+    </tr>
+</thead>

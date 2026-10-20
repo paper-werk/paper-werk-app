@@ -1,0 +1,30 @@
+{% extends 'unfold/layouts/unauthenticated.html' %}
+{% comment %}
+Ersetzt die Fehlerseite von allauth (englisch, ohne Styling, ohne Link
+zurück). Erscheint, wenn der Callback vom Anbieter scheitert: keine Antwort
+beim Token-Austausch, abgelaufener Anmeldevorgang, ungültiger state. Liegt
+in DIRS und hat damit Vorrang vor dem Template aus allauth.
+{% endcomment %}
+
+{% block title %}Anmeldung fehlgeschlagen | {{ marke }}{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/unauthenticated_title.html" with title='Anmeldung hat nicht geklappt' subtitle=marke %}
+
+    <div class="flex flex-col gap-4 text-sm">
+        <p>
+            Die Anmeldung über {{ sso_anmeldung.name|default:'den Anbieter' }}
+            konnte nicht abgeschlossen werden. Meist hilft es, es einfach noch
+            einmal zu versuchen.
+        </p>
+        <p>
+            Klappt es wiederholt nicht, ist {{ sso_anmeldung.name|default:'der Anbieter' }}
+            vielleicht gerade nicht erreichbar. Dann melden Sie sich mit
+            Benutzername und Passwort an, sofern Sie eines haben &ndash; sonst hilft
+            die Person, die {{ marke }} bei Ihnen betreut.
+        </p>
+        <p>
+            <a href="{% url 'admin:login' %}" class="text-primary-600 dark:text-primary-500 underline">Zurück zur Anmeldung</a>
+        </p>
+    </div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "faktura/pdf/basis.html" %}
+{% comment %} Stornorechnung: hebt die ursprüngliche Rechnung vollständig
+   auf. Bei der Rechnungskorrektur bleibt die Rechnung bestehen, und nur das
+   Entgelt wird gemindert. {% endcomment %}
+
+{% block nummernbezeichnung %}Rechnungsnummer{% endblock %}
+{% block gesamtbezeichnung %}Stornobetrag{% endblock %}
+
+{% block einleitung %}
+  <p>
+    hiermit stornieren wir
+    {% if beleg.vorgaenger %}unsere Rechnung <strong>{{ beleg.vorgaenger.nummer }}</strong>
+      vom {{ beleg.vorgaenger.belegdatum|date:"d.m.Y" }}{% else %}die nachstehende Leistung{% endif %}
+    vollst&auml;ndig. Die stornierte Rechnung ist damit gegenstandslos.
+  </p>
+  {% if beleg.kopftext %}<p>{{ beleg.kopftext|linebreaksbr }}</p>{% endif %}
+{% endblock %}
+
+{% block zahlungshinweis %}
+  <div class="zahlung">
+    <table>
+      <tr><th>Hinweis</th>
+          <td>Ein bereits gezahlter Betrag wird Ihnen erstattet.</td></tr>
+    </table>
+  </div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% comment %} Das Anschriftfeld nach DIN 5008.
+
+   Erwartet den Text als ``anschrift``: beim Beleg das kopierte
+   Empfängerfeld, beim Leistungsnachweis das Anschriftfeld des Kunden. Jede
+   Zeile des Texts ergibt eine Zeile im Feld. {% endcomment %}
+<section id="anschriftfeld">
+  <div class="ruecksendeangabe">{{ firma.anschrift_einzeilig|default:"" }}</div>
+  <div class="anschrift">{{ anschrift|linebreaksbr }}</div>
+</section>

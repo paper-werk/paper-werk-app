@@ -1,0 +1,224 @@
+[project]
+name = "paper-werk-app"
+version = "0.2.0"
+description = "paper-werk: Angebote, Auftraege, Rechnungen - Django 6.1 / uv / PostgreSQL"
+license = "AGPL-3.0-or-later"
+authors = [
+    { name = "Horst Amper / KI-Werkstatt" },
+]
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.1,<7",
+    "djangorestframework>=3.18",
+    "django-filter>=26.1",
+    "psycopg[binary]>=3.3",
+    "django-environ>=0.12",
+    "django-sequences>=3.0",
+    "weasyprint>=69.0",
+    "drafthorse>=2025.2.0",
+    # Holt das eingebettete XML aus einem ZUGFeRD-PDF (erfassung/erechnung.py).
+    #
+    # Ausdrücklich aufgeführt, obwohl drafthorse es ohnehin verlangt und
+    # damit installiert: Wer eine Bibliothek direkt importiert, nennt sie
+    # auch. Sonst hängt der Import an einer Entscheidung, die drafthorse
+    # jederzeit anders treffen darf, und das Einlesen fiele bei einem
+    # Update von drafthorse aus.
+    "pypdf>=6.16.0",
+    "pillow>=12.3.0",
+    "drf-spectacular[sidecar]>=0.30.0",
+    # Liefert die statischen Dateien im Betrieb aus und schreibt
+    # Prüfsummen in die Dateinamen; siehe paperwerk/settings/prod.py.
+    "whitenoise[brotli]>=6.9",
+    "gunicorn>=23.0",
+    # HTTP-Client für die Paperless-Schnittstelle (faktura/archiv.py).
+    #
+    # Eine Abhängigkeit mehr, und zwar mit Bedacht: Der Upload ist ein
+    # multipart/form-data mit Datei und Feldern. Mit urllib wäre der
+    # Nachrichtenrumpf von Hand zu bauen: Grenzmarken, Kopfzeilen,
+    # Kodierung der Umlaute in den Feldnamen. Das ist genau die Sorte Code,
+    # die zu 95 Prozent funktioniert und beim ersten Dateinamen mit
+    # Sonderzeichen auffällt.
+    "requests>=2.32",
+    "django-unfold>=0.104.1",
+    "django-import-export[xlsx]>=4.4.1",
+    # Die Anmeldung über Microsoft (core/anmeldung.py). Nur der generische
+    # OIDC-Weg wird benutzt, siehe dort.
+    "django-allauth[socialaccount]>=65.16",
+    # Liest das Ablaufdatum des HTTPS-Zertifikats (core/zertifikat.py).
+    # Kommt über allauth ohnehin mit; hier genannt, weil direkt importiert -
+    # sonst hängt die Prüfung an einer Entscheidung von allauth.
+    "cryptography>=45",
+    # Die Änderungsgeschichte der erfassten Zeiten und Fremdleistungen
+    # (GoBD): wer hat wann was geändert, alter und neuer
+    # Stand. Eigenbau wäre eine Kopie je Modell plus Signale, also genau das,
+    # was diese Bibliothek seit Jahren tut; Unfold bringt die Masken mit.
+    "django-simple-history>=3.13.0",
+    # Rendert die Bedienungsanleitung (hilfe/texte/*.md) für /hilfe/ und das
+    # PDF. Erweiterungen toc, attr_list, tables gehören zum Paket.
+    "markdown>=3.8",
+]
+
+[dependency-groups]
+dev = [
+    "django-debug-toolbar>=7.1",
+    "ruff>=0.14",
+    "pytest>=8.4",
+    "pytest-django>=4.11",
+    "model-bakery>=1.20",
+    "django-stubs>=6.1.0",
+    "playwright>=1.62.0",
+    "pytest-playwright>=0.9.0",
+    # Die Eigenschaftsprüfungen der Rechenkerne (test_recheneigenschaften.py).
+    #
+    # Sie würfelt Werte über den ganzen Bereich und prüft eine Regel statt
+    # eines Beispiels: "netto plus Steuer ergibt brutto" gilt für jeden
+    # Betrag, nicht nur für die drei, an die jemand beim Schreiben gedacht
+    # hat. Findet einen Fehler, schrumpft sie ihn auf das kleinste
+    # Gegenbeispiel, und das lässt sich einem Kunden zeigen.
+    #
+    # Nur für die reine Rechnung, nicht für Abfragen: Hypothesis führt je
+    # Regel hunderte Beispiele aus, und eine Datenbanktransaktion je Beispiel
+    # wäre weder schnell noch verlässlich. Die Abgleiche gegen die Datenbank
+    # stehen in test_rechenabgleich.py als gewöhnliche Tests.
+    "hypothesis>=6.168.0",
+    # Die Abdeckungsmessung der Rechenmodule, siehe [tool.coverage.run].
+    #
+    # Nur dort und nicht über das ganze Projekt: Ein Gesamtwert wird von
+    # Admin-Masken und Vorlagencode verwässert und sagt über die Rechnung
+    # nichts. Gemessen wird, was zur Behauptung "alle Berechnungen sind
+    # geprüft" gehört; alles andere wäre eine Zahl für den Bericht.
+    "pytest-cov>=7.1.0",
+]
+
+# Kein [build-system]: uv behandelt das Projekt damit als "virtuelles Projekt".
+# Die Anwendung wird nicht als Paket installiert, nur ihre Abhängigkeiten.
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ", "C4", "DTZ", "PIE"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "paperwerk.settings.dev"
+python_files = ["test_*.py", "tests.py"]
+# Alle Tests liegen in Paketen, keine Testdatei im Wurzelverzeichnis, deren
+# Mischung mit Paketpfaden conftest.py-Dateien verschluckte.
+testpaths = ["core", "faktura", "erfassung", "auswertung", "hilfe", "tests"]
+# Genau EINE Warnung ausgeblendet, eng gefasst auf Meldung und Herkunft.
+#
+# django-unfold überschreibt get_action_choices() noch mit der Signatur von
+# vor Django 6.1 (ohne action_location). Django warnt davor für jede
+# Admin-Klasse, im Gesamtlauf über 200 Mal. Der Fehler liegt in Unfold:
+# Auch 0.108.0 hat die alte Signatur (nachgesehen im Quelltext).
+# Wirksam wird die Änderung erst mit Django 7.0.
+#
+# Ausgeblendet, weil 200 gleiche Zeilen eine Warnung verdecken, die etwas
+# bedeutet. WIEDER HERAUSNEHMEN, sobald Unfold die Signatur
+# nachzieht (bei jedem Unfold-Update prüfen: diese Zeile löschen, Testlauf,
+# kommt die Warnung nicht mehr, bleibt sie weg).
+filterwarnings = [
+    "ignore:Overriding get_action_choices\\(\\) without the 'action_location' parameter is deprecated:django.utils.deprecation.RemovedInDjango70Warning",
+]
+
+# Die Abdeckungsmessung der Rechenmodule.
+#
+# **Nur die Dateien, in denen gerechnet wird**, und das ist eine Aussage und
+# keine Bequemlichkeit: Die Behauptung, die dieses Projekt gegenüber einem
+# Kunden vertreten muss, lautet "alle Berechnungen sind geprüft", nicht
+# "das Projekt ist zu 74 Prozent getestet". Ein Gesamtwert über Admin-Masken
+# und Vorlagencode wäre eine Zahl für den Bericht; diese hier ist ein Beleg.
+#
+# Gemessen wird mit:
+#
+#     pytest --cov -q
+#
+# Die Liste folgt docs/rechenregister.md: Jede Datei, in der eine
+# Registerzeile ihren Fundort hat, steht hier. Kommt eine dazu, gehört sie
+# in beide.
+[tool.coverage.run]
+# ``include`` und nicht ``source``: Letzteres nimmt Pakete und
+# Verzeichnisse, hier sind es einzelne Dateien aus fünf Paketen.
+include = [
+    "core/rechnen.py",
+    "faktura/services/*.py",
+    "faktura/formate.py",
+    "faktura/facturx.py",
+    "erfassung/services/*.py",
+    "erfassung/erechnung.py",
+    "auswertung/ergebnisse.py",
+    "auswertung/darstellung.py",
+    "auswertung/controlling.py",
+    "auswertung/auftragsakte.py",
+    "auswertung/projektakte.py",
+    "auswertung/dashboard.py",
+    "auswertung/controllingseite.py",
+    "auswertung/liegengeblieben.py",
+]
+
+[tool.coverage.report]
+# Zeilen, die keine Rechnung tragen und eine Messung nur verfälschen.
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "def __repr__",
+]
+# Zeigt die nicht getroffenen Zeilen; ohne sie sagt ein Prozentwert nur,
+# DASS etwas fehlt, und nicht was.
+show_missing = true
+skip_covered = true
+
+# Die Mindestschwelle.
+#
+# **Gemessen: 96 Prozent.** Die Schwelle liegt eine Stufe
+# darunter, damit ein einzelner Randzweig den Lauf nicht rot färbt, aber
+# nah genug, dass ein Abrutschen auffällt. Sie ist kein Ziel, sondern eine
+# Untergrenze: Wer eine Rechenfunktion hinzufügt, ohne sie zu prüfen,
+# sieht es hier.
+#
+# **Was die fehlenden vier Prozent sind**, nachgesehen am selben Tag: der
+# grösste Block ist ``projekt_aufloesen`` (faktura/services.py 379-429) -
+# Texterkennung, keine Rechnung, und deshalb steht sie auch in keiner Zeile
+# des Rechenregisters. Der Rest sind Fehlerpfade und einzelne Zweige.
+#
+# **Gilt für den Gesamtlauf.** Wer eine einzelne Datei mit ``--cov`` misst,
+# bekommt zwangsläufig weniger und einen roten Lauf dazu; das ist kein
+# Befund, sondern die Folge der Auswahl.
+fail_under = 95
+
+# Pyright ist die Prüfengine hinter Pylance in VS Code. Diese Datei liest sie
+# mit; die Einstellungen gelten also in der Entwicklungsumgebung genauso wie
+# beim Aufruf von der Kommandozeile.
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+exclude = ["**/migrations", "**/__pycache__", ".venv"]
+
+# Zwei Regeln sind bei Django systematisch im Unrecht, weil sie Dinge
+# bemängeln, die es
+# zur Prüfzeit gar nicht geben kann. Wer solche Meldungen stehen lässt,
+# gewöhnt sich an, Warnungen zu übersehen; das ist der eigentliche Schaden.
+#
+# 1) "class Meta" wird von Djangos Metaklasse beim Klassenaufbau ausgewertet
+#    und danach von der Klasse entfernt. Zur Laufzeit gibt es kein Attribut,
+#    das etwas überschreiben könnte; hasattr(Angebot, 'Meta') ist False.
+#    Pyright sieht dagegen zwei gleichnamige, nicht verwandte innere Klassen.
+#    Betrifft jedes Modell mit eigener Meta-Klasse, besonders Proxy-Modelle.
+reportIncompatibleVariableOverride = "none"
+
+# 2) Django erzeugt einen Teil seiner Attribute erst zur Laufzeit:
+#    Rückbeziehungen aus related_name (beleg.positionen), die impliziten
+#    Fremdschlüsselspalten (position.beleg_id) und get_FOO_display() zu jedem
+#    Feld mit choices. Auflösen ließe sich das nur mit dem mypy-Plugin von
+#    django-stubs; Pylance verwendet mypy aber nicht.
+#
+#    Nachgemessen: django-stubs senkt die Zahl der Meldungen von 33 auf 4,
+#    die Alternative django-types verschlechtert sie auf 43. Ein Rest bleibt
+#    in jedem Fall.
+#
+#    Die wirklich gefährlichen Fälle, ein Name, den es nirgends gibt,
+#    fängt ruff mit F821 zuverlässig ab. Genau so wurde in diesem Projekt
+#    ein vergessener Import bemerkt, den "manage.py check" durchgehen liess.
+reportAttributeAccessIssue = "none"

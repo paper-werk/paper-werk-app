@@ -1,0 +1,561 @@
+/* Belegvorlage; Geschäftsbrief nach DIN 5008 (Form B).
+ *
+ * Alle Maße in Millimetern, weil die Norm sie in Millimetern angibt und
+ * das Anschriftfeld zum Fenster des Umschlags passen muss.
+ *
+ * Maße nach Norm:
+ *
+ *   Anschriftfeld beginnt 45 mm von oben       (Form B, für Fensterumschlag)
+ *   Anschriftfeld ist 85 mm breit, 45 mm hoch  (DIN 5008)
+ *   linker Rand 25 mm, rechter Rand 20 mm      (DIN 5008)
+ *   Falzmarken bei 87 mm und 192 mm            (DIN 5008)
+ *   Lochmarke bei 148,5 mm                     (halbe Blatthöhe)
+ *
+ * Bei Änderungen am Layout VORLAGENVERSION in faktura/pdf.py
+ * inkrementieren, damit Abweichungen alter Belege nachvollziehbar sind.
+ */
+
+@page {
+    size: A4;
+    margin: 45mm 20mm 30mm 25mm;
+
+    /* Kopf und Fuß auf jeder Seite über "position: running()", das den
+     * Block aus dem Textfluss in diesen Seitenbereich setzt. */
+    @top-left {
+        content: element(briefkopf);
+        /* Oben ausgerichtet: Logo im oberen Drittel des Kopfbereichs von
+         * 45 mm, mit Abstand zum Anschriftfeld, wie auf dem Briefpapier.
+         * Der Abstand zur Blattkante steht als padding-top an #briefkopf. */
+        vertical-align: top;
+    }
+    @bottom-left {
+        content: element(fusszeile);
+        vertical-align: top;
+    }
+    @bottom-right {
+        content: "Seite " counter(page) " von " counter(pages);
+        font-size: 7pt;
+        color: #555;
+        vertical-align: top;
+        padding-top: 2mm;
+    }
+}
+
+/* Die beiden unteren Randbereiche teilen die Breite, weil ein laufendes
+ * Element über den ganzen Satzspiegel die Seitenzahl überlagert.
+ * Regression: "Seite 1 von 1" stand in den Pflichtangaben. */
+
+/* Auf der ersten Seite der volle Briefkopf, auf Folgeseiten eine
+ * schmale Zeile. */
+@page :first {
+    margin-top: 45mm;
+}
+
+html {
+    font-family: "Carlito", "Calibri", "DejaVu Sans", sans-serif;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #111;
+}
+
+body {
+    margin: 0;
+}
+
+/* Langtext in eigener Zeile unter der Position, von der Bezeichnung bis
+ * zum Gesamtpreis (v9).
+ *
+ * Kleiner und grauer als die Bezeichnung, damit die Positionszeile
+ * hervortritt. "orphans/widows" halten mindestens zwei Zeilen zusammen.
+ *
+ * "break-before: avoid" hält die erste Zeile des Langtexts bei seiner
+ * Position; "break-inside: auto" erlaubt den Seitenumbruch in einem langen
+ * Langtext, damit er nicht samt Position auf die nächste Seite wandert.
+ * Die Positionszeile darüber hat dafür keinen Abstand nach unten. */
+table.positionen tr.langtextzeile {
+    break-before: avoid;
+    break-inside: auto;
+}
+
+/* Vermerk unter der Bezeichnung einer optionalen Position, klein wie der
+ * Langtext und kursiv, weil er die Position kennzeichnet. */
+table.positionen td.bezeichnung .optional {
+    color: #333;
+    font-size: 8.5pt;
+    font-style: italic;
+}
+
+/* Zeilenarten (v10). Titel fett, ohne Linie zu den Unterpositionen, ohne
+ * Seitenumbruch vor der ersten Position. Rechenweg des Zuschlags klein wie
+ * der Vermerk "optional", aber aufrecht. Titelsumme fett mit Linie
+ * darüber. */
+table.positionen tr.titelzeile td {
+    font-weight: bold;
+    padding-top: 2.5mm;
+    break-after: avoid;
+}
+
+table.positionen td.text {
+    line-height: 1.35;
+    orphans: 2;
+    widows: 2;
+}
+
+table.positionen td.bezeichnung .rechenweg {
+    color: #333;
+    font-size: 8.5pt;
+}
+
+table.positionen tr.titelsumme td {
+    font-weight: bold;
+    border-top: 0.3pt solid #555;
+}
+
+table.positionen tr.mit-langtext td {
+    border-bottom: none;
+    padding-bottom: 0.3mm;
+}
+
+table.positionen tr.langtextzeile td {
+    padding-top: 0;
+}
+
+table.positionen td.langtext {
+    color: #333;
+    font-size: 8.5pt;
+    line-height: 1.35;
+    orphans: 2;
+    widows: 2;
+}
+
+/* ---------------------------------------------------------------- Kopf */
+
+/* Logo links oben, wie auf dem Briefpapier:
+ *
+ *   - 5 mm in den linken Rand hineingerückt (20 mm ab Blattkante statt
+ *     25 mm am Satzspiegel); deshalb margin-left: -5mm.
+ *   - 15 mm unter der Blattkante beginnend, mit Luft zum Anschriftfeld
+ *     bei 45 mm; deshalb padding-top: 15mm zusammen mit
+ *     "vertical-align: top" am @top-left-Randbereich.
+ *
+ * Rechts oben steht der Infoblock mit Nummer und Datum. */
+#briefkopf {
+    position: running(briefkopf);
+    width: 165mm;
+    text-align: left;
+    /* margin-left: -5mm; */
+    padding-top: 15mm;
+}
+
+/* Maße nach Briefpapier: Wortmarke rund 55 mm breit und 12,5 mm hoch.
+ * Die Höhe darf für ein eher quadratisches Logo etwas größer sein. */
+#briefkopf .logo {
+    max-height: 20mm;
+    max-width: 60mm;
+}
+
+#briefkopf .firmenname {
+    font-size: 14pt;
+    font-weight: bold;
+    letter-spacing: 0.5pt;
+}
+
+/* --------------------------------------------------------------- Fuß */
+
+#fusszeile {
+    position: running(fusszeile);
+    width: 143mm;    /* Rest des Satzspiegels bleibt der Seitenzahl */
+    display: flex;
+    gap: 4mm;
+    border-top: 0.3mm solid #999;
+    padding-top: 1.5mm;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    color: #444;
+}
+
+#fusszeile .spalte {
+    flex: 1;
+}
+
+/* ------------------------------------------------- Anschrift und Infos */
+
+/* Anschriftfeld absolut positioniert, weil es unabhängig vom Textfluss an
+ * fester Stelle steht; Werte bezogen auf die Blattkante. */
+#anschriftfeld {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 85mm;
+    height: 45mm;
+}
+
+#anschriftfeld .ruecksendeangabe {
+    font-size: 7.5pt;
+    color: #555;
+    border-bottom: 0.2mm solid #999;
+    padding-bottom: 0.5mm;
+    margin-bottom: 2mm;
+    /* Rücksendeangabe in genau einer Zeile. */
+    white-space: nowrap;
+    overflow: hidden;
+    width: 60mm;          /* nur die Linie wird kürzer */
+}
+
+#anschriftfeld .anschrift {
+    font-size: 10pt;
+    line-height: 1.35;
+}
+
+#infoblock {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60mm;
+    font-size: 8.5pt;
+}
+
+#infoblock table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#infoblock th {
+    text-align: left;
+    font-weight: normal;
+    color: #555;
+    padding: 0.3mm 2mm 0.3mm 0;
+    white-space: nowrap;
+}
+
+#infoblock td {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* -------------------------------------------------------------- Inhalt */
+
+main {
+    /* DIN 5008: Betreffzeile bei 98,46 mm ab Blattoberkante. Der
+     * Satzspiegel beginnt bei 45 mm, also 53,5 mm Abstand für das 45 mm
+     * hohe Anschriftfeld und den Abstand darunter. */
+    padding-top: 53.5mm;
+}
+
+h1 {
+    font-size: 13pt;
+    margin: 0 0 1mm 0;
+}
+
+.betreff {
+    font-weight: bold;
+    margin: 0 0 5mm 0;
+}
+
+p {
+    margin: 0 0 3mm 0;
+}
+
+.gruss {
+    margin-top: 6mm;
+}
+
+.hinweis {
+    font-size: 9pt;
+    color: #333;
+    margin-top: 3mm;
+}
+
+/* ---------------------------------------------------------- Positionen */
+
+table.positionen {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 4mm 0;
+    font-size: 9.5pt;
+}
+
+table.positionen thead {
+    /* Wiederholt die Kopfzeile bei Seitenumbruch der Tabelle. */
+    display: table-header-group;
+}
+
+table.positionen th {
+    border-bottom: 0.4mm solid #333;
+    padding: 1mm 1.2mm;
+    text-align: left;
+    font-size: 9pt;
+}
+
+table.positionen td {
+    border-bottom: 0.2mm solid #ddd;
+    padding: 1.2mm 1.2mm;
+    vertical-align: top;
+}
+
+table.positionen tr {
+    /* Kein Seitenumbruch innerhalb einer Position. */
+    break-inside: avoid;
+}
+
+/* ==================================================== Spaltenbreiten
+ *
+ * Die Breiten der Positionstabelle stehen hier; das Template
+ * (templates/faktura/pdf/basis.html) setzt nur die Klassen. Das Stylesheet
+ * gelangt über den BelegUrlFetcher in pdf.py ins PDF, der /static/ über
+ * Djangos finders auflöst.
+ *
+ * Die Bezeichnung erhält die restliche Breite, weil sie als einzige Spalte
+ * Inhalt unbekannter Länge hat. Jede andere Spalte ist auf ihren breitesten
+ * zulässigen Wert bemessen.
+ *
+ * Satzspiegel 165 mm (A4 minus 25 mm links und 20 mm rechts):
+ *
+ *   Pos 8,0 + Menge 16,5 + Einheit 11,8 + Preis 18,0
+ *           + USt 9,3 + Gesamt 20,7 = 84,3 mm
+ *   bleiben 80,7 mm für die Bezeichnung.
+ *
+ * ---------------------------------------------------------------------
+ * Voraussetzungen für diese Werte:
+ *
+ * 1. `box-sizing: border-box`, weil `width` sonst die Breite des Inhalts
+ *    ist und das Padding hinzukommt (8 mm würden 10,4 mm, bei sechs Spalten
+ *    14,4 mm weniger für die Bezeichnung).
+ * 2. `table-layout: fixed`, weil bei "auto" die Breiten nur Vorschläge
+ *    sind und die Tabelle der Bezeichnung Breite für andere Spalten
+ *    abzieht.
+ *
+ * ---------------------------------------------------------------------
+ * Grundlage: festgelegte Grenzwerte, Mindestbreiten am Layout-Baum von
+ * WeasyPrint gemessen (jeweils einschließlich 2,4 mm Padding):
+ *
+ *   Spalte    Minimum   bestimmt durch
+ *   Pos.        7,9mm   die Überschrift "Pos.", nicht die Nummer
+ *   Menge      16,0mm   1.234.567
+ *   Einheit    11,6mm   die Überschrift "Einheit", nicht "nnmm" (9 mm)
+ *   Preis      17,7mm   die Überschrift "Einzelpreis", nicht 999.999,99
+ *   USt.        9,0mm   "19 %"; mehr Sätze als 19, 7 und 0 gibt es nicht
+ *   Gesamt     20,2mm   1.481.480,40 (Menge am Grenzwert mal kleiner Preis)
+ *
+ * Bei drei von sechs Spalten ist die Überschrift breiter als jeder
+ * mögliche Inhalt; weitere Breite lässt sich dort gewinnen.
+ *
+ * Verworfen: Menge und Einheit in einer Spalte (wenig Platzgewinn,
+ * schlechter lesbar). */
+
+table.positionen {
+    table-layout: fixed;
+}
+
+table.positionen th,
+table.positionen td {
+    box-sizing: border-box;
+}
+
+/* Zahlen ohne Umbruch, weil ein umbrochener Betrag falsch gelesen
+ * werden kann.
+ *
+ * Mit nowrap ist die Mindestbreite die Breite des ganzen Texts. Regression:
+ * Ohne nowrap galt das längste nicht umbrechbare Stück als Minimum; "19 %"
+ * enthält ein Leerzeichen, gemessen wurde "USt.", und die Spalte war zu
+ * schmal. */
+table.positionen .menge,
+table.positionen .preis,
+table.positionen .steuer,
+table.positionen .summe { white-space: nowrap; }
+
+.pos      { width: 8.0mm; }
+.menge    { width: 16.5mm; text-align: right; }
+.einheit  { width: 11.8mm; }
+.preis    { width: 18.0mm; text-align: right; }
+.steuer   { width: 9.3mm;  text-align: right; }
+.summe    { width: 20.7mm; text-align: right; }
+
+/* Aufstellung der Mahnung mit drei Spalten.
+ *
+ * Ohne diese Regel wäre sie 101 mm breit, weil "table-layout: fixed" die
+ * Breiten je Klasse wörtlich nimmt. Die Bezeichnung erhält mit "auto" die
+ * restliche Breite neben "Pos." (Breite aus pdf.pos_breite) und Betrag. */
+table.mahnaufstellung .bezeichnung { width: auto; }
+
+/* Währung unter der Spaltenüberschrift, kleiner und grau als Einheit
+ * der Spalte. */
+th .waehrung {
+    display: block;
+    font-size: 7.5pt;
+    font-weight: normal;
+    color: #555;
+}
+
+/* Bei zweizeiliger Kopfzeile alle Überschriften oben, damit "Pos." auf
+ * Höhe von "Einzelpreis" steht; die Tabelle zentrierte sie sonst. */
+table.positionen th { vertical-align: top; }
+
+/* Überschriften rechtsbündig wie die Zahlen darunter.
+ *
+ * Mit eigenem Selektor, weil "table.positionen th { text-align: left }"
+ * weiter oben spezifischer ist als eine Klasse wie ".menge". */
+table.positionen th.menge,
+table.positionen th.preis,
+table.positionen th.steuer,
+table.positionen th.summe,
+table.positionen td.menge,
+table.positionen td.preis,
+table.positionen td.steuer,
+table.positionen td.summe { text-align: right; }
+
+/* ------------------------------------------------------------- Summen */
+
+table.summen {
+    margin-left: auto;
+    border-collapse: collapse;
+    font-size: 10pt;
+    break-inside: avoid;
+}
+
+table.summen th {
+    text-align: left;
+    font-weight: normal;
+    padding: 0.8mm 4mm 0.8mm 0;
+}
+
+table.summen td {
+    text-align: right;
+    padding: 0.8mm 0;
+    white-space: nowrap;
+}
+
+table.summen tr.gesamt th,
+table.summen tr.gesamt td {
+    font-weight: bold;
+    border-top: 0.4mm solid #333;
+    border-bottom: 0.8mm double #333;
+    padding-top: 1.2mm;
+}
+
+/* ------------------------------------------------------- Zahlungsblock */
+
+.zahlung {
+    margin-top: 5mm;
+    /* Abstand nach unten wie zwischen zwei Absätzen, damit ein folgender
+     * Fußtext Abstand zum grauen Kasten hat. */
+    margin-bottom: 3mm;
+    padding: 2.5mm 3mm;
+    background: #f4f4f4;
+    break-inside: avoid;
+}
+
+.zahlung table {
+    border-collapse: collapse;
+    font-size: 9.5pt;
+}
+
+.zahlung th {
+    text-align: left;
+    font-weight: normal;
+    color: #444;
+    padding-right: 4mm;
+}
+
+/* --------------------------------------------------------- Mahnungen */
+
+.mahnstufe {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #a00;
+}
+
+/* -------------------------------------------------------- Wasserzeichen */
+
+.wasserzeichen {
+    position: fixed;
+    top: 105mm;
+    left: 12mm;
+    font-size: 72pt;
+    font-weight: bold;
+    color: rgba(200, 0, 0, 0.09);
+    transform: rotate(-30deg);
+    letter-spacing: 6pt;
+    z-index: -1;
+}
+
+/* ================================================================
+ * Bildschirmvorschau
+ *
+ * Dasselbe Template im Browser. Ohne diesen Block erscheint es verschoben,
+ * weil der Browser Druck-CSS nur teilweise umsetzt:
+ *
+ *   - Die Seitenränder stehen in @page. Der Browser kennt @page nur beim
+ *     Drucken, sonst läuft der Text bis an den Fensterrand.
+ *   - Anschriftfeld und Infoblock sind absolut zur *Seite* positioniert.
+ *     Im Browser fehlt dieser Bezugsrahmen, also hängen sie am Fenster.
+ *   - Briefkopf und Fußzeile sind über position: running() aus dem
+ *     Textfluss genommen. Der Browser kennt das nicht und setzt sie
+ *     dorthin, wo sie im HTML stehen; also mitten in den Brief.
+ *
+ * Deshalb wird ein A4-Blatt nachgebildet. Nur Vorschau: mehrseitige Belege
+ * als ein langes Blatt, ohne Seitenzahlen; maßgeblich ist das PDF.
+ * ================================================================ */
+
+@media screen {
+    html {
+        background: #d8d8d8;
+    }
+
+    body {
+        /* Blatt mit position: relative als Containing Block für Anschriftfeld
+         * und Infoblock, im Druck die Seite. */
+        position: relative;
+        width: 210mm;
+        min-height: 297mm;
+        margin: 10mm auto;
+        padding: 45mm 20mm 30mm 25mm;
+        background: #fff;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+        box-sizing: border-box;
+    }
+
+    /* Absolut positionierte Elemente beziehen sich auf die padding box des
+     * Containing Block, also die Blattkante; deshalb die Randmaße
+     * explizit. */
+    #anschriftfeld {
+        top: 45mm;
+        left: 25mm;
+    }
+
+    #infoblock {
+        top: 45mm;
+        right: 20mm;
+    }
+
+    /* Ohne running() stünden beide vor dem Anschriftfeld; hier wie im Druck
+     * 15 mm von oben, 20 mm von links. */
+    #briefkopf {
+        position: absolute;
+        top: 15mm;
+        left: 20mm;
+        width: auto;
+        margin-left: 0;
+        padding-top: 0;
+    }
+
+    #fusszeile {
+        position: absolute;
+        bottom: 12mm;
+        left: 25mm;
+        width: 165mm;
+    }
+
+    main {
+        /* Der obere Rand ist im padding des Blatts enthalten. */
+        padding-top: 53.5mm;
+        padding-bottom: 20mm;
+    }
+
+    /* Ohne position: fixed, das am Viewport fixiert wäre. */
+    .wasserzeichen {
+        position: absolute;
+        top: 120mm;
+        left: 35mm;
+    }
+}

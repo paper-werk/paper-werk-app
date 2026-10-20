@@ -1,0 +1,11 @@
+{% extends "faktura/pdf/basis.html" %}
+{% comment %} Auftragsbestätigung, das PDF zum Auftrag. Die Belegart
+heißt Auftrag, das Schreiben an den Kunden Auftragsbestätigung. {% endcomment %}
+
+{% block nummernbezeichnung %}Auftragsnummer{% endblock %}
+{% block gesamtbezeichnung %}Auftragssumme{% endblock %}
+{% comment %} Zugesagter Termin, steuerlich ohne Bedeutung. {% endcomment %}
+{% block leistungsbezeichnung %}Ausf&uuml;hrung{% if beleg.leistungsdatum_bis %}szeitraum{% endif %}{% endblock %}
+
+{% comment %} Ohne festen Einleitungstext; verwendet wird der Kopftext des
+   Belegs. {% endcomment %}

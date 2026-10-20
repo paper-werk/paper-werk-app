@@ -1,0 +1,32 @@
+{% extends "faktura/pdf/basis.html" %}
+{# Rechnung: Basis-Template plus Zahlungsblock. #}
+
+{% block nummernbezeichnung %}Rechnungsnummer{% endblock %}
+
+{% comment %} Überschrift aus der Rechnungsart, weil Abschlags-, Schluss-
+und gewöhnliche Rechnung denselben Typ "rechnung" haben.
+rechnungsbezeichnung enthält die laufende Nummer des Abschlags
+("2. Abschlagsrechnung").
+{% endcomment %}
+{% block ueberschrift %}{{ beleg.rechnungsbezeichnung|default:bezeichnung }}{% if beleg.nummer %} {{ beleg.nummer }}{% endif %}{% endblock %}
+
+{% comment %} Ohne festen Einleitungstext; verwendet wird der Kopftext des
+Belegs wie in der Basis. {% endcomment %}
+
+{% block zahlungshinweis %}
+  <div class="zahlung">
+    <table>
+      <tr>
+        <th>Zahlbar</th>
+        <td>{% if beleg.faellig_am %}bis <strong>{{ beleg.faellig_am|date:"d.m.Y" }}</strong>
+            {% else %}innerhalb von {{ beleg.zahlungsziel_tage }} Tagen{% endif %} ohne Abzug</td>
+      </tr>
+      {% if firma.iban %}
+        <tr><th>IBAN</th><td>{{ firma.iban }}{% if firma.bic %} &nbsp;&middot;&nbsp; BIC {{ firma.bic }}{% endif %}</td></tr>
+      {% endif %}
+      {% if beleg.nummer %}
+        <tr><th>Verwendungszweck</th><td>{{ beleg.nummer }}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+{% endblock %}

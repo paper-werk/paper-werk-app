@@ -1,0 +1,248 @@
+# Eigene deutsche Übersetzungen, die Djangos mitgelieferte überschreiben.
+#
+# Diese Datei ist KEINE Kopie von Djangos django.po. Sie enthält nur die
+# Einträge, die anders lauten sollen. Alles Übrige kommt weiterhin aus
+# Django selbst; dank LOCALE_PATHS wird diese Datei zuletzt geladen und
+# gewinnt bei gleicher msgid.
+#
+# Nach jeder Änderung:  uv run python manage.py compilemessages
+# Der Server liest nur die erzeugte django.mo, und nur beim Start.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: paper-werk-app\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Djangos Übersetzung lautet "Geschichte". Gemeint ist das Änderungs-
+# protokoll eines Datensatzes; "Verlauf" trifft das, "Geschichte" klingt
+# nach Erzählung.
+#
+# Der Knopf oben rechts in jeder Änderungsansicht:
+msgid "History"
+msgstr "Verlauf"
+
+# Die Überschrift der Protokollseite (Djangos Fassung: "Änderungsgeschichte: %s"):
+msgid "Change history: %s"
+msgstr "Änderungsverlauf: %s"
+
+# Der Hinweis, wenn zu einem Datensatz nichts protokolliert ist. Achtung:
+# die msgid muss zeichengenau mit Djangos Original übereinstimmen; sie
+# enthält typografische Apostrophe (U+2019), keine geraden.
+msgid ""
+"This object doesn’t have a change history. It probably wasn’t added via this "
+"admin site."
+msgstr ""
+"Zu diesem Datensatz ist kein Verlauf vorhanden. Er wurde vermutlich nicht "
+"über diese Verwaltungsseiten angelegt."
+
+# ---------------------------------------------------------------------------
+# Unfold (django-unfold 0.108.0)
+#
+# Unfold bringt keine deutsche Übersetzung mit. Ohne diesen Abschnitt stehen
+# in einer sonst deutschen Oberfläche "Type to search", "Welcome back to",
+# "Return to site" und rund fünfzig weitere Texte.
+#
+# Erzeugt mit makemessages über eine Kopie von Unfold, dann nur die
+# Einträge übernommen, die weder Django noch diese Datei schon übersetzen.
+# Die msgids sind zeichengenau übernommen (Leerzeichen, typografische
+# Apostrophe); eine einzige Abweichung, und der Text bleibt englisch.
+#
+# Nach einem Unfold-Update: dasselbe Verfahren wiederholen, siehe
+# core/tests/test_oberflaeche_deutsch.py.
+# ---------------------------------------------------------------------------
+
+msgid "Select record"
+msgstr "Datensatz wählen"
+
+msgid "Select action"
+msgstr "Aktion wählen"
+
+msgid "Select action to run"
+msgstr "Aktion wählen"
+
+msgid "Raw passwords are not stored, so there is no way to see this user’s password, but you can change the password using <a href=\"{}\" class=\"text-primary-600 dark:text-primary-500\">this form</a>."
+msgstr "Passwörter werden nicht im Klartext gespeichert, deshalb lässt sich dieses Passwort nicht anzeigen. Ändern können Sie es über <a href=\"{}\" class=\"text-primary-600 dark:text-primary-500\">dieses Formular</a>."
+
+msgid "Dataset not found. No action performed."
+msgstr "Datensatz nicht gefunden. Es wurde nichts ausgeführt."
+
+msgid "Select value"
+msgstr "Wert wählen"
+
+msgid "Field <strong class=\"font-semibold\">{field_name}</strong> is not an autocomplete field. Please add it to the `autocomplete_fields` list."
+msgstr "Das Feld <strong class=\"font-semibold\">{field_name}</strong> ist kein Autocomplete-Feld. Es gehört in die Liste `autocomplete_fields`."
+
+msgid "You can not create nested object without parent"
+msgstr "Ein untergeordneter Eintrag braucht zuerst den übergeordneten."
+
+msgid "Run"
+msgstr "Ausführen"
+
+msgid "After you've created a user, you’ll be able to edit more user options."
+msgstr "Nach dem Anlegen lassen sich weitere Einstellungen des Benutzers bearbeiten."
+
+msgid "Welcome back to"
+msgstr "Willkommen bei"
+
+msgid "Forgotten your password or username?"
+msgstr "Passwort oder Benutzername vergessen?"
+
+msgid "Type to search"
+msgstr "Suchen …"
+
+msgid "You have been successfully logged out from the administration"
+msgstr "Sie sind abgemeldet."
+
+msgid "No data"
+msgstr "Keine Daten"
+
+msgid "All applications"
+msgstr "Alle Bereiche"
+
+msgid "True"
+msgstr "Ja"
+
+msgid "False"
+msgstr "Nein"
+
+msgid "Apply Filters"
+msgstr "Filter anwenden"
+
+msgid "Navigate"
+msgstr "Blättern"
+
+msgid "Select"
+msgstr "Übernehmen"
+
+msgid "Recent searches"
+msgstr "Zuletzt gesucht"
+
+msgid "Nothing matched your search"
+msgstr "Keine Treffer"
+
+msgid ""
+"\n"
+"            Found <span class=\"font-medium text-important\">%(counter)s</span> result in %(time)s seconds\n"
+"        "
+msgid_plural ""
+"\n"
+"            Found <span class=\"font-medium text-important\">%(counter)s</span> results in %(time)s seconds\n"
+"        "
+msgstr[0] ""
+"\n"
+"            <span class=\"font-medium text-important\">%(counter)s</span> Treffer in %(time)s Sekunden\n"
+"        "
+msgstr[1] ""
+"\n"
+"            <span class=\"font-medium text-important\">%(counter)s</span> Treffer in %(time)s Sekunden\n"
+"        "
+
+msgid "Submit"
+msgstr "Absenden"
+
+msgid "Record picture"
+msgstr "Bild"
+
+msgid "This item will be deleted."
+msgstr "Dieser Eintrag wird gelöscht."
+
+msgid "Click to cancel"
+msgstr "Zum Rückgängigmachen klicken"
+
+msgid "No results found"
+msgstr "Keine Einträge gefunden"
+
+msgid "This page yielded into no results. Create a new item or reset your filters."
+msgstr "Hier steht nichts. Legen Sie einen neuen Eintrag an oder setzen Sie die Filter zurück."
+
+msgid "Reset filters"
+msgstr "Filter zurücksetzen"
+
+msgid "Image preview"
+msgstr "Bildvorschau"
+
+msgid "Click to download"
+msgstr "Zum Herunterladen klicken"
+
+msgid "Go back"
+msgstr "Zurück"
+
+msgid "Previous"
+msgstr "Zurück"
+
+msgid "Next"
+msgstr "Weiter"
+
+msgid "Search apps and models..."
+msgstr "Bereiche und Listen suchen …"
+
+msgid "Available shortcuts"
+msgstr "Tastenkürzel"
+
+msgid "Global shortcuts"
+msgstr "Überall"
+
+msgid "Open command tool"
+msgstr "Schnellsuche öffnen"
+
+msgid "Open shortcuts list"
+msgstr "Tastenkürzel anzeigen"
+
+msgid "Toggle sidebar"
+msgstr "Seitenleiste ein- oder ausblenden"
+
+msgid "Toggle dark/light mode"
+msgstr "Hell oder dunkel"
+
+msgid "Changelist shortcuts"
+msgstr "In Listen"
+
+msgid "Toggle filter"
+msgstr "Filter ein- oder ausblenden"
+
+msgid "Create new record"
+msgstr "Neuen Eintrag anlegen"
+
+msgid "Command tool shortcuts"
+msgstr "In der Schnellsuche"
+
+msgid "Open selection"
+msgstr "Auswahl öffnen"
+
+msgid "Open selection in new tab"
+msgstr "Auswahl in neuem Tab öffnen"
+
+msgid "General"
+msgstr "Allgemein"
+
+msgid "Light"
+msgstr "Hell"
+
+msgid "Dark"
+msgstr "Dunkel"
+
+msgid "System"
+msgstr "System"
+
+msgid "Return to site"
+msgstr "Zur Webseite"
+
+msgid "Choose file to upload"
+msgstr "Datei auswählen"
+
+msgid "Toggle password visibility"
+msgstr "Passwort zeigen oder verbergen"
+
+msgid "Add row"
+msgstr "Zeile hinzufügen"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "Select currency"
+msgstr "Währung wählen"

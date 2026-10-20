@@ -1,0 +1,17 @@
+{% extends "faktura/pdf/basis.html" %}
+{% comment %} Angebot: kein Steuerbeleg, ohne Zahlungsblock, mit
+   Bindefrist. {% endcomment %}
+
+{% block nummernbezeichnung %}Angebotsnummer{% endblock %}
+{% block gesamtbezeichnung %}Angebotssumme{% endblock %}
+{% comment %} Ohne Leistungsdatum, weil die Leistung noch nicht erbracht
+   ist; angegeben ist der geplante Termin. {% endcomment %}
+{% block leistungsbezeichnung %}Ausf&uuml;hrung{% if beleg.leistungsdatum_bis %}szeitraum{% endif %}{% endblock %}
+
+{% comment %} Ohne festen Einleitungstext; verwendet wird der Kopftext des
+   Belegs. Der Hinweis unten (Bindefrist, Umsatzsteuer) steht auf jedem
+   Angebot. {% endcomment %}
+{% block zahlungshinweis %}
+  <p class="hinweis">Dieses Angebot ist 30 Tage g&uuml;ltig. Alle Preise verstehen
+  sich zuz&uuml;glich der gesetzlichen Umsatzsteuer.</p>
+{% endblock %}

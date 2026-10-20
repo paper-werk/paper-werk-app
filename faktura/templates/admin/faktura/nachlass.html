@@ -1,0 +1,64 @@
+{% extends "admin/base_site.html" %}
+{% load unfold %}
+
+{% comment %} Zwischenseite einer Admin-Aktion. Erbt vom Basis-Template des
+   Admins mit Menü, Kopfleiste und Styling.
+
+   Card und Button-Komponente von Unfold, weil Djangos Klassen (module,
+   aligned, submit-row, button) in Unfolds Stylesheet fehlen. {% endcomment %}
+
+{% block content %}
+  <div class="max-w-3xl">
+    <div class="font-semibold mb-6 text-2xl text-font-important-light dark:text-font-important-dark">
+      Rechnungskorrektur erstellen
+    </div>
+
+    <div class="mb-6">
+      {% component "unfold/components/card.html" %}
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          Die urspr&uuml;ngliche Rechnung bleibt bestehen und g&uuml;ltig. Es entsteht ein
+          zus&auml;tzlicher Beleg &uuml;ber den Nachlass &mdash; steuerlich eine Entgeltminderung
+          nach &sect;&nbsp;17 UStG.
+        </p>
+        <p class="text-font-default-light text-sm dark:text-font-default-dark">
+          Soll die Rechnung stattdessen vollst&auml;ndig aufgehoben und neu geschrieben
+          werden, ist <em>&bdquo;Rechnung stornieren und neu schreiben&ldquo;</em> die
+          richtige Aktion.
+        </p>
+      {% endcomponent %}
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% comment %} Überträgt die Auswahl der Liste, damit der POST die Rechnung
+         enthält. {% endcomment %}
+      <input type="hidden" name="_selected_action" value="{{ rechnung.pk }}">
+      <input type="hidden" name="action" value="action_nachlass">
+
+      {% component "unfold/components/card.html" with title="Der Nachlass" %}
+        <p class="mb-6 text-font-default-light text-sm dark:text-font-default-dark">
+          Betrifft <strong class="text-font-important-light dark:text-font-important-dark">{{ rechnung }}</strong>
+          an {{ rechnung.empfaenger_kurz }} &uuml;ber {{ summe }}&nbsp;EUR, davon offen
+          {{ offen }}&nbsp;EUR. Ein Nachlass &uuml;ber den offenen Betrag hinaus ist ein
+          Guthaben des Kunden.
+        </p>
+
+        {% comment %} Styling über Unfolds Widgets in NachlassForm. {% endcomment %}
+        <div class="flex flex-col gap-6">
+          {{ form.as_div }}
+        </div>
+      {% endcomponent %}
+
+      <div class="flex gap-3 justify-end mt-6">
+        {% component "unfold/components/button.html" with href="." variant="default" %}
+          Abbrechen
+        {% endcomponent %}
+
+        {% component "unfold/components/button.html" with submit=1 name="anwenden" %}
+          Rechnungskorrektur anlegen
+        {% endcomponent %}
+      </div>
+    </form>
+  </div>
+{% endblock %}

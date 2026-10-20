@@ -1,0 +1,25 @@
+{% comment %}
+‹ 7 von 42 › in der Kopfleiste (core.blaettern). Erwartet ``blaettern``
+aus ``nachbarn()``; ohne Schnappschuss bleibt die Stelle leer.
+{% endcomment %}
+{% if blaettern %}
+<li class="flex items-center gap-1 mr-2 px-1 text-sm whitespace-nowrap" data-blaettern>
+  {% if blaettern.zurueck %}
+    <a href="{{ blaettern.zurueck }}" title="Vorheriger Eintrag der Liste" aria-label="Zurück" rel="prev"
+       class="flex items-center px-1 py-2 rounded-default hover:text-primary-600 dark:hover:text-primary-500">
+      <span class="material-symbols-outlined">chevron_left</span>
+    </a>
+  {% else %}
+    <span class="flex items-center px-1 py-2 opacity-30" aria-hidden="true"><span class="material-symbols-outlined">chevron_left</span></span>
+  {% endif %}
+  <span class="text-font-subtle-light dark:text-font-subtle-dark" title="Stelle in der Liste, wie sie beim Öffnen war">{{ blaettern.stelle }} von {{ blaettern.anzahl }}</span>
+  {% if blaettern.weiter %}
+    <a href="{{ blaettern.weiter }}" title="Nächster Eintrag der Liste" aria-label="Weiter" rel="next"
+       class="flex items-center px-1 py-2 rounded-default hover:text-primary-600 dark:hover:text-primary-500">
+      <span class="material-symbols-outlined">chevron_right</span>
+    </a>
+  {% else %}
+    <span class="flex items-center px-1 py-2 opacity-30" aria-hidden="true"><span class="material-symbols-outlined">chevron_right</span></span>
+  {% endif %}
+</li>
+{% endif %}

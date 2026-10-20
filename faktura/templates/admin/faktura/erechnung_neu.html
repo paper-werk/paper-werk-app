@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load unfold %}
+
+{% comment %} Zwischenseite "E-Rechnung neu ausstellen", aufgebaut wie
+   nachlass.html.
+
+   Für eine von einem Rechnungsportal abgelehnte E-Rechnung. Nummer,
+   Positionen und Beträge bleiben, PDF und XML entstehen neu; die alte
+   Fassung bleibt (Belegfassung). {% endcomment %}
+
+{% block content %}
+  <div class="max-w-3xl">
+    <div class="font-semibold mb-6 text-2xl text-font-important-light dark:text-font-important-dark">
+      E-Rechnung neu ausstellen
+    </div>
+
+    <div class="mb-6">
+      {% component "unfold/components/card.html" %}
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          Betrifft
+          <strong class="text-font-important-light dark:text-font-important-dark">{{ beleg }}</strong>
+          an {{ beleg.empfaenger_kurz }}.
+        </p>
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          Nummer, Datum, Positionen und Betr&auml;ge bleiben, wie sie sind.
+          Neu entstehen PDF und E-Rechnung &ndash; mit den Angaben unten und
+          dem, was inzwischen in den Stammdaten steht (Telefon und E-Mail der
+          Firma, Zustellweg des Kunden).
+        </p>
+        <p class="text-font-default-light text-sm dark:text-font-default-dark">
+          Die bisherige Fassung bleibt samt Pr&uuml;fsummen erhalten und steht
+          danach im Reiter &bdquo;Status&ldquo;. Die neue geht als eigenes
+          Dokument ins Archiv.
+        </p>
+      {% endcomponent %}
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% component "unfold/components/card.html" with title="Die neue Fassung" %}
+        <div class="flex flex-col gap-6">
+          {{ form.as_div }}
+        </div>
+      {% endcomponent %}
+
+      <div class="flex gap-3 justify-end mt-6">
+        {% component "unfold/components/button.html" with href="../.." variant="default" %}
+          Abbrechen
+        {% endcomponent %}
+
+        {% component "unfold/components/button.html" with submit=1 name="anwenden" %}
+          Neu ausstellen
+        {% endcomponent %}
+      </div>
+    </form>
+  </div>
+{% endblock %}

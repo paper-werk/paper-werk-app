@@ -1,0 +1,11 @@
+{% comment %}
+Das „?“ in der Kopfleiste (hilfe/templatetags/hilfe.py). Öffnet einen neuen
+Tab, damit ein angefangenes Formular erhalten bleibt.
+{% endcomment %}
+{% if anker %}
+<a href="{% url 'hilfe' %}#{{ anker }}" target="_blank" rel="noopener" data-hilfe
+   title="Hilfe zu dieser Seite" aria-label="Hilfe zu dieser Seite"
+   class="flex items-center px-1 py-2 rounded-default hover:text-primary-600 dark:hover:text-primary-500">
+  <span class="material-symbols-outlined">help</span>
+</a>
+{% endif %}

@@ -1,0 +1,10 @@
+# Django-Vorlagen nicht formatieren.
+#
+# Djangos Tokenizer erkennt einen Tag nur, wenn er komplett auf einer Zeile
+# steht (tag_re in django/template/base.py kennt kein DOTALL). Prettier bricht
+# lange Zeilen nach 80 Zeichen um und zerreisst dabei {% ... %} und {{ ... }} -
+# aus dem Tag wird stiller Text, aus dem passenden End-Tag ein
+# TemplateSyntaxError.
+templates/
+**/templates/
+*.html

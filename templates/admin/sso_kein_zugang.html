@@ -1,0 +1,31 @@
+{% extends 'unfold/layouts/unauthenticated.html' %}
+{% comment %}
+Für eine Anmeldung beim Anbieter ohne eine der Rollen aus SSO_ROLLEN.
+Gezeigt von AnmeldeAdapter.pre_social_login, bevor ein Konto angelegt wird;
+es entsteht kein Datensatz.
+
+Der Text nennt Ursache und Zuständigen, weil eine 403 ohne Erklärung nicht
+von einem Tippfehler zu unterscheiden ist.
+{% endcomment %}
+{% load i18n %}
+
+{% block title %}Kein Zugang | {{ marke }}{% endblock %}
+
+{% block content %}
+    {% include "unfold/helpers/unauthenticated_title.html" with title='Kein Zugang' subtitle=marke %}
+
+    <div class="flex flex-col gap-4 text-sm">
+        <p>
+            Die Anmeldung bei {{ anbieter }} hat geklappt, aber Ihr Konto ist
+            für {{ marke }} noch nicht freigeschaltet.
+        </p>
+        <p>
+            Bitte wenden Sie sich an die Person, die bei Ihnen die
+            {{ anbieter }}-Konten verwaltet. Sie muss Ihnen in der
+            Anwendung <strong>{{ marke }}</strong> eine Rolle zuweisen.
+        </p>
+        <p>
+            <a href="{{ anmeldung }}" class="text-primary-600 dark:text-primary-500 underline">Zurück zur Anmeldung</a>
+        </p>
+    </div>
+{% endblock %}

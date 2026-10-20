@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+
+{% comment %} Die Bedienungsanleitung, siehe hilfe/views.py. {% endcomment %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+{% include "hilfe/_text.css" %}
+.pw-hilfe { display: flex; gap: 3rem; align-items: flex-start; }
+.pw-hilfe-inhalt { flex: 0 0 15rem; position: sticky; top: 1rem; font-size: .875rem; line-height: 1.5; }
+.pw-hilfe-inhalt ul ul { padding-left: 1rem; margin-bottom: .5rem; }
+.pw-hilfe-inhalt li { margin-bottom: .25rem; }
+.pw-hilfe-inhalt > ul > li > a { font-weight: 600; }
+.pw-hilfe-inhalt a:hover { text-decoration: underline; }
+@media (max-width: 1023px) {
+  .pw-hilfe { display: block; }
+  .pw-hilfe-inhalt { position: static; margin-bottom: 2rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pw-hilfe">
+  <nav class="pw-hilfe-inhalt" aria-label="Inhalt">
+    <ul>
+      {% for kapitel in anleitung.inhalt %}
+      <li><a href="#{{ kapitel.id }}">{{ kapitel.name }}</a>
+        {% if kapitel.children %}
+        <ul>
+          {% for abschnitt in kapitel.children %}
+          <li><a href="#{{ abschnitt.id }}">{{ abschnitt.name }}</a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+  <article class="pw-hilfe-text">
+    {{ anleitung.html|safe }}
+  </article>
+</div>
+{% endblock %}

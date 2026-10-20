@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Eine Gutschrift (Typcode 381) - muss abgewiesen werden.
+
+     Fachlich richtig und kein Mangel: Eine Eingangsrechnung kennt nur den
+     Rechnungsfall. Eine Gutschrift mit negativem Betrag in ein Feld zu
+     schreiben, das "Rechnungsbetrag netto" heisst, waere genau die Sorte
+     stiller Fehler, die erst in der Projektauswertung auffaellt.
+
+     Erwartet: rote Meldung "Das Dokument ist keine Rechnung, sondern eine
+     Gutschrift oder Korrektur (Typ 381)". Nichts wird angelegt. -->
+<rsm:CrossIndustryInvoice
+    xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
+    xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+    xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+  <rsm:ExchangedDocumentContext>
+    <ram:GuidelineSpecifiedDocumentContextParameter>
+      <ram:ID>urn:cen.eu:en16931:2017</ram:ID>
+    </ram:GuidelineSpecifiedDocumentContextParameter>
+  </rsm:ExchangedDocumentContext>
+  <rsm:ExchangedDocument>
+    <ram:ID>BLI-2026-4713-G</ram:ID>
+    <ram:TypeCode>381</ram:TypeCode>
+    <ram:IssueDateTime>
+      <udt:DateTimeString format="102">20260826</udt:DateTimeString>
+    </ram:IssueDateTime>
+    <ram:IncludedNote>
+      <ram:Content>Gutschrift zu Rechnung BLI-2026-4711 - Probe unbrauchbar</ram:Content>
+    </ram:IncludedNote>
+  </rsm:ExchangedDocument>
+  <rsm:SupplyChainTradeTransaction>
+    <ram:ApplicableHeaderTradeAgreement>
+      <ram:SellerTradeParty>
+        <ram:Name>Bodenlabor Isartal GmbH</ram:Name>
+        <ram:PostalTradeAddress>
+          <ram:PostcodeCode>84032</ram:PostcodeCode>
+          <ram:CityName>Altdorf</ram:CityName>
+          <ram:CountryID>DE</ram:CountryID>
+        </ram:PostalTradeAddress>
+      </ram:SellerTradeParty>
+      <ram:BuyerTradeParty>
+        <ram:Name>Ingenieurbuero Muster GmbH</ram:Name>
+      </ram:BuyerTradeParty>
+    </ram:ApplicableHeaderTradeAgreement>
+    <ram:ApplicableHeaderTradeDelivery/>
+    <ram:ApplicableHeaderTradeSettlement>
+      <ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
+      <ram:ApplicableTradeTax>
+        <ram:CalculatedAmount>8.08</ram:CalculatedAmount>
+        <ram:TypeCode>VAT</ram:TypeCode>
+        <ram:BasisAmount>42.50</ram:BasisAmount>
+        <ram:CategoryCode>S</ram:CategoryCode>
+        <ram:RateApplicablePercent>19.00</ram:RateApplicablePercent>
+      </ram:ApplicableTradeTax>
+      <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+        <ram:LineTotalAmount>42.50</ram:LineTotalAmount>
+        <ram:TaxBasisTotalAmount>42.50</ram:TaxBasisTotalAmount>
+        <ram:TaxTotalAmount currencyID="EUR">8.08</ram:TaxTotalAmount>
+        <ram:GrandTotalAmount>50.58</ram:GrandTotalAmount>
+        <ram:DuePayableAmount>50.58</ram:DuePayableAmount>
+      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+    </ram:ApplicableHeaderTradeSettlement>
+  </rsm:SupplyChainTradeTransaction>
+</rsm:CrossIndustryInvoice>

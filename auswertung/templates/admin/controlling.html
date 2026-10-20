@@ -1,0 +1,414 @@
+{% extends "admin/base_site.html" %}
+{% load faktura_extras unfold %}
+
+{% comment %} Controlling-Seite: Kennzahlen und Verläufe des Betriebs.
+
+   Abgrenzung zur Startseite im Docstring von
+   auswertung/controllingseite.py: Die Startseite zeigt den aktuellen
+   Stand, diese Seite die Entwicklung.
+
+   Die Seite verlangt faktura.view_rechnung, geprüft in der View. Anders
+   als die Projektakte hat sie ohne dieses Recht keinen Inhalt.
+{% endcomment %}
+
+{% block content %}
+{% include "admin/_eigene_stile.html" %}
+<div>
+
+  {# ---- Kopf ---- #}
+  <div class="flex flex-wrap gap-4 items-start justify-between mb-6">
+    <div>
+      <div class="font-semibold text-2xl text-font-important-light dark:text-font-important-dark">
+        Controlling
+      </div>
+      <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        Die laufenden Projekte, die letzten zwölf Monate.
+        {% if not lage.vollstaendig %}
+          <span class="text-red-600 dark:text-red-500">
+            &middot; Unvollständig: {{ lage.uebersicht.ohne_kostensatz|length }}
+            Person(en) ohne Kostensatz.
+          </span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{{ liegengeblieben_url }}"
+         class="border border-base-200 font-medium px-3 py-2 rounded-default text-sm dark:border-base-700 hover:bg-base-50 dark:hover:bg-base-800">
+        Nicht abgerechnet
+      </a>
+      <a href="{{ projekte_url }}"
+         class="border border-base-200 font-medium px-3 py-2 rounded-default text-sm dark:border-base-700 hover:bg-base-50 dark:hover:bg-base-800">
+        Alle Projekte
+      </a>
+    </div>
+  </div>
+
+  {# ---- Die vier Verhältnisse ---- #}
+  {% comment %} Keine dieser Karten steht auf der Startseite, die bereits
+     Fakturiert, Bestand und Ergebnis zeigt; hier stehen abgeleitete
+     Verhältnisse. {% endcomment %}
+  <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+    {% for kennzahl in kennzahlen %}
+      {% component "admin/_kennzahl.html" with titel=kennzahl.titel icon=kennzahl.icon warnung=kennzahl.warnung %}
+        <div class="pw-kennzahl-wert">{{ kennzahl.wert }}</div>
+        <div class="pw-kennzahl-text">{{ kennzahl.hinweis }}</div>
+      {% endcomponent %}
+    {% endfor %}
+  </div>
+
+  {# ---- Wohin geht es ---- #}
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Auftragseingang und Umsatz" %}
+      {% comment %} Zwei Reihen in einem Diagramm, weil beide dieselbe Einheit
+         und Achse haben (Euro netto je Monat) und der Vergleich die Aussage
+         ist. Bei verschiedenen Skalen wäre die Ausrichtung der Achsen
+         willkürlich.
+
+         Auftragseingang als Balken (Ereignis), Umsatz als Linie
+         (Verlauf). {% endcomment %}
+      <div class="relative w-full">
+        <canvas class="chart" data-type="bar" data-value="{{ verlauf_daten }}"
+                height="110"></canvas>
+      </div>
+
+      <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-xs">
+        <span class="flex gap-2 items-center text-font-subtle-light dark:text-font-subtle-dark">
+          <span class="h-2.5 rounded-sm w-2.5" style="background: var(--pw-reihe-2)"></span>
+          Auftragseingang {{ lage.auftragseingang_summe|geld }} €
+        </span>
+        <span class="flex gap-2 items-center text-font-subtle-light dark:text-font-subtle-dark">
+          <span class="h-0.5 w-4" style="background: var(--pw-reihe-1)"></span>
+          Fakturiert {{ lage.umsatz_summe|geld }} €
+        </span>
+      </div>
+    {% endcomponent %}
+  </div>
+
+  {# ---- Die Landkarte ---- #}
+  <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Projekte und Ausschöpfung" %}
+        {% if karte_daten %}
+          {% comment %} x: Ausschöpfung, y: Marge, Blasengröße: Leistungswert.
+             Rechts unten liegen Projekte mit hohem Aufwand und geringer
+             Marge.{% endcomment %}
+          <div class="relative w-full" style="height: 320px">
+            <canvas id="pw-landkarte" class="chart" data-type="bubble"
+                    data-value="{{ karte_daten }}"
+                    data-options="{{ karte_optionen }}"></canvas>
+          </div>
+
+          {% comment %} Eigener Tooltip-Callback, weil Unfold die Optionen als JSON
+             übergibt (JSON.parse) und JSON keine Funktionen enthalten kann.
+
+             Der Standard-Tooltip zeigte "(21, 35, 12.6999)": beide
+             Achsenwerte und den Blasenradius in Pixeln, ohne die
+             Bezeichnung des Projekts.
+
+             Inline, weil der Code nur diese Seite betrifft.
+          {% endcomment %}
+          <script>
+            (function () {
+              var versuche = 0;
+
+              function nachruesten() {
+                var flaeche = document.getElementById('pw-landkarte');
+                if (!flaeche || typeof Chart === 'undefined') { return; }
+
+                var diagramm = Chart.getChart(flaeche);
+                if (!diagramm) {
+                  // Unfolds app.js zeichnet ebenfalls bei DOMContentLoaded.
+                  // Wer zuerst registriert hat, laeuft zuerst aber darauf
+                  // verlassen wir uns nicht: Ein defer oder ein Modul
+                  // drehte die Reihenfolge um. Also warten, aber nicht
+                  // ewig.
+                  if (++versuche < 60) { requestAnimationFrame(nachruesten); }
+                  return;
+                }
+
+                diagramm.options.plugins.tooltip.callbacks = {
+                  title: function (punkte) {
+                    var b = punkte[0].raw;
+                    return b.nummer + '  ' + b.bezeichnung;
+                  },
+                  label: function (punkt) {
+                    var b = punkt.raw;
+                    return [
+                      b.kunde,
+                      'Ausgeschöpft ' + b.x + ' % des Auftrags',
+                      'Marge ' + b.y + ' %',
+                      'Leistungswert ' + b.wert,
+                      'Ergebnis ' + b.ergebnis,
+                    ];
+                  },
+                };
+                diagramm.update('none');
+              }
+
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', nachruesten);
+              } else {
+                nachruesten();
+              }
+            })();
+          </script>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch kein Projekt mit Auftrag &ndash; ohne
+            Auftragswert gibt es keine Ausschöpfung und damit keine
+            waagerechte Achse.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    {# ---- Die Staffel des Betriebs ---- #}
+    <div class="lg:w-2/5">
+      {% component "unfold/components/card.html" with title="Deckungsbeiträge" %}
+        {% if wasserfall %}
+          <div class="pw-staffel">
+            {% for stufe in wasserfall %}
+              <div class="pw-stufe">
+                <div class="text-sm {% if stufe.art == 'abzug' %}text-font-subtle-light dark:text-font-subtle-dark{% else %}font-medium text-font-important-light dark:text-font-important-dark{% endif %}">
+                  {{ stufe.titel }}
+                </div>
+                <div class="pw-spur">
+                  <div class="pw-balken"
+                       style="left: {{ stufe.start }}%; width: {{ stufe.breite }}%; background: {{ stufe.farbe }}"></div>
+                </div>
+                <div class="pw-betrag text-sm {% if stufe.art == 'abzug' %}text-font-subtle-light dark:text-font-subtle-dark{% else %}font-semibold text-font-important-light dark:text-font-important-dark{% endif %}">
+                  {{ stufe.betrag|geld }} €
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Über alle laufenden Projekte. Miete, Geräte, Versicherung und
+            Verwaltung kennt dieses Programm nicht &ndash; deshalb
+            Deckungsbeitrag und nicht Gewinn.
+          </p>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Noch keine Leistung und keine Kosten erfasst.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  </div>
+
+  {# ---- Dieselben Projekte als Tabelle ---- #}
+  {% comment %} Dieselben Daten als Tabelle, weil das Streudiagramm nur mit
+     der Maus lesbar ist (Barrierefreiheit, Ausdruck, Vorlesen). Sortiert
+     nach Marge aufsteigend. {% endcomment %}
+  {% if karte_zeilen %}
+    <div class="mb-6">
+      {% component "unfold/components/card.html" with title="Projekte im Einzelnen" %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+            <thead>
+              <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                <th class="font-medium pb-2 pr-4 text-left">Projekt</th>
+                <th class="font-medium pb-2 pr-4 text-left">Auftraggeber</th>
+                <th class="font-medium pb-2 pr-4 text-right">Leistungswert</th>
+                <th class="font-medium pb-2 pr-4 text-right">Ergebnis</th>
+                <th class="font-medium pb-2 pr-4 text-right">Marge</th>
+                <th class="font-medium pb-2 text-right">Ausschöpfung</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for zeile in karte_zeilen %}
+                <tr class="border-b border-base-200 dark:border-base-800">
+                  <td class="py-2 pr-4">
+                    <a href="{{ zeile.url }}"
+                       class="font-medium text-primary-600 hover:underline dark:text-primary-500">
+                      {{ zeile.nummer }}
+                    </a>
+                    <span class="text-font-subtle-light dark:text-font-subtle-dark">
+                      {{ zeile.bezeichnung }}
+                    </span>
+                  </td>
+                  <td class="py-2 pr-4 text-font-subtle-light dark:text-font-subtle-dark">
+                    {{ zeile.kunde }}
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap">{{ zeile.leistungswert }}</td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap {% if not zeile.traegt %}text-red-600 dark:text-red-500{% else %}font-medium text-font-important-light dark:text-font-important-dark{% endif %}">
+                    {{ zeile.ergebnis }}
+                  </td>
+                  <td class="py-2 pr-4 text-right whitespace-nowrap {% if not zeile.traegt %}text-red-600 dark:text-red-500{% endif %}">
+                    {{ zeile.marge|default:"&ndash;" }}
+                  </td>
+                  <td class="py-2 text-right whitespace-nowrap {% if zeile.ist_ueberzogen %}text-red-600 dark:text-red-500{% endif %}">
+                    {{ zeile.ausschoepfung|default:"&ndash;" }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+  <div class="flex flex-col gap-6 mb-6 lg:flex-row">
+
+    {# ---- Wo bleibt Geld liegen ---- #}
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Verrechnungsdauer" %}
+        {% comment %} Ein Balken je Altersklasse in derselben Farbe mit
+           zunehmender Helligkeitsstufe, weil die Klassen geordnet sind
+           (jung nach alt). Verschiedene Farben stünden für verschiedene
+           Kategorien. {% endcomment %}
+        <div class="flex flex-col gap-3">
+          {% for klasse in altersklassen %}
+            <div>
+              <div class="flex gap-2 items-baseline mb-1 text-sm">
+                <span class="{% if klasse.hervorgehoben %}font-medium text-red-600 dark:text-red-500{% else %}text-font-subtle-light dark:text-font-subtle-dark{% endif %}">
+                  {{ klasse.beschriftung }}
+                </span>
+                <span class="grow"></span>
+                <span class="font-medium text-font-important-light whitespace-nowrap dark:text-font-important-dark"
+                      style="font-variant-numeric: tabular-nums">
+                  {{ klasse.betrag }}
+                </span>
+                <span class="text-font-subtle-light text-xs w-9 text-right dark:text-font-subtle-dark"
+                      style="font-variant-numeric: tabular-nums">
+                  {{ klasse.anteil }} %
+                </span>
+              </div>
+              <div class="bg-base-100 flex overflow-hidden rounded-default dark:bg-base-800">
+                <div class="h-1.5 rounded-default {{ klasse.klasse }}"
+                     style="width: {{ klasse.breite }}%"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Erbrachte eigene Leistung ohne Rechnung, insgesamt
+          {{ lage.offene_leistung_gesamt|geld }} €.
+          {% if lage.alt_liegengeblieben %}
+            Davon {{ lage.alt_liegengeblieben|geld }} € älter als 90 Tage.
+          {% endif %}
+          Zugekauftes zählt hier nicht mit &ndash; es ist bereits bezahlt und
+          hat eine andere Dringlichkeit.
+        </p>
+      {% endcomponent %}
+    </div>
+
+    {# ---- Woran hängen wir ---- #}
+    <div class="grow min-w-0">
+      {% component "unfold/components/card.html" with title="Top Auftraggeber" %}
+        {% if kunden %}
+          <div class="flex flex-col gap-3">
+            {% for zeile in kunden %}
+              <div>
+                <div class="flex gap-2 items-baseline mb-1 text-sm">
+                  <span class="{% if zeile.ist_rest %}italic text-font-subtle-light dark:text-font-subtle-dark{% elif zeile.ist_klumpen %}font-medium text-font-important-light dark:text-font-important-dark{% else %}text-font-subtle-light dark:text-font-subtle-dark{% endif %}">
+                    {{ zeile.name }}
+                  </span>
+                  <span class="grow"></span>
+                  <span class="whitespace-nowrap" style="font-variant-numeric: tabular-nums">
+                    {{ zeile.betrag }}
+                  </span>
+                  <span class="text-font-subtle-light text-xs w-9 text-right dark:text-font-subtle-dark"
+                        style="font-variant-numeric: tabular-nums">
+                    {{ zeile.anteil }} %
+                  </span>
+                </div>
+                <div class="bg-base-100 flex overflow-hidden rounded-default dark:bg-base-800">
+                  <div class="h-1.5 rounded-default"
+                       style="width: {{ zeile.breite }}%; background: {% if zeile.ist_rest %}var(--pw-gedaempft){% elif zeile.ist_klumpen %}var(--pw-reihe-2){% else %}var(--pw-reihe-1){% endif %}"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Umsatz im laufenden Jahr, {{ lage.kunden.gesamt|geld }} € über
+            {{ lage.kunden.anzahl }} Auftraggeber. Die drei größten tragen
+            {{ lage.kunden.anteil_top3 }} %.
+            {% if lage.kunden.klumpen %}
+              {% comment %} Die Schwelle von 30 % ist eine Faustregel für das
+                 Klumpenrisiko eines Auftraggebers. {% endcomment %}
+              <span class="text-red-600 dark:text-red-500">
+                {{ lage.kunden.klumpen|length }} davon über 30 % &ndash; ihr
+                Ausfall wäre nicht durch Sparen aufzufangen.
+              </span>
+            {% endif %}
+          </p>
+        {% else %}
+          <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+            Im laufenden Jahr wurde noch nichts berechnet.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+  </div>
+
+  {# ---- Die Zeit der Mannschaft ---- #}
+  {% if auslastung %}
+    <div class="mb-6">
+      {% component "unfold/components/card.html" with title="Zeitaufteilung" %}
+        {% comment %} Drei Abschnitte in einem gestapelten Balken, weil Anteile an
+           einem Ganzen gezeigt werden. Verworfen: drei getrennte Balken.
+
+           Die Lücke von 2px trennt die Flächen auch bei ähnlich
+           wahrgenommenen Farben. {% endcomment %}
+        <div class="flex flex-col gap-4">
+          {% for person in auslastung %}
+            <div>
+              <div class="flex gap-2 items-baseline mb-1 text-sm">
+                <span class="font-medium text-font-important-light dark:text-font-important-dark">
+                  {{ person.name }}
+                </span>
+                <span class="grow"></span>
+                <span class="text-font-subtle-light dark:text-font-subtle-dark"
+                      style="font-variant-numeric: tabular-nums">
+                  {{ person.stunden }} Std
+                </span>
+                {% if person.quote is not None %}
+                  <span class="text-font-subtle-light text-xs w-12 text-right dark:text-font-subtle-dark"
+                        style="font-variant-numeric: tabular-nums">
+                    {{ person.quote }} %
+                  </span>
+                {% endif %}
+              </div>
+              <div class="flex gap-0.5 h-2 overflow-hidden rounded-default">
+                {% for abschnitt in person.abschnitte %}
+                  {% if abschnitt.breite != "0.0" %}
+                    <div style="width: {{ abschnitt.breite }}%; background: {{ abschnitt.farbe }}"
+                         title="{{ abschnitt.titel }}: {{ abschnitt.stunden }} Std"></div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-xs">
+          <span class="flex gap-2 items-center text-font-subtle-light dark:text-font-subtle-dark">
+            <span class="h-2.5 rounded-sm w-2.5" style="background: var(--pw-reihe-1)"></span>
+            Abgerechnet
+          </span>
+          <span class="flex gap-2 items-center text-font-subtle-light dark:text-font-subtle-dark">
+            <span class="h-2.5 rounded-sm w-2.5" style="background: var(--pw-reihe-3)"></span>
+            Erbracht, noch offen
+          </span>
+          <span class="flex gap-2 items-center text-font-subtle-light dark:text-font-subtle-dark">
+            <span class="h-2.5 rounded-sm w-2.5" style="background: var(--pw-gedaempft)"></span>
+            Nicht abrechenbar
+          </span>
+        </div>
+
+        <p class="mt-3 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Der Prozentwert ist der verkaufbare Anteil &ndash; im Betrieb
+          "produktive Quote" genannt. In einem gesunden Ingenieurbüro liegt er
+          zwischen 70 und 85 %: darunter wird Zeit verschenkt, darüber die
+          Verwaltung vernachlässigt.
+        </p>
+      {% endcomponent %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

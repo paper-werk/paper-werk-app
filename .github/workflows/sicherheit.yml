@@ -1,0 +1,42 @@
+# Sicherheitsprüfung der Abhängigkeiten, dieselben Schritte wie
+# ./sicherheit.sh. Lücken werden meist erst nach einem Release bekannt,
+# darum läuft sie wöchentlich und nicht nur beim Push. Schlägt sie fehl,
+# schickt GitHub die übliche Mail über einen fehlgeschlagenen Lauf.
+#
+# Der Bericht steht in der Zusammenfassung des Laufs und als Anhang.
+name: Sicherheit
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'   # montags 05:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [dev, main]
+    paths:
+      - uv.lock
+      - package-lock.json
+      - sicherheit-ausnahmen.txt
+      - sicherheit.sh
+      - .github/workflows/sicherheit.yml
+
+jobs:
+  sicherheit:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Abhängigkeiten prüfen
+        run: ./sicherheit.sh
+
+      - name: Bericht in die Zusammenfassung
+        if: always()
+        run: cat sicherheit-*.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sicherheitsbericht
+          path: sicherheit-*.md

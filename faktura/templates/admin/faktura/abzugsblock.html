@@ -1,0 +1,38 @@
+{% load faktura_extras %}
+{% comment %} Abgesetzte Abschläge unter den Positionen einer Schluss- oder
+   Teilschlussrechnung, eine Zeile je Abschlag und Steuersatz, wie im PDF
+   (services.abzugsblock).
+
+   Readonly. Zugrunde liegen Positionen je Abschlagsposition, die zählen;
+   angelegt und an die Zahlungen angepasst über "Abschläge absetzen". Ohne
+   Abzüge leer.
+{% endcomment %}
+{% if abzuege %}
+  <div class="abzugsblock border border-base-200 mt-6 rounded-default dark:border-base-800">
+    <h2 class="border-b border-base-200 font-semibold px-4 py-3 text-font-important-light text-sm dark:border-base-800 dark:text-font-important-dark">
+      Bereits berechnete Abschläge
+    </h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-font-subtle-light dark:text-font-subtle-dark">
+          <th class="font-medium px-4 py-2 text-left">Abschlag</th>
+          <th class="font-medium px-4 py-2 text-right">USt.</th>
+          <th class="font-medium px-4 py-2 text-right">Betrag</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for abzug in abzuege %}
+          <tr class="border-t border-base-200 dark:border-base-800">
+            <td class="px-4 py-2">{{ abzug.bezeichnung }}</td>
+            <td class="px-4 py-2 text-right">{{ abzug.steuersatz_dezimal|prozent }}</td>
+            <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ abzug.betrag|geld }} €</td>
+          </tr>
+        {% endfor %}
+        <tr class="border-t border-base-200 font-semibold dark:border-base-800">
+          <td class="px-4 py-2" colspan="2">Summe der Abschläge</td>
+          <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ abzuege_summe|geld }} €</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endif %}

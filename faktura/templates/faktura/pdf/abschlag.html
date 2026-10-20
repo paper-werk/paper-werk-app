@@ -1,0 +1,21 @@
+{% extends "faktura/pdf/rechnung.html" %}
+{% comment %} Abschlagsrechnung. Erbt von der Rechnung Zahlungsblock,
+Nummernbezeichnung und Überschrift; die Überschrift enthält die laufende
+Nummer über rechnungsbezeichnung ("2. Abschlagsrechnung"). {% endcomment %}
+
+{% block gesamtbezeichnung %}Abschlagsbetrag{% endblock %}
+
+{% comment %} Ohne "Leistungsdatum", weil ein Abschlag keines hat; der
+Zeitraum gibt den Leistungsstand an (Beleg.steuerliches_leistungsdatum). {% endcomment %}
+{% block leistungsbezeichnung %}Leistungsstand{% endblock %}
+
+{% comment %} Hinweis auf die Schlussrechnung, weil ein Abschlag steuerlich
+eine Anzahlung ist (§ 13 Abs. 1 Nr. 1a Satz 4 UStG), die die
+Schlussrechnung absetzt (§ 14 Abs. 5 Satz 2); ohne Hinweis buchte der
+Empfänger ihn als gewöhnliche Rechnung. {% endcomment %}
+{% block schlusstext %}
+  <p class="hinweis">Abschlagszahlung auf die noch nicht abgeschlossene
+  Leistung. Die Abrechnung erfolgt mit der Schlussrechnung; die geleisteten
+  Abschl&auml;ge werden dort abgesetzt.</p>
+  {{ block.super }}
+{% endblock %}

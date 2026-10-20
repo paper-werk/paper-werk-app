@@ -1,0 +1,33 @@
+{% comment %}
+Unfolds Template (django-unfold 0.104.1), erweitert um eine Zeile: die
+Version unten in der Sidebar unter dem Benutzer (core/version.py).
+
+Kopie dieser Datei und nicht von navigation_user.html, weil ein Override das
+gleichnamige Original nicht per ``include`` einbinden kann. Diese Datei
+bindet den Benutzerblock nur ein; zu pflegen sind fünfzehn statt
+fünfunddreißig Zeilen.
+
+Als Kopie muss die Datei nach jedem Unfold-Update mit dem Original
+abgeglichen werden; Abweichung nur an der mit "PAPER-WERK" markierten
+Stelle.
+{% endcomment %}
+{% load i18n unfold %}
+
+<nav id="nav-sidebar-inner" class="bg-base-50 flex flex-col min-h-screen dark:text-font-default-dark dark:bg-base-950/20 {% element_classes 'navigation_inner' %}">
+    {% include "unfold/helpers/navigation_header.html" %}
+
+    {% include "unfold/helpers/search.html" %}
+
+    {% if sidebar_navigation|length > 0 %}
+        {% include "unfold/helpers/app_list.html" with app_list=available_apps %}
+    {% else %}
+        {% include "admin/app_list.html" with app_list=available_apps show_changelinks=False %}
+    {% endif %}
+
+    {% include "unfold/helpers/navigation_user.html" %}
+
+    {# PAPER-WERK: die Versionsnummer (core/version.py) #}
+    {% if app_version %}
+        <div class="px-6 pb-3 text-subtle text-xs select-all">Version {{ app_version }}</div>
+    {% endif %}
+</nav>

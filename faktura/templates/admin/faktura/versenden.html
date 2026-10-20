@@ -1,0 +1,197 @@
+{% extends "admin/base_site.html" %}
+{% load unfold %}
+
+{% comment %} Zwischenseite "Versenden", aufgebaut wie nachlass.html.
+
+   Submit-Buttons (drei am Entwurf, sonst zwei) und keine Checkboxen, weil
+   eine Aktion gewählt wird. Jeder schreibt fest; das steht daher über den
+   Buttons.
+{% endcomment %}
+
+{% block content %}
+  {% comment %} form.media, weil eine Zwischenseite anders als der Admin
+     (ModelAdmin.media) die Media des Formulars nicht einbindet; ohne sie
+     hätte der Button "Textvorlagen" keine Wirkung. {% endcomment %}
+  {{ form.media }}
+
+  <div class="max-w-3xl">
+    <div class="font-semibold mb-6 text-2xl text-font-important-light dark:text-font-important-dark">
+      {% if ist_entwurf %}Festschreiben und versenden{% elif beleg.versendet_am %}Erneut versenden{% else %}Versenden{% endif %}
+    </div>
+
+    <div class="mb-6">
+      {% component "unfold/components/card.html" %}
+        <p class="mb-3 text-font-default-light text-sm dark:text-font-default-dark">
+          Betrifft
+          <strong class="text-font-important-light dark:text-font-important-dark">{{ beleg }}</strong>
+          an {{ beleg.empfaenger_kurz }} &uuml;ber {{ summe }}&nbsp;EUR.
+        </p>
+
+        {% if ist_entwurf %}
+          <p class="text-font-default-light text-sm dark:text-font-default-dark">
+            <strong class="text-font-important-light dark:text-font-important-dark">Der Beleg wird dabei festgeschrieben</strong>
+            &ndash; {% if beleg.nummer %}sein PDF wird neu erzeugt{% else %}er
+            bekommt seine Nummer, sein PDF wird eingefroren{% endif %}, und
+            &Auml;nderungen sind danach nur noch nach erneutem &Ouml;ffnen
+            m&ouml;glich. Das gilt f&uuml;r alle Wege unten.
+          </p>
+        {% elif beleg.versendet_am %}
+          {% comment %} Ein erneuter Versand überschreibt versendet_am nicht, weil
+             das Datum den ersten Zugang nachweist.
+          {% endcomment %}
+          <p class="text-font-default-light text-sm dark:text-font-default-dark">
+            Dieser Beleg ging am {{ beleg.versendet_am|date:"d.m.Y H:i" }} an
+            {{ beleg.versendet_an }} hinaus.
+            <strong class="text-font-important-light dark:text-font-important-dark">Dieses Datum bleibt stehen</strong>
+            &ndash; der neue Versand kommt im Reiter &bdquo;Status&ldquo;
+            dazu, als weitere Zeile im Versandverlauf.
+          </p>
+        {% else %}
+          <p class="text-font-default-light text-sm dark:text-font-default-dark">
+            Der Beleg ist bereits festgeschrieben und wurde noch nicht
+            versendet.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% component "unfold/components/card.html" with title="Die Nachricht" %}
+        {% comment %} Styling über Unfolds Widgets in VersandForm. {% endcomment %}
+        <div class="flex flex-col gap-6">
+          {{ form.as_div }}
+        </div>
+
+        {% comment %} Der Anhang ist dieselbe Datei wie bei "Herunterladen" und
+           folgt aus dem Beleg (services.versandformat). Der Text nennt Datei
+           und Zustellweg des Kunden. {% endcomment %}
+        <p class="mt-6 text-font-default-light text-sm dark:text-font-default-dark">
+          Angeh&auml;ngt und heruntergeladen wird:
+          <strong class="text-font-important-light dark:text-font-important-dark">{{ formattext }}</strong>.
+          {% if kunde %}Zustellweg von {{ kunde.name }}: {{ kunde.get_zustellweg_display }}.{% endif %}
+        </p>
+
+        {% comment %} Anlagen (Leistungsnachweis) nur mit gesetzter Checkbox;
+           die Vorschau zeigt sie vorab. {% endcomment %}
+        {% for titel, url in anlagenvorschau %}
+          <p class="mt-2 text-font-default-light text-sm dark:text-font-default-dark">
+            <a href="{{ url }}" target="_blank" class="text-primary-600 dark:text-primary-500">{{ titel }} ansehen</a>
+          </p>
+        {% endfor %}
+
+        {% if mit_kopie and kopie_an %}
+          <p class="mt-6 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+            Eine Kopie geht als Blindkopie an {{ kopie_an }}.
+          </p>
+        {% endif %}
+
+        {% comment %} Hinweis vor dem Klick, dass keine Mail versendet wird
+           (kein Postausgang konfiguriert). {% endcomment %}
+        {% if not geht_hinaus %}
+          <p class="mt-4 text-red-600 text-xs dark:text-red-500">
+            <strong>Auf diesem Rechner ist kein Postausgang eingerichtet.</strong>
+            Die Nachricht wird nicht verschickt, sondern in die
+            Server-Konsole geschrieben. Der Beleg wird trotzdem
+            festgeschrieben.
+          </p>
+        {% endif %}
+      {% endcomponent %}
+
+      {% comment %} Falsches Profil: Leitweg-ID ohne XRechnung-Kunden, oder
+         ein Zustellweg, der sich nach dem Festschreiben geändert hat.
+         Nur Hinweis (facturx.zustellweg_warnung). {% endcomment %}
+      {% if zustellweg_warnung %}
+        <div class="mt-6">
+          {% component "unfold/components/card.html" with title="Passt das Format zum Kunden?" %}
+            <p class="text-red-600 text-sm dark:text-red-500">{{ zustellweg_warnung }}</p>
+          {% endcomponent %}
+        </div>
+      {% endif %}
+
+      {% comment %} Überschreitung des Beauftragten vor dem Klick;
+         festgeschrieben wird nur mit Bestätigung, sonst lehnt der Service ab
+         und die Seite erscheint mit Meldung erneut. "Abbrechen" führt zurück
+         in den Entwurf. {% endcomment %}
+      {% if ueberschreitungen %}
+        <div class="mt-6">
+          {% component "unfold/components/card.html" with title="Mehr als beauftragt" %}
+            <ul class="list-disc mb-4 ml-5 text-red-600 text-sm dark:text-red-500">
+              {% for ueberschreitung in ueberschreitungen %}
+                <li>{{ ueberschreitung }}</li>
+              {% endfor %}
+            </ul>
+            <label class="flex gap-2 items-center text-font-important-light text-sm dark:text-font-important-dark">
+              <input type="checkbox" name="mengen_bestaetigt" value="1"
+                     class="border-base-300 rounded-sm dark:border-base-600">
+              Ja, trotzdem festschreiben &ndash; die Überschreitung ist gewollt.
+            </label>
+          {% endcomponent %}
+        </div>
+      {% endif %}
+
+      {% comment %} Abgesetzt werden die gestellten Abschläge, netto nur das
+         Bezahlte; der Rest steht als eigene Zeile und wird mit einem
+         späteren Abschlag oder dieser Rechnung gefordert, die
+         Abschlagsforderung erlischt (Rechenregister R-174). Hinweis vor dem
+         Festschreiben, etwa um eine Zahlung noch zu erfassen; keine Sperre.
+         {% endcomment %}
+      {% if offene_abschlaege %}
+        <div class="mt-6">
+          {% component "unfold/components/card.html" with title="Abschläge nicht vollständig bezahlt" %}
+            <ul class="list-disc mb-2 ml-5 text-sm text-font-important-light dark:text-font-important-dark">
+              {% for eintrag in offene_abschlaege %}
+                <li>{{ eintrag }}</li>
+              {% endfor %}
+            </ul>
+            <p class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+              Abgesetzt wird nur, was bezahlt ist. Steht der Rest nicht schon
+              in einem sp&auml;teren Abschlag, fordert ihn diese Rechnung. Mit dem
+              Festschreiben ist die Abschlagsrechnung erledigt, eine sp&auml;tere
+              Zahlung darauf geh&ouml;rt zu dieser Rechnung. Ist inzwischen Geld
+              eingegangen, erst die Zahlung vermerken, dann
+              &bdquo;Abschl&auml;ge absetzen&ldquo; erneut ausf&uuml;hren.
+            </p>
+          {% endcomponent %}
+        </div>
+      {% endif %}
+
+      <div class="flex flex-wrap gap-3 justify-end mt-6">
+        {% component "unfold/components/button.html" with href="../.." variant="default" %}
+          Abbrechen
+        {% endcomponent %}
+
+        {% comment %} Sekundäre Buttons links, der primäre (Versenden per Mail)
+           rechts als letzter.
+
+           "Nur festschreiben" nur am Entwurf; am festgeschriebenen Beleg
+           dient "Abbrechen". {% endcomment %}
+        {% comment %} formnovalidate an den beiden sekundären Buttons, weil das
+           Adressfeld 'required' ist und sonst auch "Nur festschreiben" und
+           "Herunterladen" blockierte, die keine Adresse brauchen. Der Server
+           validiert das Formular nur beim Versand per Mail
+           (_versand_ausfuehren).
+
+           An den Buttons und nicht als 'novalidate' am Formular, damit der
+           Browser beim Versand per Mail Tippfehler vor dem Festschreiben
+           meldet. {% endcomment %}
+        {% if ist_entwurf %}
+          {% component "unfold/components/button.html" with submit=1 name="nur_festschreiben" variant="default" extra_attrs="formnovalidate" %}
+            Nur festschreiben
+          {% endcomponent %}
+        {% endif %}
+
+        {% comment %} Bei XRechnung liefert "Herunterladen" das XML für den
+           Upload ins Rechnungsportal. {% endcomment %}
+        {% component "unfold/components/button.html" with submit=1 name="herunterladen" variant="default" extra_attrs="formnovalidate" %}
+          {% if ist_entwurf %}Festschreiben und herunterladen{% else %}Herunterladen{% endif %}
+        {% endcomponent %}
+
+        {% component "unfold/components/button.html" with submit=1 name="senden" %}
+          {% if ist_entwurf %}Festschreiben und senden{% elif beleg.versendet_am %}Erneut senden{% else %}Per E-Mail senden{% endif %}
+        {% endcomponent %}
+      </div>
+    </form>
+  </div>
+{% endblock %}

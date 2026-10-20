@@ -1,0 +1,32 @@
+# Zeilenenden.
+#
+# Entwickelt wird unter Windows, ausgeführt wird unter Linux. Ohne diese
+# Datei entscheidet die lokale core.autocrlf-Einstellung, was im Arbeitsbaum
+# landet, und die ist auf jedem Rechner anders eingestellt.
+#
+# Bei Dateien, die ein Linux-Interpreter liest, ist das kein Schönheits-
+# problem: Ein Shell-Skript mit CRLF scheitert mit "bad interpreter: No such
+# file or directory", weil das \r zum Programmnamen gezählt wird. Im
+# Dockerfile hat CRLF hier bereits eine zeilenübergreifende Textersetzung
+# stillschweigend fehlschlagen lassen.
+#
+# Deshalb: Text normalisiert Git beim Einchecken auf LF, und die folgenden
+# Dateien bekommen LF auch im Arbeitsbaum.
+* text=auto
+
+Dockerfile   text eol=lf
+*.sh         text eol=lf
+*.yaml       text eol=lf
+*.yml        text eol=lf
+.env.example text eol=lf
+
+# Und was Git gar nicht anfassen darf.
+#
+# Git erkennt Binärdateien sonst an ihrem Inhalt, und das geht meistens
+# gut. Bei einem PDF ist "meistens" zu wenig: In
+# beispiele/e-rechnung/ liegt eine E-Rechnung, deren eingebettetes XML
+# über Byte-Positionen in der Querverweistabelle gefunden wird. Ein
+# einziges umgeschriebenes Zeilenende macht sie unlesbar, und zwar
+# lautlos, denn die Datei sieht danach noch aus wie ein PDF.
+*.pdf        binary
+*.png        binary

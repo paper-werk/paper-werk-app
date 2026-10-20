@@ -1,0 +1,115 @@
+{% extends "admin/base_site.html" %}
+{% load faktura_extras erfassung_extras unfold %}
+
+{% comment %} Rechnungsakte: Zusammensetzung einer Rechnung.
+
+   Gliederung wie Projekt- und Auftragsakte: Kopf, Kennzahlen, Tabellen
+   (auswertung/rechnungsakte.py). {% endcomment %}
+
+{% block nav-global %}{% include "admin/blaettern.html" %}{% endblock %}
+
+{% block content %}
+<div>
+
+  {# ---- Kopf ---- #}
+  <div class="flex flex-wrap gap-4 items-start justify-between mb-6">
+    <div>
+      {% comment %} Nummer, Zustand und Zahlungsstand in einer Zeile. Ein
+         Entwurf heißt wie in der Liste ("Entwurf 54"). {% endcomment %}
+      <div class="flex flex-wrap gap-x-3 gap-y-1 items-center">
+        <span class="font-semibold text-2xl text-font-important-light dark:text-font-important-dark">
+          {% if rechnung.nummer %}{{ rechnung.nummer }}{% else %}Entwurf {{ rechnung.pk }}{% endif %}
+          {% if rechnung.betreff %}&middot; {{ rechnung.betreff }}{% endif %}
+        </span>
+        {% include "unfold/helpers/label.html" with text=rechnung.get_status_display %}
+        {% if zahlungsstand %}
+          {% include "unfold/helpers/label.html" with text=zahlungsstand.text type=zahlungsstand.art %}
+        {% endif %}
+      </div>
+      <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        {% if projektakte_url %}
+          <a href="{{ projektakte_url }}" class="text-primary-600 hover:underline dark:text-primary-500">
+            {{ rechnung.projekt }}
+          </a>
+          &middot;
+        {% endif %}
+        {% if kunde_url %}
+          <a href="{{ kunde_url }}" class="text-primary-600 hover:underline dark:text-primary-500">
+            {{ empfaenger }}
+          </a>
+        {% else %}
+          {{ empfaenger }}
+        {% endif %}
+        &middot; {{ bezeichnung }}
+        {% if rechnung.belegdatum %}&middot; {{ rechnung.belegdatum|date:"d.m.Y" }}{% endif %}
+      </div>
+    </div>
+    <a href="{{ formular_url }}"
+       class="bg-primary-600 border border-transparent font-medium px-3 py-2 rounded-default text-sm text-white hover:bg-primary-700">
+      Rechnung bearbeiten
+    </a>
+  </div>
+
+  {% comment %} ---- Status des Belegs ----
+     Vom Entwurf bis zur Zahlung, je Schritt das Datum. Der erste offene
+     Schritt ist hervorgehoben (rechnungsakte.belegweg). {% endcomment %}
+  <ol id="belegweg" class="bg-white border border-base-200 flex flex-wrap gap-y-3 mb-6 px-4 py-4 rounded-default shadow-xs dark:bg-base-900 dark:border-base-800">
+    {% for schritt in belegweg %}
+      <li class="flex flex-1 gap-2 items-start min-w-32">
+        <span class="flex h-5 items-center justify-center mt-0.5 rounded-full shrink-0 w-5 {% if schritt.erreicht %}bg-primary-600 text-white{% elif schritt.jetzt %}border-2 border-primary-600 dark:border-primary-500{% else %}border-2 border-base-300 dark:border-base-600{% endif %}">
+          {% if schritt.erreicht %}<span class="material-symbols-outlined text-sm">check</span>{% endif %}
+        </span>
+        <span class="flex flex-col min-w-0">
+          <span class="text-sm {% if schritt.erreicht or schritt.jetzt %}font-medium text-font-important-light dark:text-font-important-dark{% else %}text-font-subtle-light dark:text-font-subtle-dark{% endif %}">{{ schritt.titel }}</span>
+          <span class="text-font-subtle-light text-xs dark:text-font-subtle-dark">{% if schritt.datum %}{{ schritt.datum }}{% elif schritt.jetzt %}als Nächstes{% else %}&nbsp;{% endif %}</span>
+        </span>
+      </li>
+    {% endfor %}
+  </ol>
+
+  {# ---- Kennzahlen: Nettobetrag nach Herkunft ---- #}
+  <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+    {% for kennzahl in kennzahlen %}
+      {% component "admin/_kennzahl.html" with titel=kennzahl.titel icon=kennzahl.icon warnung=kennzahl.warnung %}
+        <div class="pw-kennzahl-wert">{{ kennzahl.wert }}</div>
+        <div class="pw-kennzahl-text">{{ kennzahl.hinweis }}</div>
+      {% endcomponent %}
+    {% endfor %}
+  </div>
+
+  {# ---- Zuordnung ---- #}
+  <div class="mb-6">
+    {% include "admin/faktura/_zuordnung.html" %}
+  </div>
+
+  {# ---- Aufwand je Person ---- #}
+  <div class="lg:w-1/2">
+    {% component "unfold/components/card.html" with title="Fakturierte Erfassungen" %}
+      {% if personen %}
+        <table class="w-full text-sm" style="font-variant-numeric: tabular-nums">
+          <thead>
+            <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+              <th class="font-medium pb-2 pr-4 text-left">Person</th>
+              <th class="font-medium pb-2 text-right">Auf dieser Rechnung</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for anteil in personen %}
+              <tr class="border-b border-base-200 dark:border-base-800">
+                <td class="py-2 pr-4">{{ anteil.name }}</td>
+                <td class="py-2 text-right font-medium text-font-important-light dark:text-font-important-dark">
+                  {{ anteil.umfang }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          Auf dieser Rechnung stehen keine erfassten Leistungen.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+  </div>
+</div>
+{% endblock %}

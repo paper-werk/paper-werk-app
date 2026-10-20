@@ -1,0 +1,45 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie beschrieben.
+labels: ["fehler"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sicherheitslücken bitte nicht hier melden, sondern wie in SECURITY.md beschrieben.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Steht unten in der Seitenleiste.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte
+      description: Was wurde der Reihe nach getan?
+      placeholder: |
+        1. Rechnung angelegt, zwei Positionen
+        2. Festgeschrieben
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Erwartet
+    validations:
+      required: true
+  - type: textarea
+    id: tatsaechlich
+    attributes:
+      label: Tatsächlich
+      description: Fehlermeldung, Ausschnitt aus dem Log, Screenshot. Keine echten Kundendaten.
+    validations:
+      required: true
+  - type: textarea
+    id: umgebung
+    attributes:
+      label: Umgebung
+      description: Installation über paper-werk oder eigener Aufbau, Betriebssystem, Browser.

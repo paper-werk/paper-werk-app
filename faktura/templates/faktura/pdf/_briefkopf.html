@@ -1,0 +1,16 @@
+{% comment %} Briefkopf für Belege und Leistungsnachweis.
+
+   Eigenes Template, damit Logo und Anschrift an einer Stelle gepflegt
+   werden. Erwartet nur ``firma``. {% endcomment %}
+<header id="briefkopf">
+  {% if firma.logo %}
+    {% comment %} .url, weil .path den Dateipfad des Servers liefert
+       (C:\...\media\firma\logo.png), den weder Browser noch WeasyPrint
+       laden (ohne Schema, mit Backslashes); das Bild fehlte ohne Fehler.
+       .url ergibt /media/firma/logo.png, das der BelegUrlFetcher auf die
+       Datei auflöst. {% endcomment %}
+    <img class="logo" src="{{ firma.logo.url }}" alt="{{ firma.name }}">
+  {% else %}
+    <div class="firmenname">{{ firma.name|default:"" }}</div>
+  {% endif %}
+</header>
