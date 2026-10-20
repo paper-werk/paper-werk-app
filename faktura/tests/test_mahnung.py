@@ -131,7 +131,7 @@ class TestMahnung:
 
     def test_ohne_bausteine_bleibt_der_kopftext_leer(self, rechnung,
                                                      ueberfaellig):
-        # Migration 0047 legt die Bausteine der Mahnung an.
+        # Die Anfangsmigration von faktura legt die Bausteine der Mahnung an.
         Textbaustein.objects.all().delete()
         original = ueberfaellig(rechnung)
 

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('erfassung', '0026_fremdleistung_leistungsdatum'),
+        ('erfassung', '0001_squashed_0026_fremdleistung_leistungsdatum'),
         ('faktura', '0053_texte_ohne_gedankenstrich'),
     ]
 

@@ -12,10 +12,8 @@ from datetime import date, time
 from decimal import Decimal
 
 import pytest
-from django.apps import apps
 from django.contrib.auth.models import Permission
 from django.urls import reverse
-from django.utils import timezone
 
 from erfassung import services
 from erfassung.models import Eingangsrechnung, Erfassungszeile, Fremdleistung
@@ -141,23 +139,3 @@ class TestFremdleistung:
         unterschied = {c.field: (c.old, c.new)
                        for c in neu.diff_against(alt).changes}
         assert unterschied['menge'] == (Decimal('2.00'), Decimal('3.00'))
-
-
-@pytest.mark.django_db
-class TestAnfangsstand:
-    """Migration 0021 legt für jede vorhandene Zeile einen ersten Stand an,
-    damit die erste Änderung einen vorigen Stand hat."""
-
-    def test_jede_zeile_bekommt_genau_einen_anfangsstand(self, zeile):
-        from importlib import import_module
-        migration = import_module(
-            'erfassung.migrations.0021_aenderungsgeschichte_anfangsstand')
-        Erfassungszeile.history.all().delete()
-
-        migration.anfangsstand(apps, None)
-
-        staende = list(zeile.history.all())
-        assert len(staende) == 1
-        assert staende[0].history_change_reason == 'Anfangsstand'
-        assert staende[0].beschreibung == 'Gutachten, Entwurf'
-        assert staende[0].history_date <= timezone.now()
