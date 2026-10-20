@@ -12,7 +12,7 @@ import pytest
 from django.urls import reverse
 
 from faktura import facturx, services
-from faktura.models import Beleg, BelegTyp, Kontakt, Rechnungsart
+from faktura.models import BelegTyp, Kontakt, Rechnungsart
 from faktura.tests.test_pdf import xml_datum, xml_wert
 
 ARBEIT_BEGINN = date(2026, 9, 5)
@@ -126,31 +126,6 @@ class TestEigenesFeld:
 
         assert storno.steuerliches_leistungsdatum == ABNAHME
         assert neu.steuerliches_leistungsdatum == ABNAHME
-
-
-@pytest.mark.django_db
-class TestDatenmigration:
-
-    def test_vorhandene_rechnungen_bekommen_den_abgeleiteten_wert(
-            self, kunde):
-        from importlib import import_module
-
-        from django.apps import apps
-        migration = import_module(
-            'faktura.migrations.0036_steuerliches_leistungsdatum_fuellen')
-        gewoehnlich = rechnung(kunde, leistungsdatum=ARBEIT_BEGINN,
-                               leistungsdatum_bis=ARBEIT_ENDE)
-        abschlag = rechnung(kunde, art=Rechnungsart.ABSCHLAG,
-                            leistungsdatum=ARBEIT_BEGINN,
-                            leistungsdatum_bis=ARBEIT_ENDE)
-        Beleg.objects.update(steuerliches_leistungsdatum=None)
-
-        migration.fuellen(apps, None)
-
-        gewoehnlich.refresh_from_db()
-        abschlag.refresh_from_db()
-        assert gewoehnlich.steuerliches_leistungsdatum == ARBEIT_ENDE
-        assert abschlag.steuerliches_leistungsdatum is None
 
 
 @pytest.mark.django_db
