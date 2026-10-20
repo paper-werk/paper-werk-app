@@ -26,7 +26,7 @@ from faktura.models import (
 def test_legt_alle_bausteine_an(firma):
     """Zwanzig Bausteine: zwölf für den Beleg, acht Anschreiben.
 
-    Die Tabelle wird zuerst geleert, weil Migration 0047 die drei Bausteine
+    Die Tabelle wird zuerst geleert, weil die Anfangsmigration die drei Bausteine
     der Mahnung bereits anlegt.
     """
     Textbaustein.objects.all().delete()
@@ -116,7 +116,7 @@ def test_zweiter_lauf_aendert_nichts(firma):
 def test_befehl_laeuft_auf_leerer_anlage(capsys):
     """``faktura_textbausteine`` läuft auf einer leeren Installation."""
     Firma.objects.all().delete()
-    # Leer, auch ohne die Bausteine aus Migration 0047.
+    # Leer, auch ohne die Bausteine aus der Anfangsmigration.
     Textbaustein.objects.all().delete()
 
     call_command('faktura_textbausteine')

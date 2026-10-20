@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('faktura', '0052_steuersatz_tabelle'),
+        ('faktura', '0001_squashed_0052_steuersatz_tabelle'),
     ]
 
     operations = [
