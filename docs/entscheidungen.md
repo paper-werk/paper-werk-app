@@ -171,8 +171,7 @@ Die Begründung für Anwender steht in der Hilfe, Kapitel 06
   mehrere zugleich. Das frühere Modell `Lieferant` ist darin aufgegangen. Die
   Felder `kunde` an Beleg, Projekt und Zahlung bleiben, weil sie die Rolle
   benennen. Dazu das Feld „Eigene Kundennummer“: die Nummer, unter der der
-  Kontakt den eigenen Betrieb führt (`faktura/models/stammdaten.py`,
-  `erfassung/migrations/0014` bis `0016`).
+  Kontakt den eigenen Betrieb führt (`faktura/models/stammdaten.py`).
 - Adressen, Ansprechpartner und Kontaktwege sind eigene Tabellen.
   `kontakt.strasse` und die übrigen Adressfelder lesen aus der
   Standardadresse.
@@ -193,8 +192,7 @@ Die Begründung für Anwender steht in der Hilfe, Kapitel 06
   (`simple_history`), nur lesend; einen früheren Stand zurückzuholen ist
   gesperrt (`core/adminhilfen.py`).
 - Gespeicherte Filter der Erfassungsliste gibt es nicht. Zeitraum,
-  Sortierung und Art sind Filter der Liste und stehen in der URL
-  (`erfassung/migrations/0013_ansichten_entfernen.py`).
+  Sortierung und Art sind Filter der Liste und stehen in der URL.
 
 ## Rechte
 
@@ -202,11 +200,8 @@ Die Begründung für Anwender steht in der Hilfe, Kapitel 06
   `view_rechnung` (`Beleg.Meta.permissions`).
 - Tests melden sich mit Rollen-Fixtures an, nicht als Superuser, damit sie die
   Rechte prüfen, die im Betrieb gelten (`conftest.py`, `core/tests/test_rechte.py`).
-- Erfassen ohne Auftragsposition darf jeder, der erfassen darf. Das frühere
-  Recht `erfassung.katalog_frei_waehlen` wurde nie geprüft und ist entfernt;
-  die Migration löscht auch die `Permission`-Zeile, damit es nicht weiter in
-  der Gruppenauswahl steht
-  (`erfassung/migrations/0025_recht_katalog_frei_waehlen_entfernt.py`).
+- Erfassen ohne Auftragsposition darf jeder, der erfassen darf; ein eigenes
+  Recht dafür gibt es nicht.
 
 ## Architektur
 
