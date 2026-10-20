@@ -17,8 +17,9 @@
 #   - Docker nicht läuft oder gh kein write:packages hat (Image-Push).
 # Danach: main auf dev vorspulen, Tag, pushen, GitHub-Release mit dem
 # Sicherheitsbericht als Anhang, Image aus dem Tag bauen und nach GHCR
-# pushen, Vorgabe der Version in paper-werk anheben, dev auf die
-# nächste Version, lokales App-Image der Installation dev neu bauen.
+# pushen, Vorgabe der Version in paper-werk auf dev und main anheben,
+# dev auf die nächste Version, lokales App-Image der Installation dev neu
+# bauen.
 
 cd "$(dirname "$0")" || exit 1
 
@@ -84,7 +85,7 @@ echo
 echo "Jetzt wird ausgegeben:"
 echo "  main auf $(git rev-parse --short HEAD) vorspulen, Tag $TAG, pushen"
 echo "  GitHub-Release $VERSION mit $NOTES und $BERICHT"
-echo "  Image $IMAGE:$VERSION bauen und pushen, Vorgabe in paper-werk anheben"
+echo "  Image $IMAGE:$VERSION bauen und pushen, Vorgabe in paper-werk (dev, main) anheben"
 echo "  dev auf $NAECHSTE hochzählen, pushen"
 printf 'Zum Bestätigen die Version eintippen (%s): ' "$VERSION"
 read -r antwort
@@ -130,6 +131,30 @@ fi
 # Neue Installationen laden das Image in der Version, die die Vorlage in
 # paper-werk vorgibt. Angehoben wird nur, wenn das Image in der
 # Registry liegt, und nur auf einem sauberen dev.
+# main ist der Default-Branch von paper-werk, den die Anleitung klont; ohne
+# die Vorgabe dort laden neue Installationen die vorige Version. Enthält dev
+# außer dem Vorgabe-Commit nichts, was main fehlt, wird main vorgespult,
+# sonst kommt nur dieser Commit per cherry-pick auf main, damit unfertige
+# Arbeit auf dev nicht mit ausgeliefert wird.
+vorgabe_auf_main() {
+    if git -C "$INSTALL" merge-base --is-ancestor origin/main dev \
+        && [ -z "$(git -C "$INSTALL" rev-list origin/main..dev~1)" ]; then
+        git -C "$INSTALL" push -q origin dev:main \
+            && echo "main von paper-werk vorgespult." && return
+    elif git -C "$INSTALL" switch -q main \
+        && git -C "$INSTALL" merge -q --ff-only origin/main \
+        && git -C "$INSTALL" cherry-pick dev > /dev/null \
+        && git -C "$INSTALL" push -q origin main; then
+        git -C "$INSTALL" switch -q dev
+        echo "Vorgabe per cherry-pick auf main von paper-werk."
+        return
+    fi
+    git -C "$INSTALL" cherry-pick --abort 2> /dev/null
+    git -C "$INSTALL" switch -q dev 2> /dev/null
+    echo "WARNUNG: main von paper-werk gibt noch die vorige Version vor."
+    echo "  Von Hand: Commit $(git -C "$INSTALL" rev-parse --short dev) auf main übernehmen, pushen."
+}
+
 echo "== paper-werk: Vorgabe auf $VERSION"
 if [ "$IMAGE_DA" = 1 ] && [ -f "$INSTALL/$VORLAGE" ]; then
     if [ "$(git -C "$INSTALL" rev-parse --abbrev-ref HEAD)" = dev ] \
@@ -139,6 +164,7 @@ if [ "$IMAGE_DA" = 1 ] && [ -f "$INSTALL/$VORLAGE" ]; then
         && git -C "$INSTALL" commit -q -m "App-Image $VERSION als Vorgabe (paper-werk-app $TAG)" -- "$VORLAGE" \
         && git -C "$INSTALL" push -q origin dev; then
         echo "dev von paper-werk gibt jetzt $VERSION vor."
+        vorgabe_auf_main
     else
         echo "WARNUNG: Vorgabe nicht angehoben (paper-werk nicht auf sauberem dev?)."
         echo "  Von Hand in $INSTALL/$VORLAGE: PAPER_WERK_APP_VERSION:-$VERSION, committen, pushen."
