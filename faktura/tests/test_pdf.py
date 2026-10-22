@@ -338,6 +338,42 @@ class TestFacturX:
         assert xml_wert(xml, 'LineTotalAmount') == '100.00'
         assert '-' not in xml_wert(xml, 'GrandTotalAmount')
 
+    def test_storno_verweist_auf_die_rechnung(self, rechnung):
+        """BG-3: Das Storno nennt Nummer und Datum der stornierten Rechnung
+        (§ 31 Abs. 5 UStDV)."""
+        original = services.beleg_festschreiben(beleg_id=rechnung.pk)
+        storno, _ = services.rechnung_korrigieren(beleg_id=original.pk)
+
+        xml = facturx.xml_erzeugen(storno).decode()
+
+        assert vorgaengerbezug(xml) == (
+            original.nummer, original.belegdatum.strftime('%Y%m%d'))
+
+    def test_rechnungskorrektur_verweist_auf_die_rechnung(self, rechnung):
+        original = services.beleg_festschreiben(beleg_id=rechnung.pk)
+        korrektur = services.rechnungskorrektur_erstellen(
+            beleg_id=original.pk, betrag_netto=Decimal('100.00'),
+            grund='Nachlass wegen Verzug')
+        korrektur = services.beleg_festschreiben(beleg_id=korrektur.pk)
+
+        xml = facturx.xml_erzeugen(korrektur).decode()
+
+        assert vorgaengerbezug(xml) == (
+            original.nummer, original.belegdatum.strftime('%Y%m%d'))
+
+    def test_rechnung_ohne_vorgaengerbezug(self, rechnung):
+        """Auch die Neufassung nach einem Storno hat kein BG-3, obwohl ihr
+        ``vorgaenger`` gesetzt ist: Sie ist eine neue Rechnung."""
+        original = services.beleg_festschreiben(beleg_id=rechnung.pk)
+        _, neufassung = services.rechnung_korrigieren(beleg_id=original.pk)
+        neufassung = services.beleg_festschreiben(beleg_id=neufassung.pk)
+
+        assert neufassung.vorgaenger_id == original.pk
+        assert vorgaengerbezug(
+            facturx.xml_erzeugen(original).decode()) is None
+        assert vorgaengerbezug(
+            facturx.xml_erzeugen(neufassung).decode()) is None
+
     def test_storno_hat_keinen_negativen_einzelpreis(self, rechnung):
         """Dasselbe beim Storno. Regression: Nur die Zeilensumme war positiv,
         der Einzelpreis blieb negativ."""
@@ -445,6 +481,16 @@ def xml_wert(xml: str, tag: str) -> str:
     return treffer.group(1)
 
 
+def vorgaengerbezug(xml: str) -> tuple[str, str] | None:
+    """BG-3 als (BT-25, BT-26 im Format 102), ``None`` ohne BG-3."""
+    treffer = re.search(
+        r'<ram:InvoiceReferencedDocument>.*?'
+        r'<ram:IssuerAssignedID>([^<]*)</ram:IssuerAssignedID>.*?'
+        r'<qdt:DateTimeString format="102">([^<]*)</qdt:DateTimeString>.*?'
+        r'</ram:InvoiceReferencedDocument>', xml, re.S)
+    return treffer.groups() if treffer else None
+
+
 def kontextwert(xml: str, art: str) -> str:
     """ID in ``<art>SpecifiedDocumentContextParameter``: BT-24 bei
     'Guideline', BT-23 bei 'BusinessProcess'."""
@@ -463,6 +509,22 @@ class TestXRechnung:
     entscheidet der KoSIT-Validator; hier geprüft werden Kennung,
     Pflichtfelder und die Übereinstimmung der Beträge mit dem PDF.
     """
+
+    def test_storno_eines_nachlasses_als_384_mit_bg3(self, xrechnung):
+        """BR-DE-26: Bei 384 ist BG-3 vorhanden. Das XML besteht das XSD
+        (``xml_erzeugen`` prüft es)."""
+        original = services.beleg_festschreiben(beleg_id=xrechnung.pk)
+        korrektur = services.rechnungskorrektur_erstellen(
+            beleg_id=original.pk, betrag_netto=Decimal('100.00'),
+            grund='Mangel')
+        korrektur = services.beleg_festschreiben(beleg_id=korrektur.pk)
+        storno = services.nachlass_stornieren(beleg_id=korrektur.pk)
+
+        xml = facturx.xml_erzeugen(storno).decode()
+
+        assert xml_wert(xml, 'TypeCode') == '384'
+        assert vorgaengerbezug(xml)[0] == korrektur.nummer
+        assert '-' not in xml_wert(xml, 'GrandTotalAmount')
 
     def test_der_zustellweg_waehlt_das_profil(self, xrechnung, rechnung):
         assert facturx.ist_xrechnung(xrechnung)
