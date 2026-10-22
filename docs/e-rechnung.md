@@ -23,8 +23,10 @@ erhalten eine XRechnung 3.0 als reines XML.
 | Zusätzliche Pflichtfelder | keine | Leitweg-ID (BT-10), Ansprechpartner mit Telefon und E-Mail (BG-6), elektronische Adressen (BT-34: E-Mail der Firma, BT-49: Leitweg-ID mit Schema `0204`), Zahlungsanweisung auch bei Gutschriften (Code `1`) |
 
 **Belegarten:** Rechnung (Typcode 380), Stornorechnung und
-Rechnungskorrektur (beide 381, Beträge positiv). Angebot, Auftrag,
-Lieferschein und Mahnung haben keine E-Rechnung.
+Rechnungskorrektur (beide 381, Beträge positiv), Storno einer
+Rechnungskorrektur (384, korrigierte Rechnung). Storno und Korrektur
+verweisen in BG-3 auf ihren Vorgänger. Angebot, Auftrag, Lieferschein und
+Mahnung haben keine E-Rechnung.
 
 **Wahl des Profils:** Der Zustellweg am Kunden bestimmt das Profil. Beim
 Festschreiben wird es daraus abgeleitet und am Beleg eingefroren; eine

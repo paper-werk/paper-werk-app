@@ -18,7 +18,7 @@ from django.utils import timezone
 from faktura import facturx, services
 from faktura.models import Beleg, BelegStatus, BelegTyp, Kontakt, Rechnungsart
 from faktura.services.korrektur import forderungszeile
-from faktura.tests.test_pdf import xml_wert
+from faktura.tests.test_pdf import vorgaengerbezug, xml_wert
 
 # Mit Marker legt ``faktura/conftest.py`` die eigene Firma an, ohne die
 # kein XML entsteht.
@@ -303,15 +303,15 @@ class TestNachlassStornieren:
         assert sum(services.belegsummen(b).brutto
                    for b in belege) == Decimal('0.00')
 
-    def test_e_rechnung_als_rechnung_nicht_als_gutschrift(self, rechnung):
-        """Das Storno des Nachlasses ist im XML eine Rechnung (380), weil 381
-        die positiven Beträge umkehrte."""
+    def test_e_rechnung_als_korrigierte_rechnung(self, rechnung):
+        """Das Storno des Nachlasses ist im XML eine korrigierte Rechnung
+        (384), weil 381 die positiven Beträge umkehrte."""
         korrektur = _nachlass(rechnung, '100.00')
         storno = services.nachlass_stornieren(beleg_id=korrektur.pk)
         storno_rechnung, _ = services.rechnung_korrigieren(
             beleg_id=rechnung.pk)
 
-        assert facturx.typcode(storno) == '380'
+        assert facturx.typcode(storno) == '384'
         assert facturx.typcode(korrektur) == '381'
         assert facturx.typcode(storno_rechnung) == '381'
 
@@ -322,8 +322,19 @@ class TestNachlassStornieren:
 
         xml = facturx.xml_erzeugen(storno).decode()
 
-        assert xml_wert(xml, 'TypeCode') == '380'
+        assert xml_wert(xml, 'TypeCode') == '384'
         assert Decimal(xml_wert(xml, 'GrandTotalAmount')) == Decimal('119.00')
+
+    def test_das_xml_verweist_auf_die_korrektur(self, rechnung):
+        """BG-3 nennt die berichtigte Rechnungskorrektur, nicht die
+        Rechnung; BR-DE-26 verlangt BG-3 bei 384."""
+        korrektur = _nachlass(rechnung, '100.00')
+        storno = services.nachlass_stornieren(beleg_id=korrektur.pk)
+
+        xml = facturx.xml_erzeugen(storno).decode()
+
+        assert vorgaengerbezug(xml) == (
+            korrektur.nummer, korrektur.belegdatum.strftime('%Y%m%d'))
 
     def test_der_kopftext_schreibt_nicht_gut(self, rechnung):
         korrektur = _nachlass(rechnung, '100.00')

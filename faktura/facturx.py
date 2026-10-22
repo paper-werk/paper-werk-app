@@ -89,6 +89,12 @@ TYP_CODE = {
     BelegTyp.GUTSCHRIFT: '381',
 }
 
+#: Corrected invoice, für das Storno einer Rechnungskorrektur.
+TYPCODE_KORRIGIERT = '384'
+
+#: Belegtypen, die im XML auf ihren Vorgänger verweisen (BG-3).
+GEGENBELEGE = (BelegTyp.STORNO, BelegTyp.GUTSCHRIFT)
+
 def typcode(beleg) -> str:
     """BT-3 des Belegs. Bei Rechnungen aus der Zuordnung von Rechnungsart zu
     Code in den Settings (``ERECHNUNG_TYPCODE``); die Fachlogik kennt nur
@@ -96,13 +102,13 @@ def typcode(beleg) -> str:
     if beleg.typ == BelegTyp.RECHNUNG:
         return settings.ERECHNUNG_TYPCODE.get(beleg.rechnungsart,
                                               TYP_CODE[beleg.typ])
-    # Das Storno einer Rechnungskorrektur stellt die Forderung wieder her,
-    # mit positiven Beträgen, also als Rechnung (380). Mit 381 kehrte
-    # ``vorzeichen`` die Beträge im XML um (entscheidungen.md,
-    # „Rechnungskorrektur und Nachlass“).
+    # Das Storno einer Rechnungskorrektur berichtigt die Korrektur und stellt
+    # die Forderung wieder her, mit positiven Beträgen: korrigierte Rechnung
+    # (384). Mit 381 kehrte ``vorzeichen`` die Beträge im XML um
+    # (entscheidungen.md, „Rechnungskorrektur und Nachlass“).
     if (beleg.typ == BelegTyp.STORNO and beleg.vorgaenger_id
             and beleg.vorgaenger.typ == BelegTyp.GUTSCHRIFT):
-        return TYP_CODE[BelegTyp.RECHNUNG]
+        return TYPCODE_KORRIGIERT
     return TYP_CODE[beleg.typ]
 
 
@@ -434,6 +440,15 @@ def xml_erzeugen(beleg) -> bytes:
         projekt = doc.trade.agreement.procuring_project_type
         projekt.id = beleg.projekt.nummer
         projekt.name = beleg.projekt.bezeichnung
+
+    # BG-3 "Preceding invoice reference": Storno und Rechnungskorrektur
+    # verweisen auf den berichtigten Beleg (§ 31 Abs. 5 UStDV; bei 384
+    # BR-DE-26). Bei XRechnung ist das XML das Original, der Verweis im
+    # Betreff genügt dort nicht. Im CII höchstens einmal.
+    if beleg.typ in GEGENBELEGE and beleg.vorgaenger_id:
+        bezug = doc.trade.settlement.invoice_referenced_document
+        bezug.issuer_assigned_id = beleg.vorgaenger.nummer
+        bezug.issue_date_time = beleg.vorgaenger.belegdatum
 
     # --- Leistungsdatum und -zeitraum ---
     # BT-72 ist das Ende, nicht der Beginn; beim Abschlag fehlt es. Die
