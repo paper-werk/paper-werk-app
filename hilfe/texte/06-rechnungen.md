@@ -370,6 +370,6 @@ genau einem Gegenbeleg zuordnen kann. Nur wenn der Nachlass nie
 hinausgegangen ist, bleibt sein Storno bei Ihnen.
 
 Das Storno eines Nachlasses erhöht die Forderung wieder. Als E-Rechnung
-geht es deshalb als Rechnung hinaus, nicht als Gutschrift.
+geht es deshalb als korrigierte Rechnung hinaus, nicht als Gutschrift.
 
 Rechnungskorrekturen entstehen nur so; ihre Liste hat kein „+“.

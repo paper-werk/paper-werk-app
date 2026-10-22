@@ -72,7 +72,13 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   Fassung bleibt als `Belegfassung` erhalten
   (`services.erechnung_neu_ausstellen`).
 - Der Dokumenttyp (BT-3) ist je Rechnungsart einstellbar, Vorgabe 380;
-  Stornorechnung und Rechnungskorrektur haben 381 (`ERECHNUNG_TYPCODE`).
+  Stornorechnung und Rechnungskorrektur haben 381, das Storno einer
+  Rechnungskorrektur 384 (`ERECHNUNG_TYPCODE`, `facturx.typcode`).
+- Storno und Rechnungskorrektur verweisen im XML auf ihren Vorgänger (BG-3:
+  BT-25 Nummer, BT-26 Datum), weil die Berichtigung spezifisch und eindeutig
+  auf den berichtigten Beleg verweisen muss (§ 31 Abs. 5 UStDV) und bei
+  XRechnung das XML das Original ist. Die Neufassung nach einem Storno hat
+  kein BG-3; sie ist eine neue Rechnung.
 - Der erste Versand wird in `versendet_am` und `versendet_an` gespeichert und
   nie überschrieben. Weitere Versendungen stehen im Verlauf (`LogEntry`),
   ohne eigene Tabelle (`Beleg.versendet_am`).
@@ -130,8 +136,10 @@ mindert nichts.
 - Eine Rechnung lässt sich erst stornieren, wenn ihre festgeschriebenen
   Nachlässe storniert sind, weil sonst doppelt gutgeschrieben würde.
 - „Nachlass stornieren“ an der Korrektur erzeugt ein eigenes Storno ohne
-  Neufassung, mit positiven Beträgen, als E-Rechnung mit Typcode 380; mit 381
-  kehrte das XML die Beträge um.
+  Neufassung, mit positiven Beträgen, als E-Rechnung mit Typcode 384
+  (korrigierte Rechnung), weil es die Korrektur berichtigt; BG-3 nennt die
+  Korrektur, wie BR-DE-26 es bei 384 verlangt. Mit 381 kehrte das XML die
+  Beträge um.
 - Jeder Beleg bekommt seinen eigenen Gegenbeleg, kein Sammelstorno über
   Rechnung und Nachlass. Ob ein Storno zwei Belege aufheben darf, ist nicht
   belegt (UStAE 14.11 verlangt nur einen „spezifischen und eindeutigen“
@@ -144,8 +152,6 @@ mindert nichts.
   festschreiben.
 - Abschlagsrechnungen bekommen keinen Nachlass; dort gilt die Kürzung bei der
   Zahlung.
-- Offen: ob Typcode 384 (korrigierte Rechnung) für das Storno eines Nachlasses
-  passender ist als 380.
 
 Die Begründung für Anwender steht in der Hilfe, Kapitel 06
 „Rechnungskorrekturen“. Code: `services.nachlaesse`,
