@@ -264,6 +264,25 @@ class TestWiedereroeffnen:
         assert Beleg.objects.get(pk=angebot.pk).betreff.endswith('angepasst')
         assert beleg.positionen.first().einzelpreis == Decimal('90.00')
 
+    def test_das_pdf_zeigt_den_entwurf(self, mit_pdf, angebot, admin_client):
+        """"PDF anzeigen" erzeugt am wiedereröffneten Beleg die Vorschau,
+        weil ``ansicht_pdf`` eine gespeicherte Datei bevorzugt und sonst den
+        Stand vom Festschreiben ausliefert."""
+        from .test_pdf import text_aus
+
+        services.beleg_festschreiben(beleg_id=angebot.pk)
+        beleg = services.beleg_wiedereroeffnen(beleg_id=angebot.pk)
+        services.position_hinzufuegen(
+            beleg=beleg, bezeichnung='Statik nachgereicht', menge=Decimal('1'),
+            einzelpreis=Decimal('300.00'), steuersatz='19.00',
+        )
+
+        antwort = admin_client.get(
+            f'/admin/faktura/angebot/{angebot.pk}/pdf-ansehen/')
+
+        assert 'Statik nachgereicht' in text_aus(antwort.content)
+        assert not Beleg.objects.get(pk=angebot.pk).pdf
+
     def test_die_spur_bleibt_am_beleg(self, angebot, bearbeiterin):
         """``geaendert_am/-von`` bleibt gesetzt, weil die GoBD verlangen, dass
         Änderungen erkennbar bleiben."""

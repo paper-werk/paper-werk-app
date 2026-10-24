@@ -57,6 +57,8 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   Nummer bleibt, einen dritten Zustand gibt es nicht. Lieferscheine lassen
   sich nicht wiedereröffnen. Die Änderung steht in `geaendert_am` und
   `geaendert_von` (`BelegTyp.entsperrbar`, `services.beleg_wiedereroeffnen`).
+  PDF und XML werden vom Beleg gelöst, damit „PDF anzeigen“ den Entwurf
+  zeigt; das Festschreiben erzeugt sie neu.
 - Der Auftrag bekommt beim Festschreiben kein Dokument und wird nicht
   archiviert (`BelegTyp.mit_dokument`).
 
