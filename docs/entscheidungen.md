@@ -120,6 +120,16 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   „vereinnahmt“ gibt es nicht (`faktura/services/abschlaege.py`).
 - Mehr abzurechnen als beauftragt ist erlaubt, beim Festschreiben aber erst
   nach Hinweis und Bestätigung (`services.mengenueberschreitungen`).
+- Abschlagsrechnungen ab der zweiten sind kumuliert: Leistungsstand abzüglich
+  der gestellten Abschläge. Kumuliert wird nur bei der Ausgabe, gespeichert
+  bleibt der Zuwachs, damit Schlussrechnung und offene Posten unverändert
+  rechnen. PDF und XML enthalten dieselben Zeilen, weil der Bildteil keine
+  abweichende Leistungsbeschreibung enthalten darf (Abschn. 14.4 Abs. 4a
+  UStAE). Abgezogen wird das Gestellte, nicht das Bezahlte, weil sonst ein
+  offener Abschlag in zwei Rechnungen gefordert würde. In Projekten mit
+  Teilabnahme bleibt der Abschlag einfach (`faktura/services/kumuliert.py`).
+  Verworfen: der kumulierte Stand als gespeicherte Positionen mit Abzügen der
+  Vorgänger, weil eine Abzugszeile den Vorgänger abrechnen würde.
 
 ## Rechnungskorrektur und Nachlass
 

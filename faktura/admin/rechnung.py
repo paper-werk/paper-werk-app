@@ -728,6 +728,23 @@ class AbschlagsrechnungAdmin(RechnungAdmin):
                     'empfaenger_zeile', 'belegdatum', 'faelligkeit',
                     'summe_brutto', 'zahlungsstand', 'dokument', 'schloss']
 
+    #: Ab dem 2. Abschlag unter den Positionen die kumulierte Sicht wie im
+    #: PDF, schreibgeschützt.
+    change_form_after_template = 'admin/faktura/kumuliert.html'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        beleg = self._beleg_oder_none(object_id)
+        kumuliert = (services.kumulierter_abschlag(beleg)
+                     if beleg is not None else None)
+        if kumuliert is not None:
+            extra_context = {
+                **(extra_context or {}),
+                'kumuliert': kumuliert,
+                'kumuliert_netto': services.belegsummen(beleg).netto,
+            }
+        return super().change_view(request, object_id, form_url,
+                                   extra_context)
+
     @admin.display(description='Abschlag', ordering='belegdatum')
     def abschlag_anzeige(self, beleg):
         """Bezeichnung wie "2. Abschlagsrechnung", sortiert nach Belegdatum,
