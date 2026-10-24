@@ -76,7 +76,7 @@ class ErfassungszeileAdmin(
     search_fields = ['projekt__nummer', 'projekt__bezeichnung',
                      'benutzer__first_name', 'benutzer__last_name',
                      'benutzer__username', 'beschreibung']
-    # Mit dem Auftrag, weil die Spalte "Worauf" seine Nummer zeigt; sonst
+    # Mit dem Auftrag, weil die Spalte "Position / Leistung" seine Nummer zeigt; sonst
     # eine Abfrage je Zeile (Lasttest).
     list_select_related = ['projekt', 'leistung', 'auftragsposition__beleg',
                            'benutzer']

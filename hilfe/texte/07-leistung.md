@@ -25,7 +25,7 @@ alle und hat zusätzlich das Feld **Person** und den Filter nach Person.
 | Dauer | aus Von und Bis gerechnet |
 | Umfang | Dauer oder Menge mit Einheit |
 | Projekt | |
-| Worauf | Auftragsposition mit Positionsnummer und darunter die Auftragsnummer, sonst die Katalogleistung |
+| Position / Leistung | Auftragsnummer und Auftragsposition mit Positionsnummer, sonst die Katalogleistung |
 | Person | nur mit dem Recht für andere |
 | Beschreibung | |
 | Zustand | offen, abgerechnet oder nicht abrechenbar |
