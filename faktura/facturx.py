@@ -592,16 +592,58 @@ def xmp_metadaten(beleg=None) -> bytes:
 
     Ohne ``beleg`` das Profil EN 16931, mit Beleg das Ergebnis von
     ``ist_xrechnung``. Name und Profil müssen zum Anhang passen.
+
+    Dazu die Deklaration des Namensraums ``fx`` als PDF/A-Erweiterungsschema
+    (``XMP_ERWEITERUNGSSCHEMA``), weil PDF/A nur deklarierte XMP-Properties
+    zulässt (ISO 19005-3, 6.6.2.3.1). Ohne sie ist das PDF kein gültiges
+    PDF/A-3; das XML bleibt davon unberührt.
     """
     dateiname = anhangname(beleg) if beleg is not None else XML_DATEINAME
     profil = profilname(beleg) if beleg is not None else PROFIL_NAME
-    return f'''<rdf:Description rdf:about=""
+    return (XMP_ERWEITERUNGSSCHEMA + f'''<rdf:Description rdf:about=""
         xmlns:fx="urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#">
       <fx:DocumentType>INVOICE</fx:DocumentType>
       <fx:DocumentFileName>{dateiname}</fx:DocumentFileName>
       <fx:Version>1.0</fx:Version>
       <fx:ConformanceLevel>{profil}</fx:ConformanceLevel>
-    </rdf:Description>'''.encode()
+    </rdf:Description>''').encode()
+
+
+def _xmp_property(name: str, beschreibung: str) -> str:
+    return f'''
+              <rdf:li rdf:parseType="Resource">
+                <pdfaProperty:name>{name}</pdfaProperty:name>
+                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                <pdfaProperty:category>external</pdfaProperty:category>
+                <pdfaProperty:description>{beschreibung}</pdfaProperty:description>
+              </rdf:li>'''
+
+
+#: PDF/A-Erweiterungsschema für die Factur-X-Properties, Wortlaut nach der
+#: Factur-X-Spezifikation 1.0 (Anhang, XMP-Metadaten).
+XMP_ERWEITERUNGSSCHEMA = f'''<rdf:Description rdf:about=""
+        xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/"
+        xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#"
+        xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#">
+      <pdfaExtension:schemas>
+        <rdf:Bag>
+          <rdf:li rdf:parseType="Resource">
+            <pdfaSchema:schema>Factur-X PDFA Extension Schema</pdfaSchema:schema>
+            <pdfaSchema:namespaceURI>urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#</pdfaSchema:namespaceURI>
+            <pdfaSchema:prefix>fx</pdfaSchema:prefix>
+            <pdfaSchema:property>
+              <rdf:Seq>{
+    _xmp_property('DocumentFileName', 'name of the embedded XML invoice file')}{
+    _xmp_property('DocumentType', 'INVOICE')}{
+    _xmp_property('Version', 'The actual version of the Factur-X XML schema')}{
+    _xmp_property('ConformanceLevel',
+                  'The conformance level of the embedded Factur-X data')}
+              </rdf:Seq>
+            </pdfaSchema:property>
+          </rdf:li>
+        </rdf:Bag>
+      </pdfaExtension:schemas>
+    </rdf:Description>'''
 
 
 def _xrechnung_pruefen(beleg, firma) -> None:
