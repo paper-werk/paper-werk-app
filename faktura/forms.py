@@ -353,6 +353,12 @@ class BelegpositionForm(forms.ModelForm):
                 'placeholder': 'Langtext, erscheint im PDF unter der '
                                'Bezeichnung',
             }),
+            # Die Zeile zeigt keinen help_text; der Platzhalter nennt die
+            # Bedeutung des leeren Felds.
+            'zuschlag_auf': UnfoldAdminTextInputWidget(attrs={
+                'placeholder': 'leer: alle Leistungen, sonst Titel oder '
+                               'Position',
+            }),
             # Spinner mit Schrittweite 1.
             'menge': MengeWidget(attrs={'step': '1'}),
         }
