@@ -60,7 +60,9 @@ logging.getLogger('fontTools').setLevel(logging.ERROR)
 #       Nummern wie "01.01.0010"; optionale Positionen
 #   v10 Zeilenarten Titel (mit Titelsumme), Text und Zuschlag (mit
 #       Rechenweg); Schlussrechnung je Abschlag eine Zeile
-VORLAGENVERSION = 'v10'
+#   v11 Abschlagsrechnung ab der zweiten kumuliert: Leistungsstand, darunter
+#       die bereits berechneten Abschläge
+VORLAGENVERSION = 'v11'
 
 #: Spalte "Pos.": bis vier Zeichen bestimmt die Überschrift die Breite
 #: (beleg.css). Darüber je Zeichen 1,6 mm plus 2,4 mm Padding, höchstens
@@ -111,6 +113,12 @@ def beleg_als_html(beleg, *, entwurf_kennzeichnen: bool = True) -> str:
     # Basis-Template sie nicht behandeln muss.
     alle = list(beleg.positionen.all())
     positionen = [p for p in alle if not p.ist_abzug]
+    # Je Abschlag eine Zeile, die Restzeile darin enthalten (R-174).
+    abzuege = services.abzugsblock(alle)
+    # Ab dem 2. Abschlag der Leistungsstand und die Vorgänger (R-183).
+    kumuliert = services.kumulierter_abschlag(beleg)
+    if kumuliert is not None:
+        positionen, abzuege = kumuliert.positionen, kumuliert.abzuege
     # Titelsumme nach der letzten Zeile des Titels, Rechenweg unter dem
     # Zuschlag, als Attribut der Zeile, damit das Template eine Schleife
     # hat (R-180, R-181).
@@ -126,8 +134,8 @@ def beleg_als_html(beleg, *, entwurf_kennzeichnen: bool = True) -> str:
         'firma': firma,
         'positionen': positionen,
         'pos_breite': pos_breite(positionen),
-        # Je Abschlag eine Zeile, die Restzeile darin enthalten (R-174).
-        'abzuege': services.abzugsblock(alle),
+        'abzuege': abzuege,
+        'kumuliert': kumuliert is not None,
         'summen': summen,
         'mit_preisen': beleg.ist_wertbeleg,
         'ist_entwurf': beleg.status == BelegStatus.ENTWURF,
