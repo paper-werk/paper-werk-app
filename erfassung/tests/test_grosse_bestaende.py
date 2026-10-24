@@ -164,7 +164,7 @@ class TestAbfragenDerErfassungsliste:
     def test_doppelt_so_viele_zeilen_gleich_viele_abfragen(
             self, verwaltung, projekt, auftragsposition, mitarbeiter):
         """Die Zahl der Abfragen hängt nicht von der Zahl der Zeilen ab; die
-        Spalte "Worauf" lädt den Auftrag mit."""
+        Spalte "Position / Leistung" lädt den Auftrag mit."""
         def erfassen(tage):
             for tag in tage:
                 services.zeile_erfassen(

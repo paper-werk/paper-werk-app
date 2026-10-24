@@ -175,13 +175,13 @@ class TestNachAuftrag:
 
     def test_worauf_zeigt_die_positionsnummer(self, als_mitarbeiter,
                                               zwei_auftraege):
-        """Die Spalte zeigt die Position mit Nummer, darunter den Auftrag."""
+        """Die Spalte zeigt Auftrag und Position mit Nummer wie das
+        Formular."""
         antwort = als_mitarbeiter.get(reverse(LISTE),
                                       {'sortierung': Sortierung.AUFTRAG})
 
-        zelle = _zelle(antwort.content.decode(), 'worauf')
-        assert '10. Planung' in zelle
-        assert 'AU-2026-0001' in zelle
+        assert (_zelle(antwort.content.decode(), 'worauf')
+                == 'AU-2026-0001 · 10. Planung')
 
 
 @pytest.mark.django_db
