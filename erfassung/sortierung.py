@@ -18,6 +18,7 @@ class Sortierung(models.TextChoices):
     NEUESTE = 'neueste', 'Neueste zuerst'
     NACHWEIS = 'nachweis', 'Nachweis: Projekt, Art, Datum'
     TAGEBUCH = 'tagebuch', 'Tagebuch: Projekt, Datum, Art'
+    AUFTRAG = 'auftrag', 'Auftrag: Projekt, Position, Datum'
     PERSON = 'person', 'Person, dann Datum'
     LEISTUNG = 'leistung', 'Leistung, dann Datum'
 
@@ -66,6 +67,23 @@ def _tag():
     return [_datum(), _uhrzeit()]
 
 
+def _auftragsposition():
+    """Auftrag, dann Position in der Reihenfolge des Belegs
+    (``Belegposition.sortierung``, "9" vor "10").
+
+    Zeilen ohne Auftragsposition stehen mit ``nulls_last`` am Ende und dort
+    nach Katalogleistung. Der Auftrag sortiert nach Nummer und, weil ein
+    Entwurf keine Nummer hat, zusätzlich nach Primärschlüssel; sonst
+    mischten sich die Positionen zweier Entwürfe.
+    """
+    return [
+        F('auftragsposition__beleg__nummer').asc(nulls_last=True),
+        F('auftragsposition__beleg_id').asc(nulls_last=True),
+        F('auftragsposition__sortierung').asc(nulls_last=True),
+        'leistung__bezeichnung',
+    ]
+
+
 def _tag_rueckwaerts():
     return [F('datum').desc(), F('von').desc(nulls_last=True)]
 
@@ -94,6 +112,9 @@ _REGELN = {
     # und nicht _tag().
     Sortierung.TAGEBUCH:
         lambda: ['projekt__nummer', _datum(), _artrang().asc(), _uhrzeit()],
+    # Je Vorhaben nach Auftragsposition, für Aufträge mit vielen Positionen.
+    Sortierung.AUFTRAG:
+        lambda: ['projekt__nummer', *_auftragsposition(), *_tag()],
     Sortierung.PERSON:
         lambda: [*_person(), *_tag()],
     Sortierung.LEISTUNG:

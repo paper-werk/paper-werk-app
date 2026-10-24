@@ -313,7 +313,7 @@ class EingangsrechnungAdmin(Kopfleiste, VersionAdminMixin,
 
     @admin.display(description='Projekt')
     def projekte_anzeige(self, obj) -> str:
-        nummern = sorted({p.projekt.nummer for p in obj.positionen.all()})
+        nummern = [projekt.nummer for projekt in obj.projekte]
         if not nummern:
             return '—'
         if len(nummern) <= 3:
