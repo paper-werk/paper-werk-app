@@ -22,14 +22,17 @@ class SpaltenMixin:
     def worauf(self, obj):
         """Grundlage der Zeile: Auftragsposition oder Katalogleistung.
 
-        Eine gemeinsame Spalte, weil immer nur eines gesetzt ist. Nicht
-        sortierbar, weil das über zwei Relationen eine Annotation bräuchte.
+        Eine gemeinsame Spalte, weil immer nur eines gesetzt ist. Die
+        Auftragsposition mit Positionsnummer wie in der Auswahl des
+        Formulars, damit gleich benannte Positionen unterscheidbar sind.
+        Nicht über den Spaltenkopf sortierbar, weil das über zwei Relationen
+        eine Annotation bräuchte; dafür gibt es die Sortierung "Auftrag".
         """
         if obj.auftragsposition_id:
             auftrag = obj.auftragsposition.beleg
             return format_html(
                 '{}<br><span class="text-xs text-base-500">{}</span>',
-                obj.leistungsbezeichnung,
+                obj.auftragsposition,
                 auftrag.nummer or 'Auftrag ohne Nummer')
         return obj.leistungsbezeichnung
 

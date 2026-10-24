@@ -570,6 +570,17 @@ class Eingangsrechnung(MitVersion):
         return self.rest == 0
 
     @property
+    def projekte(self) -> list:
+        """Projekte der Positionen, ohne Doppelte, nach Nummer.
+
+        Bei einer teilweise verteilten Rechnung der wahrscheinliche Ort des
+        Rests. Liest ``positionen.all()``, damit ``prefetch_related(
+        'positionen__projekt')`` greift.
+        """
+        projekte = {p.projekt_id: p.projekt for p in self.positionen.all()}
+        return sorted(projekte.values(), key=lambda projekt: projekt.nummer)
+
+    @property
     def archiv_adresse(self) -> str:
         """URL des Dokuments in Paperless, leer ohne ID."""
         if not self.paperless_id:

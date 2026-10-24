@@ -84,20 +84,30 @@ def _labor(projekt, *, nummer='AL-1', betrag='96.00', tage_zurueck=1):
         menge=Decimal('1'), einkaufspreis=Decimal('96.00'))
 
 
-def _zeilen(inhalt) -> list[str]:
-    """Zeilen des ``<tbody>`` der ersten Tabelle als Text.
+def _zeilen(inhalt, tabelle=0) -> list[str]:
+    """Zeilen des ``<tbody>`` der Tabelle mit Index ``tabelle`` als Text.
 
     Nur der Rumpf, weil die Kopfzeile dieselbe CSS-Klasse hat und eine
     Prüfung der Sortierung sonst den Kopf mitläse (wie in
     erfassung/tests/hilfen.py).
     """
-    rumpf = re.search(r'<tbody>(.*?)</tbody>', inhalt, re.S)
-    if rumpf is None:
+    rumpfe = re.findall(r'<tbody>(.*?)</tbody>', inhalt, re.S)
+    if len(rumpfe) <= tabelle:
         return []
     return [
         re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', z)).strip()
-        for z in re.findall(r'<tr[^>]*>(.*?)</tr>', rumpf.group(1), re.S)
+        for z in re.findall(r'<tr[^>]*>(.*?)</tr>', rumpfe[tabelle], re.S)
     ]
+
+
+def _fremde_zeilen(inhalt) -> list[str]:
+    """Zeilen der Tabelle "Eingangsrechnungen ohne vollständige Zuordnung".
+
+    Ohne offene Leistung fehlt die erste Tabelle, die zweite ist dann die
+    einzige.
+    """
+    rumpfe = re.findall(r'<tbody>', inhalt)
+    return _zeilen(inhalt, tabelle=len(rumpfe) - 1)
 
 
 class TestWasAufDerListeSteht:
@@ -213,6 +223,33 @@ class TestDieFremdenRechnungen:
 
         assert 'AL-fertig' not in inhalt
         assert 'vollständig auf Projekte verteilt' in inhalt
+
+    def test_die_teilweise_verteilte_nennt_ihr_projekt(self, als_chefin,
+                                                       kunde):
+        """Das Projekt der verteilten Positionen steht an der Rechnung, als
+        wahrscheinlicher Ort des Rests."""
+        projekt = _projekt(kunde, '2026-077')
+        _labor(projekt, nummer='AL-4711', betrag='500.00')
+
+        inhalt = als_chefin.get(LISTE).content.decode()
+        (zeile,) = _fremde_zeilen(inhalt)
+
+        assert 'AL-4711' in zeile
+        assert '2026-077' in zeile
+        assert reverse('projektakte', args=[projekt.pk]) in inhalt
+
+    def test_eine_rechnung_ohne_positionen_ist_nicht_verteilt(
+            self, als_chefin, kunde):
+        labor = Kontakt.objects.create(name='ISARTAL', ist_kunde=False,
+                                       ist_lieferant=True)
+        Eingangsrechnung.objects.create(
+            lieferant=labor, nummer='AL-leer', datum=timezone.localdate(),
+            betrag_netto=Decimal('120.00'))
+
+        (zeile,) = _fremde_zeilen(als_chefin.get(LISTE).content.decode())
+
+        assert 'AL-leer' in zeile
+        assert 'noch nicht verteilt' in zeile
 
 
 class TestWerDasSehenDarf:
