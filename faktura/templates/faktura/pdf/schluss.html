@@ -1,8 +1,4 @@
 {% extends "faktura/pdf/rechnung.html" %}
-{% load faktura_extras %}
-{% comment %} Eigenes load, weil {% load %} je Template gilt und nicht
-vererbt wird; ohne es schlägt erst das Rendern des Abzugsblocks fehl.
-{% endcomment %}
 {% comment %} Schlussrechnung: volle Leistung abzüglich der Abschläge. Die
 Abzugszeilen sind Positionen mit negativem Preis (ist_abzug=True);
 pdf.beleg_als_html nimmt sie aus der Positionstabelle und übergibt sie als
@@ -12,28 +8,7 @@ pdf.beleg_als_html nimmt sie aus der Positionstabelle und übergibt sie als
 
 {% block gesamtbezeichnung %}Restbetrag{% endblock %}
 
-{% comment %} Abzüge zwischen Positionen und Summen, außerhalb der
-Positionstabelle, damit sie nicht als Leistungen erscheinen. {% endcomment %}
 {% block summen %}
-  {% if abzuege %}
-    <table class="positionen abzuege">
-      <thead>
-        <tr>
-          <th class="bezeichnung">Bereits berechnete Abschl&auml;ge</th>
-          <th class="steuer">USt.</th>
-          <th class="summe">Betrag<span class="waehrung">EUR</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for abzug in abzuege %}
-          <tr>
-            <td class="bezeichnung">{{ abzug.bezeichnung }}</td>
-            <td class="steuer">{{ abzug.steuersatz_dezimal|prozent }}</td>
-            <td class="summe">{{ abzug.betrag|geld }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
+  {% include "faktura/pdf/_abzuege.html" %}
   {{ block.super }}
 {% endblock %}

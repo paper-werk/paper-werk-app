@@ -475,6 +475,13 @@ def xml_erzeugen(beleg) -> bytes:
     leistungen = [p for p in beleg.positionen.all()
                   if not p.ist_abzug
                   and p.zeilenart not in Zeilenart.ohne_betrag()]
+    # Ab dem 2. Abschlag dieselben Zeilen wie im PDF: Leistungsstand und je
+    # Vorgänger eine negative Zeile, weil der Bildteil keine abweichende
+    # Leistungsbeschreibung enthalten darf (R-185). Ihre Summe je Satz ist
+    # das Netto des Abschlags, BT-113 bleibt leer.
+    kumuliert = services.kumulierter_abschlag(beleg)
+    if kumuliert is not None:
+        leistungen = kumuliert.xml_zeilen()
     for nummer, position in enumerate(leistungen, start=1):
         zeile = LineItem()
         # BT-126: die Nummer wie im PDF, bei einem Leistungsverzeichnis die

@@ -352,6 +352,24 @@ Auftrag 120.000, Abschlag 1 über 50.000 nur zu 40.000 bezahlt, Abschlag 2
 (Altform, R-165) schließen keinen Abschlag. Geprüft in
 `faktura/tests/test_abschlagskuerzung.py`.
 
+**Kumulierte Abschlagsrechnung (R-183 bis R-186).** Ab dem zweiten Abschlag
+zeigen PDF, E-Rechnung und Maske den Leistungsstand und ziehen die
+gestellten Abschläge ab. Gespeichert bleibt der Zuwachs, die Belegsumme
+(R-005) ist also unverändert der Abschlagsbetrag; alle Regeln dieses
+Abschnitts und von J rechnen weiter mit den Positionen. Implementiert in
+`faktura/services/kumuliert.py`.
+
+| Nr | Größe | Rechenregel | Implementierung | Test |
+| --- | --- | --- | --- | --- |
+| R-183 | Vorgänger eines Abschlags | Festgeschriebene Abschläge desselben Projekts, die in der Ordnung von R-012 (Belegdatum, pk) vor ihm stehen. **Nicht** Entwürfe, **nicht** stornierte. Ohne Vorgänger und in einem Projekt mit Teilabnahme keine kumulierte Sicht | `kumuliert.vorgaenger_abschlaege`, `kumuliert.ist_kumulierbar` | `+` |
+| R-184 | Zeile des Leistungsstands | Über die Positionen der Vorgänger und des Abschlags (ohne Titel, Text, optionale): je Auftragsposition und Satz, sonst je Bezeichnung, Einheit, Satz und Art, ein Zuschlag je Bezeichnung, Prozentsatz, Bezug und Satz. Betrag = **Summe der Positionsnetti** (R-001, je Position gerundet). Gesamtmenge mal Preis nur, wenn alle Positionen der Gruppe denselben Preis und dieselbe Einheit haben und das Produkt auf den Cent den Betrag ergibt; sonst Menge 1, „pausch“, Preis = Betrag | `kumuliert._kumulieren` | `+` |
+| R-185 | Vorgängerzeile | Je Vorgänger und Satz dessen Netto (R-002), **negativ**: gestellt, nicht bezahlt, damit ein offener Abschlag nicht ein zweites Mal gefordert wird. Im XML eine Zeile mit Menge −1 und positivem Preis (BR-27), dieselben Zeilen wie im PDF | `kumuliert.kumulierter_abschlag`, `KumulierterAbschlag.xml_zeilen` | `+` |
+| R-186 | Abschlagsbetrag kumuliert | Je Satz: Summe R-184 plus Summe R-185 = Netto des Abschlags (R-002), **auf den Cent**. Steuer, Brutto und BT-106 bis BT-115 damit wie bisher; kein BT-113 | `pdf.beleg_als_html`, `facturx.xml_erzeugen` | `+` |
+
+Geprüft in `faktura/tests/test_kumulierter_abschlag.py` (Gruppierung,
+Rundung je Position, zwei Steuersätze, drei Abschläge, Storno und Entwurf
+als Vorgänger, Teilabnahme, PDF, XML, Maske).
+
 
 ## Regeln für Änderungen
 
