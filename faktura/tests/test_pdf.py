@@ -251,6 +251,29 @@ class TestFacturX:
         assert roh.index('fx:DocumentFileName') < roh.index('</rdf:RDF>')
         assert 'pdfaid:part="3"' in roh
 
+    def test_fx_ist_als_pdfa_erweiterungsschema_deklariert(
+            self, mit_pdf, rechnung):
+        """PDF/A lässt nur deklarierte XMP-Properties zu (ISO 19005-3,
+        6.6.2.3.1). Regression: Mustang meldete jede fx-Property als nicht
+        deklariert, das PDF war kein gültiges PDF/A-3."""
+        import io
+        import xml.etree.ElementTree as ET
+        beleg = services.beleg_festschreiben(beleg_id=rechnung.pk)
+        roh = PdfReader(io.BytesIO(beleg.pdf.read())).trailer[
+            '/Root']['/Metadata'].get_data().decode()
+
+        baum = ET.fromstring(roh[roh.index('<x:xmpmeta'):
+                                 roh.index('</x:xmpmeta>') + 12])
+        schema = 'http://www.aiim.org/pdfa/ns/schema#'
+        prop = 'http://www.aiim.org/pdfa/ns/property#'
+        fx = 'urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#'
+        assert [e.text for e in baum.iter(f'{{{schema}}}namespaceURI')] == [fx]
+        deklariert = {e.text for e in baum.iter(f'{{{prop}}}name')}
+        verwendet = {e.tag.split('}')[1] for e in baum.iter()
+                     if e.tag.startswith(f'{{{fx}}}')}
+        assert verwendet == deklariert == {
+            'DocumentType', 'DocumentFileName', 'Version', 'ConformanceLevel'}
+
     def test_betraege_stimmen_mit_dem_sichtbaren_beleg_ueberein(
         self, mit_pdf, rechnung
     ):
