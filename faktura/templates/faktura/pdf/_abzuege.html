@@ -1,0 +1,26 @@
+{% load faktura_extras %}
+{% comment %} Bereits berechnete Abschläge zwischen Positionen und Summen,
+außerhalb der Positionstabelle, damit sie nicht als Leistungen erscheinen.
+Schlussrechnung: je abgesetztem Abschlag (services.abzugsblock);
+kumulierter Abschlag: je Vorgänger (services.kumulierter_abschlag). Netto
+und negativ, je Steuersatz eine Zeile. {% endcomment %}
+{% if abzuege %}
+  <table class="positionen abzuege">
+    <thead>
+      <tr>
+        <th class="bezeichnung">Bereits berechnete Abschl&auml;ge</th>
+        <th class="steuer">USt.</th>
+        <th class="summe">Betrag<span class="waehrung">EUR</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for abzug in abzuege %}
+        <tr>
+          <td class="bezeichnung">{{ abzug.bezeichnung }}</td>
+          <td class="steuer">{{ abzug.steuersatz_dezimal|prozent }}</td>
+          <td class="summe">{{ abzug.betrag|geld }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
