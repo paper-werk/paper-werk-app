@@ -446,6 +446,11 @@ def beleg_wiedereroeffnen(*, beleg_id: int, benutzer=None) -> Beleg:
     zur alten Fassung und bleibt) und erhält dauerhaft
     ``geaendert_am/-von`` (GoBD).
 
+    PDF und XML werden vom Beleg gelöst, weil ``ansicht_pdf`` eine
+    gespeicherte Datei statt der Vorschau ausliefert; der Entwurf zeigte
+    sonst den Stand vom Festschreiben. Die Dateien bleiben im
+    Ablageverzeichnis, das Festschreiben legt neue an.
+
     Über ``update()``, weil ``save()`` Änderungen an festgeschriebenen
     Belegen ablehnt.
     """
@@ -472,6 +477,8 @@ def beleg_wiedereroeffnen(*, beleg_id: int, benutzer=None) -> Beleg:
         paperless_id=None,
         archiviert_am=None,
         paperless_task_id='',
+        pdf=None, pdf_sha256='', xml=None, xml_sha256='',
+        erechnungsprofil='', vorlagenversion='',
     )
     # Version inkrementieren, damit ein vor dem Festschreiben geladenes
     # Formular den wiedereröffneten Beleg nicht überschreibt.

@@ -180,7 +180,9 @@ Links in der zweiten Zeile wählen Sie die **Zeilenart**:
   (01) heißt: auf diesen Titel; eine Positionsnummer (01.0020) heißt: auf
   genau diese Position. Den Betrag rechnet Paper-Werk selbst und rechnet
   ihn beim Festschreiben nach. Im PDF steht darunter der Rechenweg, etwa
-  „3 % auf 9.500,00“.
+  „3 % auf 9.500,00“. Andere Zuschläge zählen nie mit: Nebenkosten auf
+  alle Leistungen rechnen also nicht auf einen Erschwerniszuschlag. Sonst
+  rechneten zwei Zuschläge auf alle Leistungen jeweils auf den anderen.
 
 Felder, die in einer Zeilenart keine Bedeutung haben, sind gesperrt.
 
