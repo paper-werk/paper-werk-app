@@ -124,6 +124,17 @@ Im PDF steht „1. Abschlagsrechnung“, „2. Abschlagsrechnung“ und so
 weiter, gezählt je Projekt nach Belegdatum; die Liste zeigt die Zählung in
 der Spalte „Abschlag“. Knöpfe und Versand wie bei jeder Rechnung.
 
+**Ab dem zweiten Abschlag kumuliert.** Sie tragen nur ein, was seit dem
+letzten Abschlag hinzugekommen ist, meist mit „Erbrachte Leistungen
+hinzufügen“. Das PDF zeigt dann den gesamten Leistungsstand, je
+Auftragsposition eine Zeile, darunter „Bereits berechnete Abschläge“ mit
+jedem früheren Abschlag und als Abschlagsbetrag die Differenz. Abgezogen
+wird, was die früheren Abschläge gefordert haben, nicht was bezahlt ist; ein
+offener Abschlag bleibt offen und wird für sich gemahnt. Unter den
+Positionen der Maske steht dieselbe Aufstellung („Kumuliert, wie im PDF“).
+Mitgezählt werden nur festgeschriebene, nicht stornierte Abschläge. In einem
+Projekt mit Teilabnahme bleibt jeder Abschlag in der einfachen Form.
+
 **Gekürzte Zahlung.** Zahlt der Kunde weniger, weil er einen Teil (noch)
 nicht anerkennt, tragen Sie beim Vermerken der Zahlung den Betrag unter
 **Gekürzt** ein. Dieser Teil wird nicht gemahnt; die Schlussrechnung

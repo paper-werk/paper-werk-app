@@ -1,0 +1,52 @@
+{% load faktura_extras %}
+{% comment %} Kumulierte Sicht eines Abschlags ab dem zweiten, wie im PDF
+   (services.kumulierter_abschlag): Leistungsstand bis zum Stichtag,
+   abzüglich der bereits berechneten Abschläge, gleich der Summe der
+   Positionen oben. Readonly, berechnet aus dem gespeicherten Stand; ohne
+   Vorgänger leer.
+{% endcomment %}
+{% if kumuliert %}
+  <div class="abzugsblock border border-base-200 mt-6 rounded-default dark:border-base-800">
+    <h2 class="border-b border-base-200 font-semibold px-4 py-3 text-font-important-light text-sm dark:border-base-800 dark:text-font-important-dark">
+      Kumuliert, wie im PDF
+    </h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-font-subtle-light dark:text-font-subtle-dark">
+          <th class="font-medium px-4 py-2 text-left">Pos.</th>
+          <th class="font-medium px-4 py-2 text-left">Leistungsstand</th>
+          <th class="font-medium px-4 py-2 text-right">Menge</th>
+          <th class="font-medium px-4 py-2 text-left">Einheit</th>
+          <th class="font-medium px-4 py-2 text-right">Einzelpreis</th>
+          <th class="font-medium px-4 py-2 text-right">USt.</th>
+          <th class="font-medium px-4 py-2 text-right">Betrag</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for position in kumuliert.positionen %}
+          <tr class="border-t border-base-200 dark:border-base-800">
+            <td class="px-4 py-2">{{ position.position }}</td>
+            <td class="px-4 py-2">{{ position.bezeichnung }}</td>
+            <td class="px-4 py-2 text-right">{{ position.menge|menge }}</td>
+            <td class="px-4 py-2">{{ position.einheit }}</td>
+            <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ position.einzelpreis|geld }} €</td>
+            <td class="px-4 py-2 text-right">{{ position.steuersatz_dezimal|prozent }}</td>
+            <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ position|zeilensumme|geld }} €</td>
+          </tr>
+        {% endfor %}
+        {% for abzug in kumuliert.abzuege %}
+          <tr class="border-t border-base-200 dark:border-base-800">
+            <td class="px-4 py-2"></td>
+            <td class="px-4 py-2" colspan="4">abzüglich {{ abzug.bezeichnung }}</td>
+            <td class="px-4 py-2 text-right">{{ abzug.steuersatz_dezimal|prozent }}</td>
+            <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ abzug.betrag|geld }} €</td>
+          </tr>
+        {% endfor %}
+        <tr class="border-t border-base-200 font-semibold dark:border-base-800">
+          <td class="px-4 py-2" colspan="6">Abschlagsbetrag netto</td>
+          <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ kumuliert_netto|geld }} €</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endif %}

@@ -15,6 +15,7 @@ lückenlose Nummern, Unveränderlichkeit festgeschriebener Belege.
 ``projekte``       Projekt aus Text auflösen, Projektakte, Projektstände
 ``auswertung``     Umsatzverlauf, Auftragseingang, Umsatz je Kunde
 ``zuschlaege``     Titelsummen und Zuschläge aus der Positionsnummer
+``kumuliert``      kumulierte Darstellung der Abschlagsrechnung
 
 Importiert wird über ``faktura.services``.
 """
@@ -104,6 +105,12 @@ from .korrektur import (
     rechnung_korrigieren,
     rechnungskorrektur_erstellen,
 )
+from .kumuliert import (
+    KumulierterAbschlag,
+    ist_kumulierbar,
+    kumulierter_abschlag,
+    vorgaenger_abschlaege,
+)
 from .projekte import (
     Aufloesung,
     Projektauswertung,
@@ -172,6 +179,8 @@ __all__ = [
     'leistungssummen', 'umsatzsummen', 'OffenerAbschlag', 'abschlaege_absetzen',
     'anrechenbare_abschlagspositionen', 'offene_abgesetzte_abschlaege',
     'abgerechnet_in', 'abschlagsrest', 'abzugsblock', 'veraltete_abschlagsreste',
+    'KumulierterAbschlag', 'ist_kumulierbar', 'kumulierter_abschlag',
+    'vorgaenger_abschlaege',
     'ANSCHRIFTSFELDER', 'DUPLIZIERBAR', 'NUMMERNKREIS', 'POSITIONSNETTO', 'PRAEFIX',
     'ArchivFehler', 'Archivbefund', 'Archivbericht', 'Aufloesung',
     'BelegNichtAenderbar', 'BelegOhnePositionen', 'Belegmengensumme',

@@ -1,13 +1,30 @@
 {% extends "faktura/pdf/rechnung.html" %}
 {% comment %} Abschlagsrechnung. Erbt von der Rechnung Zahlungsblock,
 Nummernbezeichnung und Überschrift; die Überschrift enthält die laufende
-Nummer über rechnungsbezeichnung ("2. Abschlagsrechnung"). {% endcomment %}
+Nummer über rechnungsbezeichnung ("2. Abschlagsrechnung").
+
+Ab dem zweiten Abschlag kumuliert (services.kumulierter_abschlag):
+``positionen`` ist der Leistungsstand, ``abzuege`` sind die Vorgänger,
+``summen`` die Belegsumme, also der Zuwachs. {% endcomment %}
 
 {% block gesamtbezeichnung %}Abschlagsbetrag{% endblock %}
 
 {% comment %} Ohne "Leistungsdatum", weil ein Abschlag keines hat; der
 Zeitraum gibt den Leistungsstand an (Beleg.steuerliches_leistungsdatum). {% endcomment %}
 {% block leistungsbezeichnung %}Leistungsstand{% endblock %}
+
+{% block einleitung %}
+  {{ block.super }}
+  {% if kumuliert %}
+    <p class="hinweis">Leistungsstand bis zum Stichtag, abz&uuml;glich der
+    bereits berechneten Abschl&auml;ge.</p>
+  {% endif %}
+{% endblock %}
+
+{% block summen %}
+  {% include "faktura/pdf/_abzuege.html" %}
+  {{ block.super }}
+{% endblock %}
 
 {% comment %} Hinweis auf die Schlussrechnung, weil ein Abschlag steuerlich
 eine Anzahlung ist (§ 13 Abs. 1 Nr. 1a Satz 4 UStG), die die
