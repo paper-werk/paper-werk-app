@@ -7,7 +7,9 @@
    Zur Rechnung (``a.beleg``) zusätzlich die weiterberechneten
    Fremdleistungen, ohne Preis, weil der Einkaufspreis die Spanne zeigte. Je
    Zeile der berechnete Umfang: Std nur bei Zeitleistungen, sonst Menge.
-   Datum mit Jahr, weil eine Probenahme im Vorjahr liegen kann.
+   Datum mit Jahr, weil eine Probenahme im Vorjahr liegen kann. Vorn die
+   Nummer der Rechnungsposition (``rechnungsposition``), nach der die Zeilen
+   sortiert sind.
 
    Seitengeometrie, Briefkopf, Fußzeile und Anschriftfeld kommen von faktura.
    Nur die Tabelle und der Unterschriftsblock sind eigen (nachweis.css).
@@ -56,6 +58,7 @@
   <table class="positionen nachweiszeilen{% if a.beleg %} zur-rechnung{% endif %}">
     <thead>
       <tr>
+        {% if a.beleg %}<th class="pos">Pos.</th>{% endif %}
         <th class="datum">Datum</th>
         <th class="person">Person</th>
         {% if mit_uhrzeit %}
@@ -75,6 +78,7 @@
          Erfassungsliste. {% endcomment %}
       {% for zeile in a.zeilen %}
         <tr{% if not zeile.abrechenbar %} class="ohne-berechnung"{% endif %}>
+          {% if a.beleg %}<td class="pos">{{ zeile.rechnungsposition }}</td>{% endif %}
           <td class="datum">{% if a.beleg %}{{ zeile.datum|date:"d.m.Y" }}{% else %}{{ zeile.datum|date:"d.m." }}{% endif %}</td>
           <td class="person">{{ zeile.benutzer|person }}</td>
           {% if mit_uhrzeit %}
@@ -111,6 +115,7 @@
   <table class="positionen nachweiszeilen fremdzeilen">
     <thead>
       <tr>
+        <th class="pos">Pos.</th>
         <th class="datum">Datum</th>
         <th class="bezeichnung">Leistung</th>
         <th class="umfang">Menge</th>
@@ -119,6 +124,7 @@
     <tbody>
       {% for f in a.fremdleistungen %}
         <tr>
+          <td class="pos">{{ f.rechnungsposition }}</td>
           <td class="datum">{{ f.leistungsdatum|date:"d.m.Y" }}</td>
           <td class="bezeichnung">{{ f.bezeichnung }}</td>
           <td class="umfang">{{ f.menge|menge }} {{ f.einheit }}</td>
