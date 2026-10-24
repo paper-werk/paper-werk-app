@@ -16,6 +16,7 @@ from django.utils import timezone
 from erfassung import nachweis, services
 from erfassung.models import Erfassungszeile
 from erfassung.sortierung import Sortierung
+from faktura.models import Katalogposition, Leistungsart
 
 LISTE = 'admin:erfassung_erfassungszeile_changelist'
 
@@ -76,10 +77,30 @@ class TestDieAufstellungRechnetRichtig:
         assert [(m.einheit, m.menge) for m in a.mengen] == [('km', Decimal('23'))]
 
     def test_zwei_einheiten_werden_nicht_verschmolzen(
+        self, projekt, mengenleistung, mitarbeiter
+    ):
+        """Mengen verschiedener Einheiten (23 km, 2 Stk) werden nicht
+        addiert."""
+        probe = Katalogposition.objects.create(
+            bezeichnung='Bodenprobe', einheit='Stk',
+            einzelpreis=Decimal('45.00'), kontierbar=True,
+            art=Leistungsart.MENGE)
+        services.zeile_erfassen(
+            projekt=projekt, leistung=mengenleistung, benutzer=mitarbeiter,
+            menge=Decimal('23'), beschreibung='Anfahrt')
+        services.zeile_erfassen(
+            projekt=projekt, leistung=probe, benutzer=mitarbeiter,
+            menge=Decimal('2'), beschreibung='Proben')
+
+        a = services.zeitaufstellung(Erfassungszeile.objects.all())
+
+        assert [(m.einheit, m.menge) for m in a.mengen] == [
+            ('Stk', Decimal('2')), ('km', Decimal('23'))]
+
+    def test_pauschalen_ohne_mengensumme(
         self, projekt, mengenleistung, pauschalleistung, mitarbeiter
     ):
-        """Mengen verschiedener Einheiten (23 km, 1 Pauschale) werden nicht
-        addiert."""
+        """Eine Summe über Pauschalen ("psch 3") sagt nichts aus."""
         services.zeile_erfassen(
             projekt=projekt, leistung=mengenleistung, benutzer=mitarbeiter,
             menge=Decimal('23'), beschreibung='Anfahrt')
@@ -90,7 +111,22 @@ class TestDieAufstellungRechnetRichtig:
         a = services.zeitaufstellung(Erfassungszeile.objects.all())
 
         assert [(m.einheit, m.menge) for m in a.mengen] == [
-            ('km', Decimal('23')), ('pausch', Decimal('1'))]
+            ('km', Decimal('23'))]
+
+    def test_pauschale_ohne_art_an_der_einheit(self, projekt, mitarbeiter):
+        """Von Hand angelegte Positionen haben keine Art Pauschale, nur die
+        Einheit."""
+        ingenieur = Katalogposition.objects.create(
+            bezeichnung='Ingenieurleistungen', einheit='psch.',
+            einzelpreis=Decimal('900.00'), kontierbar=True,
+            art=Leistungsart.MENGE)
+        services.zeile_erfassen(
+            projekt=projekt, leistung=ingenieur, benutzer=mitarbeiter,
+            menge=Decimal('1'), beschreibung='Verzeichnis übermittelt')
+
+        a = services.zeitaufstellung(Erfassungszeile.objects.all())
+
+        assert a.mengen == []
 
     def test_der_zeitraum_kommt_aus_den_zeilen(self, projekt, zeitleistung,
                                                mitarbeiter):

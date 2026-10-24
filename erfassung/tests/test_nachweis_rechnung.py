@@ -20,7 +20,17 @@ from django.utils import timezone
 from erfassung import nachweis, services
 from erfassung.models import Eingangsrechnung, Fremdleistung
 from faktura import services as faktura_services
-from faktura.models import Firma, Katalogposition, Kontakt, Leistungsart
+from faktura.models import (
+    Beleg,
+    Belegposition,
+    BelegStatus,
+    BelegTyp,
+    Firma,
+    Katalogposition,
+    Kontakt,
+    Leistungsart,
+    Rechnungsart,
+)
 
 
 @pytest.fixture
@@ -127,6 +137,110 @@ def test_stueckleistung_zeigt_den_umfang_nicht_die_stunden(projekt, kollege):
     assert '1 Stk' in html
     assert '9:30' not in html
     assert 'Summe der Stunden' not in html
+
+
+# ── Positionsnummern ─────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def lv(projekt):
+    """Festgeschriebener Auftrag mit den Positionen 2.1 (Zeit) und 2.2
+    (Stück)."""
+    auftrag = Beleg.objects.create(
+        typ=BelegTyp.AUFTRAG, status=BelegStatus.FESTGESCHRIEBEN,
+        nummer='AU-2026-0011', projekt=projekt)
+    return Belegposition.objects.bulk_create([
+        Belegposition(beleg=auftrag, position='2.1', bezeichnung='Planung',
+                      menge=Decimal('100'), einheit='Std',
+                      einzelpreis=Decimal('95.00'), steuersatz='19.00',
+                      art=Leistungsart.ZEIT),
+        Belegposition(beleg=auftrag, position='2.2',
+                      bezeichnung='Bodenprobe', menge=Decimal('40'),
+                      einheit='Stk', einzelpreis=Decimal('145.00'),
+                      steuersatz='19.00', art=Leistungsart.MENGE),
+    ])
+
+
+def _auf_lv(projekt, lv, kollege, labor):
+    """Zwei Tage Planung auf 2.1, eine Probe auf 2.2 vor beiden, Analysen
+    auf 2.2 und ohne Auftragsposition."""
+    planung, probe = lv
+    for tag in (date(2026, 10, 7), date(2026, 10, 6)):
+        services.zeile_erfassen(
+            projekt=projekt, auftragsposition=planung, benutzer=kollege,
+            datum=tag, von=time(8, 0), bis=time(9, 0), beschreibung='Planung')
+    services.zeile_erfassen(
+        projekt=projekt, auftragsposition=probe, benutzer=kollege, menge=1,
+        datum=date(2026, 10, 1), beschreibung='Probe')
+    _fremd(projekt, labor, date(2026, 10, 3), 'Ohne Bezug')
+    analyse = _fremd(projekt, labor, date(2026, 10, 5), 'Auf 2.2')
+    analyse.auftragsposition = probe
+    analyse.save()
+    return (services.offene_leistungen(projekt)[0].zeilen,
+            Fremdleistung.objects.all())
+
+
+def test_nach_position_dann_nach_datum(projekt, lv, kollege, labor):
+    zeilen, fremd = _auf_lv(projekt, lv, kollege, labor)
+    beleg, _ = services.in_rechnung_uebernehmen(
+        zeilen=zeilen, fremdleistungen=fremd)
+
+    a = services.nachweis_zur_rechnung(beleg)
+
+    assert [(z.rechnungsposition, z.datum.day) for z in a.zeilen] == [
+        ('2.1', 6), ('2.1', 7), ('2.2', 1)]
+    # Fremdleistungen bekommen eigene Positionen hinter denen des LV.
+    assert [f.rechnungsposition for f in a.fremdleistungen] == [
+        f.abgerechnet_in.position for f in a.fremdleistungen]
+    assert [f.abgerechnet_in.sortierung for f in a.fremdleistungen] == sorted(
+        f.abgerechnet_in.sortierung for f in a.fremdleistungen)
+    assert '<th class="pos">Pos.</th>' in nachweis.nachweis_als_html(a)
+
+
+def _schluss_aus_abschlag(projekt, zeilen, fremd):
+    abschlag, _ = services.in_rechnung_uebernehmen(
+        zeilen=zeilen, fremdleistungen=fremd,
+        rechnungsart=Rechnungsart.ABSCHLAG)
+    abschlag.leistungsdatum = abschlag.leistungsdatum_bis = date(2026, 10, 7)
+    abschlag.save()
+    abschlag = faktura_services.beleg_festschreiben(beleg_id=abschlag.pk)
+    schluss = faktura_services.beleg_anlegen(
+        projekt=projekt, typ=BelegTyp.RECHNUNG,
+        rechnungsart=Rechnungsart.SCHLUSS)
+    faktura_services.abschlaege_absetzen(beleg_id=schluss.pk)
+    return abschlag, schluss
+
+
+def test_schlussrechnung_mit_den_zeilen_der_abschlaege(
+        projekt, lv, kollege, labor):
+    """Kommt die Leistung ganz aus Abschlägen, hängen die Zeilen am
+    Abschlag. Die Nummer ist die der Schlussrechnung."""
+    zeilen, fremd = _auf_lv(projekt, lv, kollege, labor)
+    _, schluss = _schluss_aus_abschlag(projekt, zeilen, fremd)
+    nummern = dict(schluss.positionen.filter(ist_abzug=False)
+                   .values_list('bezeichnung', 'position'))
+
+    assert services.hat_nachweis(schluss)
+    a = services.nachweis_zur_rechnung(schluss)
+
+    assert [(z.rechnungsposition, z.datum.day) for z in a.zeilen] == [
+        ('2.1', 6), ('2.1', 7), ('2.2', 1)]
+    assert sorted(f.rechnungsposition for f in a.fremdleistungen) == sorted(
+        nummern[b] for b in ('Bodenprobe', 'Ohne Bezug'))
+
+
+def test_schlussrechnung_ohne_passende_position_nennt_den_abschlag(
+        projekt, lv, kollege, labor):
+    zeilen, fremd = _auf_lv(projekt, lv, kollege, labor)
+    abschlag, schluss = _schluss_aus_abschlag(projekt, zeilen, fremd)
+    schluss.positionen.filter(bezeichnung='Ohne Bezug').update(
+        bezeichnung='Von Hand geändert')
+    quelle = abschlag.positionen.get(bezeichnung='Ohne Bezug')
+
+    a = services.nachweis_zur_rechnung(schluss)
+
+    assert a.fremdleistungen[-1].rechnungsposition == (
+        f'{abschlag.nummer} / {quelle.position}')
 
 
 def test_rechnung_ohne_stunden_und_fremdleistungen_hat_keinen(db):
