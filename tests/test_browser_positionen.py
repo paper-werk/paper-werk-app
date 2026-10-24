@@ -367,6 +367,79 @@ class TestZeilenartImBrowser:
 
 
 @pytest.mark.django_db(transaction=True)
+class TestZuschlagBeiEingabe:
+    """Der Betrag eines Zuschlags folgt der Eingabe, nicht erst dem
+    Speichern (zeilensumme.js). Regression: Nach dem Umstellen von "auf" auf
+    einen Titel blieb der alte Betrag stehen."""
+
+    @pytest.fixture
+    def angebot(self, chefin, kunde):
+        """Titel 01 mit 01.1 (2 x 50,00), Titel 02 mit 02.1 (1 x 50,50),
+        Zuschlag 3 % auf alles: 4,52 (150,50 x 3 % = 4,515, halber Cent
+        aufgerundet)."""
+        from faktura.models import Zeilenart
+        beleg = services.beleg_anlegen(kunde=kunde, typ=BelegTyp.ANGEBOT,
+                                       betreff='Zuschlag')
+        for nummer, text, art, menge, preis in (
+                ('01', 'Erkundung', Zeilenart.TITEL, '0', '0'),
+                ('01.1', 'Bohrung', Zeilenart.LEISTUNG, '2', '50.00'),
+                ('02', 'Analytik', Zeilenart.TITEL, '0', '0'),
+                ('02.1', 'Asbest', Zeilenart.LEISTUNG, '1', '50.50')):
+            services.position_hinzufuegen(
+                beleg=beleg, position=nummer, bezeichnung=text, zeilenart=art,
+                menge=Decimal(menge), einzelpreis=Decimal(preis),
+                steuersatz='19.00')
+        services.position_hinzufuegen(
+            beleg=beleg, position='04', bezeichnung='Nebenkosten',
+            zeilenart=Zeilenart.ZUSCHLAG, zuschlag_prozent=Decimal('3'),
+            menge=Decimal('1'), einzelpreis=Decimal('0'), steuersatz='19.00')
+        return beleg
+
+    @staticmethod
+    def _betrag(page, nummer):
+        return page.locator(
+            f'tbody.form-group:has(#id_positionen-{nummer}-bezeichnung) '
+            f'td.field-zeilensumme .readonly')
+
+    def test_zuschlag_folgt_auf_menge_und_option(self, live_server, page,
+                                                 angebot):
+        TestPositionenDarstellung()._oeffnen(page, live_server, angebot)
+        zuschlag = self._betrag(page, 4)
+        expect(zuschlag).to_have_text('4,52 EUR')
+
+        page.fill('#id_positionen-4-zuschlag_auf', '02')
+        expect(zuschlag).to_have_text('1,52 EUR')     # 50,50 x 3 % = 1,515
+
+        page.fill('#id_positionen-3-menge', '2')
+        expect(zuschlag).to_have_text('3,03 EUR')     # 101,00 x 3 %
+
+        page.check('#id_positionen-3-optional')
+        expect(zuschlag).to_have_text('0,00 EUR')
+        page.uncheck('#id_positionen-3-optional')
+
+        page.fill('#id_positionen-4-zuschlag_prozent', '2.5')
+        expect(zuschlag).to_have_text('2,53 EUR')     # 101,00 x 2,5 % = 2,525
+
+        page.fill('#id_positionen-4-zuschlag_auf', '01')
+        expect(zuschlag).to_have_text('2,50 EUR')     # 100,00 x 2,5 %
+
+    def test_angezeigt_ist_was_der_server_speichert(self, live_server, page,
+                                                    angebot):
+        TestPositionenDarstellung()._oeffnen(page, live_server, angebot)
+        page.fill('#id_positionen-4-zuschlag_auf', '02')
+        page.fill('#id_positionen-3-menge', '3')
+        angezeigt = self._betrag(page, 4).inner_text()
+
+        page.locator('button[name="_continue"]').click()
+        page.wait_for_load_state('networkidle')
+
+        gespeichert = angebot.positionen.get(position='04').einzelpreis
+        assert angezeigt == f'{gespeichert:.2f} EUR'.replace('.', ',')
+        assert gespeichert == Decimal('4.55')          # 151,50 x 3 % = 4,545
+        expect(self._betrag(page, 4)).to_have_text(angezeigt)
+
+
+@pytest.mark.django_db(transaction=True)
 class TestKatalogsucheNurAnNeuenZeilen:
     """Die Katalogsuche steht nur über neuen Zeilen.
 
