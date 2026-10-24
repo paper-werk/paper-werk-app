@@ -25,16 +25,16 @@ alle und hat zusätzlich das Feld **Person** und den Filter nach Person.
 | Dauer | aus Von und Bis gerechnet |
 | Umfang | Dauer oder Menge mit Einheit |
 | Projekt | |
-| Worauf | Auftragsposition mit Auftragsnummer, sonst die Katalogleistung |
+| Position / Leistung | Auftragsnummer und Auftragsposition mit Positionsnummer, sonst die Katalogleistung |
 | Person | nur mit dem Recht für andere |
 | Beschreibung | |
 | Zustand | offen, abgerechnet oder nicht abrechenbar |
 
 Die Filter: **Sortierung** (Neueste zuerst; Nachweis: Projekt, Art,
-Datum; Tagebuch: Projekt, Datum, Art; Person, dann Datum; Leistung, dann
-Datum), **Zeitraum** (Heute, Diese Woche, Letzte Woche, Dieser Monat,
-Letzter Monat, Dieses und Letztes Quartal, Dieses und Letztes Jahr,
-Letzte 7 und 30 Tage), **Zustand**, Kunde, Projekt, **Art der Erfassung**
+Datum; Tagebuch: Projekt, Datum, Art; Auftrag: Projekt, Position, Datum;
+Person, dann Datum; Leistung, dann Datum), **Zeitraum** (Heute, Diese
+Woche, Letzte Woche, Dieser Monat, Letzter Monat, Dieses und Letztes
+Quartal, Dieses und Letztes Jahr, Letzte 7 und 30 Tage), **Zustand**, Kunde, Projekt, **Art der Erfassung**
 (Zeit, Menge, Pauschale), Leistung und Person. Die Zeitraumfilter sind
 relativ: Ein Lesezeichen auf „Letzter Monat“ zeigt immer den Vormonat.
 

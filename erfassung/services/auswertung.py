@@ -352,7 +352,8 @@ def unvollstaendige_eingangsrechnungen() -> list:
             output_field=DecimalField(max_digits=14, decimal_places=2)))
         .exclude(betrag_netto=F('zugeordnet_summe'))
         .select_related('lieferant')
-        .prefetch_related('positionen')
+        # Mit Projekt für ``Eingangsrechnung.projekte``.
+        .prefetch_related('positionen__projekt')
     )
     offen = [r for r in rechnungen if not r.ist_vollstaendig]
     offen.sort(key=lambda r: abs(r.rest), reverse=True)
