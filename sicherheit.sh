@@ -38,7 +38,8 @@ if [ -f "$AUSNAHMEN" ]; then
 fi
 
 # pip-audit über uvx: kein zusätzliches Paket im Projekt. Rückgabe 1 heißt
-# Treffer oder Fehler, beides soll im Bericht sichtbar werden.
+# Treffer oder Fehler, beides soll im Bericht sichtbar werden. UTF-8, weil
+# die Beschreibungen Zeichen außerhalb von cp1252 enthalten (Windows).
 pip_pruefen() {
     # $1: Ausgabedatei, Rest: Optionen für uv export
     ziel=$1
@@ -46,7 +47,7 @@ pip_pruefen() {
     uv export --frozen --no-emit-project --format requirements-txt "$@" \
         > "$ARBEIT/anforderungen.txt" || return 2
     # shellcheck disable=SC2086
-    uvx pip-audit --progress-spinner off --disable-pip --require-hashes \
+    PYTHONIOENCODING=utf-8 uvx pip-audit --progress-spinner off --disable-pip --require-hashes \
         -r "$ARBEIT/anforderungen.txt" -f markdown --desc on $IGNORIEREN \
         > "$ziel" 2>&1
 }
