@@ -2,7 +2,6 @@
 
 
 from django.contrib import admin
-from django.utils.html import format_html
 
 from ..formate import dauer_zeigen, personenname
 from ..services import (
@@ -18,19 +17,20 @@ class SpaltenMixin:
     Grundlage und Abrechnungszustand."""
 
 
-    @admin.display(description='Worauf')
+    @admin.display(description='Position / Leistung')
     def worauf(self, obj):
         """Grundlage der Zeile: Auftragsposition oder Katalogleistung.
 
-        Eine gemeinsame Spalte, weil immer nur eines gesetzt ist. Nicht
-        sortierbar, weil das über zwei Relationen eine Annotation bräuchte.
+        Eine gemeinsame Spalte, weil immer nur eines gesetzt ist. Die
+        Auftragsposition als "Auftragsnummer · Positionsnummer. Bezeichnung"
+        wie in der Auswahl des Formulars, damit gleich benannte Positionen
+        unterscheidbar sind. Nicht über den Spaltenkopf sortierbar, weil das
+        über zwei Relationen eine Annotation bräuchte; dafür gibt es die
+        Sortierung "Auftrag".
         """
         if obj.auftragsposition_id:
             auftrag = obj.auftragsposition.beleg
-            return format_html(
-                '{}<br><span class="text-xs text-base-500">{}</span>',
-                obj.leistungsbezeichnung,
-                auftrag.nummer or 'Auftrag ohne Nummer')
+            return f'{auftrag.nummer or "Entwurf"} · {obj.auftragsposition}'
         return obj.leistungsbezeichnung
 
     @staticmethod

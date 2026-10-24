@@ -1,6 +1,7 @@
 """Benannte Sortierungen (``erfassung/sortierung.py``)."""
 
-from datetime import time, timedelta
+from datetime import date, time, timedelta
+from decimal import Decimal
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -10,6 +11,9 @@ from django.utils import timezone
 from erfassung import services
 from erfassung.sortierung import Sortierung, ordnung
 from erfassung.tests.hilfen import spalte as _spalte
+from erfassung.tests.hilfen import zelle as _zelle
+from faktura.models import Beleg, Belegposition, BelegStatus, BelegTyp
+from faktura.positionsnummer import sortierschluessel
 
 LISTE = 'admin:erfassung_erfassungszeile_changelist'
 
@@ -114,6 +118,70 @@ class TestNachweisUndTagebuch:
             gesehen.add(tuple(_spalte(antwort.content.decode(), 'beschreibung')))
 
         assert len(gesehen) >= 3
+
+
+def _auftrag(projekt, nummer, *positionen):
+    """Festgeschriebener Auftrag mit Positionen ``(nummer, bezeichnung)``.
+
+    Über ``bulk_create`` wie die Fixture ``auftragsposition``, deshalb mit
+    gesetzter ``sortierung``.
+    """
+    auftrag = Beleg.objects.create(
+        typ=BelegTyp.AUFTRAG, status=BelegStatus.FESTGESCHRIEBEN,
+        nummer=nummer, projekt=projekt)
+    return Belegposition.objects.bulk_create([
+        Belegposition(
+            beleg=auftrag, position=position, bezeichnung=bezeichnung,
+            sortierung=sortierschluessel(position), menge=Decimal('10'),
+            einheit='Std', einzelpreis=Decimal('95.00'), art='zeit')
+        for position, bezeichnung in positionen
+    ])
+
+
+@pytest.mark.django_db
+class TestNachAuftrag:
+    """Je Vorhaben nach Auftrag und Position, Katalogzeilen am Ende."""
+
+    @pytest.fixture
+    def zwei_auftraege(self, projekt, zeitleistung, mitarbeiter):
+        """Zwei Aufträge und eine Katalogzeile, in gemischter Reihenfolge
+        angelegt. Position "9" vor "10" prüft die Sortierung nach
+        ``Belegposition.sortierung`` statt nach dem Text."""
+        zehn, neun = _auftrag(projekt, 'AU-2026-0002',
+                              ('10', 'Bauüberwachung'), ('9', 'Prüfung'))
+        (erster,) = _auftrag(projekt, 'AU-2026-0001', ('10', 'Planung'))
+
+        def erfassen(beschreibung, tag, **grundlage):
+            services.zeile_erfassen(
+                projekt=projekt, benutzer=mitarbeiter, beschreibung=beschreibung,
+                datum=date(2026, 9, tag), von=time(8), bis=time(9),
+                **grundlage)
+
+        erfassen('Katalog', 1, leistung=zeitleistung)
+        erfassen('0002/10 später', 5, auftragsposition=zehn)
+        erfassen('0002/9', 2, auftragsposition=neun)
+        erfassen('0001/10', 9, auftragsposition=erster)
+        erfassen('0002/10 früher', 3, auftragsposition=zehn)
+
+    def test_auftrag_position_datum_und_katalog_am_ende(
+        self, als_mitarbeiter, zwei_auftraege
+    ):
+        antwort = als_mitarbeiter.get(reverse(LISTE),
+                                      {'sortierung': Sortierung.AUFTRAG})
+
+        assert _spalte(antwort.content.decode(), 'beschreibung') == [
+            '0001/10', '0002/9', '0002/10 früher', '0002/10 später',
+            'Katalog']
+
+    def test_worauf_zeigt_die_positionsnummer(self, als_mitarbeiter,
+                                              zwei_auftraege):
+        """Die Spalte zeigt Auftrag und Position mit Nummer wie das
+        Formular."""
+        antwort = als_mitarbeiter.get(reverse(LISTE),
+                                      {'sortierung': Sortierung.AUFTRAG})
+
+        assert (_zelle(antwort.content.decode(), 'worauf')
+                == 'AU-2026-0001 · 10. Planung')
 
 
 @pytest.mark.django_db
