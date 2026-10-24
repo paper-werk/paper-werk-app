@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "django>=6.1,<7",
-    "djangorestframework>=3.18",
+    "djangorestframework>=3.18.3",
     "django-filter>=26.1",
     "psycopg[binary]>=3.3",
     "django-environ>=0.12",
@@ -23,8 +23,8 @@ dependencies = [
     # auch. Sonst hängt der Import an einer Entscheidung, die drafthorse
     # jederzeit anders treffen darf, und das Einlesen fiele bei einem
     # Update von drafthorse aus.
-    "pypdf>=6.16.0",
-    "pillow>=12.3.0",
+    "pypdf>=6.21.2",
+    "pillow>=13.0.0",
     "drf-spectacular[sidecar]>=0.30.0",
     # Liefert die statischen Dateien im Betrieb aus und schreibt
     # Prüfsummen in die Dateinamen; siehe paperwerk/settings/prod.py.
