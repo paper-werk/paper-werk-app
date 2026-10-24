@@ -5,11 +5,11 @@ bleiben ungerundet; auf die Viertelstunde gerundet wird bei der Abrechnung.
 """
 
 from dataclasses import dataclass, field, replace
-from datetime import date
+from datetime import date, time
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import Sum
 
 from faktura.models import Katalogposition, Leistungsart, Projekt
 
@@ -171,7 +171,8 @@ def zeitaufstellung(zeilen) -> Zeitaufstellung:
     daten = [z.datum for z in zeilen]
     mengen = {}
     for zeile in zeilen:
-        if zeile.ist_zeitleistung or zeile.menge is None:
+        if (zeile.ist_zeitleistung or zeile.menge is None
+                or _ist_pauschale(zeile)):
             continue
         einheit = zeile.einheit
         mengen[einheit] = mengen.get(einheit, Decimal('0')) + zeile.menge
@@ -195,9 +196,29 @@ def zeitaufstellung(zeilen) -> Zeitaufstellung:
     )
 
 
+#: Einheiten, an denen eine Pauschale ohne Leistungsart erkannt wird. Von
+#: Hand angelegte Auftragspositionen haben keine Art und gelten als MENGE.
+PAUSCHALEINHEITEN = {'psch', 'pausch', 'pauschal', 'pschl'}
+
+
+def _ist_pauschale(zeile) -> bool:
+    """Ob die Zeile eine Pauschale abrechnet. Pauschalen fehlen in den
+    Mengensummen, weil eine Summe über verschiedene Pauschalen ("psch 3")
+    nichts aussagt."""
+    return (zeile.leistungsart == Leistungsart.PAUSCHALE
+            or zeile.einheit.strip().rstrip('.').lower() in PAUSCHALEINHEITEN)
+
+
 def nachweis_zur_rechnung(beleg) -> Zeitaufstellung:
     """Leistungsnachweis als Anlage einer Rechnung: Erfassungszeilen und
-    weiterberechnete Fremdleistungen auf Positionen des Belegs, nach Datum.
+    weiterberechnete Fremdleistungen auf Positionen des Belegs, bei Schluss-
+    und Teilschlussrechnung auch auf den abgesetzten Abschlagspositionen
+    (``_nachweispositionen``).
+
+    Jede Zeile trägt in ``rechnungsposition`` die Positionsnummer auf dieser
+    Rechnung (``_rechnungspositionen``) und ist danach sortiert, innerhalb
+    einer Position nach Datum, damit sich der Nachweis Position für Position
+    gegen die Rechnung prüfen lässt.
 
     Projekt und Anschrift kommen vom Beleg, der Zeitraum umfasst beide
     Quellen. Die Stundensumme enthält nur Zeitleistungen, weil eine
@@ -206,13 +227,24 @@ def nachweis_zur_rechnung(beleg) -> Zeitaufstellung:
     """
     from faktura.services import anschriftgeber
 
-    zeilen = (Erfassungszeile.objects.filter(abgerechnet_in__beleg=beleg)
-              .order_by('datum', 'von', 'pk'))
+    quellen = _nachweispositionen(beleg)
+    zeilen = (Erfassungszeile.objects.filter(abgerechnet_in__in=quellen)
+              .select_related('abgerechnet_in__beleg'))
     fremd = list(
-        Fremdleistung.objects.filter(abgerechnet_in__beleg=beleg)
-        .select_related('rechnung__lieferant')
-        .order_by(F('leistungsdatum').asc(nulls_last=True), 'pk'))
+        Fremdleistung.objects.filter(abgerechnet_in__in=quellen)
+        .select_related('rechnung__lieferant', 'abgerechnet_in__beleg'))
     a = zeitaufstellung(zeilen)
+
+    nummern = _rechnungspositionen(
+        beleg, {p.abgerechnet_in for p in (*a.zeilen, *fremd)})
+    for posten in (*a.zeilen, *fremd):
+        posten.rechnungsposition, posten.positionsrang = nummern[
+            posten.abgerechnet_in_id]
+    a.zeilen.sort(key=lambda z: (z.positionsrang, z.datum,
+                                 z.von is None, z.von or time.min, z.pk))
+    fremd.sort(key=lambda f: (f.positionsrang, f.leistungsdatum is None,
+                              f.leistungsdatum or date.min, f.pk))
+
     tage = [t for t in (a.von, a.bis, *(f.leistungsdatum for f in fremd)) if t]
     zeit = [z for z in a.zeilen if z.ist_zeitleistung]
     return replace(
@@ -227,9 +259,63 @@ def nachweis_zur_rechnung(beleg) -> Zeitaufstellung:
 
 def hat_nachweis(beleg) -> bool:
     """Ob zur Rechnung etwas nachzuweisen ist."""
-    return (Erfassungszeile.objects.filter(abgerechnet_in__beleg=beleg).exists()
+    quellen = _nachweispositionen(beleg)
+    return (Erfassungszeile.objects.filter(abgerechnet_in__in=quellen).exists()
             or Fremdleistung.objects.filter(
-                abgerechnet_in__beleg=beleg).exists())
+                abgerechnet_in__in=quellen).exists())
+
+
+def _nachweispositionen(beleg) -> set[int]:
+    """Belegpositionen, deren Zeilen in den Nachweis zur Rechnung gehören:
+    die eigenen und die über Abzugszeilen abgesetzten Abschlagspositionen.
+
+    Die Schlussrechnung übernimmt die Leistung der Abschläge in eigene
+    Positionen (``faktura.services.abschlaege``); die Erfassungszeilen
+    bleiben mit ``abgerechnet_in`` am Abschlag. Ohne die abgesetzten
+    Positionen hätte eine Schlussrechnung, deren Leistung ganz aus Abschlägen
+    kommt, keinen Nachweis.
+    """
+    positionen = beleg.positionen.values_list('pk', 'abgesetzte_position_id')
+    return {pk for paar in positionen for pk in paar if pk is not None}
+
+
+def _rechnungspositionen(beleg, quellen) -> dict[int, tuple[str, tuple]]:
+    """Positionsnummer auf ``beleg`` und Sortierschlüssel je Quellposition.
+
+    Eine eigene Position hat ihre Nummer. Für eine Abschlagsposition gilt
+    die Position, die die Schlussrechnung daraus angelegt hat: dieselbe
+    Auftragsposition, sonst dieselben Merkmale wie bei der Gruppierung in
+    ``faktura.services.abschlaege._leistung_aus_abschlaegen``. Ohne Treffer
+    (von Hand geänderte Position) Abschlagsnummer und Position; sie stehen
+    am Ende.
+    """
+    eigene = [p for p in beleg.positionen.all()
+              if not p.ist_abzug and not p.ist_abschlagsrest]
+    nach_auftrag = {p.auftragsposition_id: p for p in eigene
+                    if p.auftragsposition_id}
+    nach_merkmal = {_merkmal(p): p for p in eigene
+                    if not p.auftragsposition_id}
+
+    nummern = {}
+    for quelle in quellen:
+        if quelle.beleg_id == beleg.pk:
+            ziel = quelle
+        elif quelle.auftragsposition_id:
+            ziel = nach_auftrag.get(quelle.auftragsposition_id)
+        else:
+            ziel = nach_merkmal.get(_merkmal(quelle))
+        if ziel is not None:
+            nummern[quelle.pk] = (ziel.position, (0, ziel.sortierung))
+        else:
+            nummern[quelle.pk] = (
+                f'{quelle.beleg.nummer} / {quelle.position}',
+                (1, quelle.beleg.nummer or '', quelle.sortierung))
+    return nummern
+
+
+def _merkmal(position) -> tuple:
+    return (position.bezeichnung, position.einheit, position.einzelpreis,
+            position.steuersatz, position.art)
 
 
 def _leistung_pruefen(leistung: Katalogposition) -> None:

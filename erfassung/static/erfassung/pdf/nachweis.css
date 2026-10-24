@@ -12,6 +12,10 @@ table.nachweiszeilen {
   font-size: 8.5pt;
 }
 
+/* Breiter als .pos im Beleg (8 mm), weil "01.0010" in eine Zeile passen
+ * soll. Längere Nummern und "RE-2025-0003 / 3" brechen um, statt in die
+ * Datumsspalte zu laufen (table-layout: fixed aus beleg.css). */
+table.nachweiszeilen .pos     { width: 14mm; overflow-wrap: anywhere; }
 table.nachweiszeilen .datum   { width: 7%;  white-space: nowrap; }
 table.nachweiszeilen .person  { width: 15%; }
 table.nachweiszeilen .uhrzeit { width: 6%;  text-align: right; white-space: nowrap; }

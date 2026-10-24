@@ -24,7 +24,7 @@ VORLAGE = 'erfassung/nachweis/basis.html'
 #: Fußzeile, damit sich ältere Ausdrucke zuordnen lassen.
 #:
 #: Wird nicht gespeichert, weil es keinen Datensatz zum Nachweis gibt.
-VORLAGENVERSION = 'v1'
+VORLAGENVERSION = 'v2'
 
 
 def nachweis_als_html(aufstellung, *, erzeugt_von=None,
