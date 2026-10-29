@@ -30,7 +30,7 @@ jobs:
       DATABASE_URL: postgres://paperwerk:paperwerk@localhost:5432/paperwerk
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Systempakete für WeasyPrint
         run: |
@@ -39,7 +39,7 @@ jobs:
             libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 libffi8 \
             shared-mime-info fonts-dejavu-core fonts-crosextra-carlito
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10.3.2
 
       - name: Abhängigkeiten
         run: |
@@ -81,7 +81,7 @@ jobs:
       DJANGO_SETTINGS_MODULE: paperwerk.settings.kern
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Systempakete für WeasyPrint
         run: |
@@ -90,7 +90,7 @@ jobs:
             libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libharfbuzz-subset0 libffi8 \
             shared-mime-info fonts-dejavu-core fonts-crosextra-carlito
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10.3.2
 
       - name: Abhängigkeiten
         run: uv sync
