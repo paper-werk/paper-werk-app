@@ -105,12 +105,10 @@ INSTALLED_APPS = [
 # /opt/paperwerk-zusatz/paperwerk_pruefung) und trägt sie in
 # PAPERWERK_ZUSATZAPPS ein. Kein Modul dieses Repos importiert einen Zusatz;
 # er registriert sich wie die eigenen Apps über core/erweiterungen.py.
-# /opt/paperwerk-premium ist der frühere Pfad, auf den bestehende
-# Installationen noch mounten.
 import sys  # noqa: E402
 
 PAPERWERK_ZUSATZPFAD = '/opt/paperwerk-zusatz'
-sys.path += [PAPERWERK_ZUSATZPFAD, '/opt/paperwerk-premium']
+sys.path.append(PAPERWERK_ZUSATZPFAD)
 INSTALLED_APPS += env.list('PAPERWERK_ZUSATZAPPS', default=[])
 
 # --- Weglassbare Apps -------------------------------------------------------
