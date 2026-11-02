@@ -509,6 +509,9 @@ class Beleg(MitVersion):
             # Getrennt von ``change_beleg``, weil das Wiedereröffnen
             # versendeter Belege eigens erlaubt sein soll.
             ('beleg_wiedereroeffnen', 'Kann Belege wieder öffnen'),
+            # Für Workflows über die API (docs/webhooks.md): unkritische
+            # Kopffelder eines Entwurfs ohne ``change_beleg``.
+            ('kopf_aendern_beleg', 'Kann Kopffelder über die API ändern'),
         ]
         constraints = [
             # In der Datenbank, damit auch Skripte und Importe gebunden
@@ -591,7 +594,13 @@ class Beleg(MitVersion):
                     f'stehen. Auch ein wiedereröffneter Beleg behält sie; '
                     f'sie ist außer Haus.'
                 )
+        neu = self._state.adding
         super().save(*args, **kwargs)
+        # Hier statt in den Services, weil Belege auf vielen Wegen entstehen
+        # (Maske, Umwandeln, Duplizieren, Korrektur, Mahnung, Abrechnung).
+        if neu:
+            from ..ereignisse import ANGELEGT, melden
+            melden(ANGELEGT, self)
 
     @property
     def loeschsperre(self) -> str:

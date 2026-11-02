@@ -11,6 +11,7 @@ from django.core.mail import EmailMessage, mailers
 from django.db.models import TextChoices
 from django.utils import timezone
 
+from .. import ereignisse
 from ..models import Beleg, Firma
 from .anlagen import anlage_dateiname, anlage_pdf, anlagenquellen
 from .fehler import EmpfaengeradresseFehlt, VersandFehlgeschlagen
@@ -121,6 +122,7 @@ def beleg_versenden(
         )
         beleg.versendet_am = zeitpunkt
         beleg.versendet_an = empfaenger
+    ereignisse.melden(ereignisse.VERSENDET, beleg)
     return beleg
 
 

@@ -8,7 +8,8 @@ class CoreConfig(AppConfig):
     verbose_name = 'Benutzerverwaltung'
 
     def ready(self):
-        """Registriert die Systemprüfungen und die Einträge der Seitenleiste.
+        """Registriert die Systemprüfungen, den Versand von Ereignissen und die
+        Einträge der Seitenleiste.
 
         Der Import von ``checks`` wirkt über seinen Seiteneffekt: Erst er
         führt die ``@register``-Dekoratoren aus. Ohne ihn findet ``manage.py
@@ -18,7 +19,11 @@ class CoreConfig(AppConfig):
         from . import (
             checks,  # noqa: F401
             erweiterungen,
+            webhooks,
         )
+
+        # Versand an die Ereignisregeln (docs/webhooks.md).
+        erweiterungen.ereignisempfaenger(webhooks.versenden)
 
         erweiterungen.menue(
             'Übersicht', separator=False, collapsible=False, eintraege=[
@@ -50,5 +55,12 @@ class CoreConfig(AppConfig):
                 'link': reverse_lazy('admin:authtoken_tokenproxy_changelist'),
                 'permission': lambda r: r.user.has_perm(
                     'authtoken.view_tokenproxy'),
+            },
+            {
+                'title': 'Ereignisse',
+                'icon': 'campaign',
+                'link': reverse_lazy('admin:core_ereignisregel_changelist'),
+                'permission': lambda r: r.user.has_perm(
+                    'core.view_ereignisregel'),
             },
         ])

@@ -120,6 +120,23 @@ def version_erhoehen(modell, pk) -> None:
         **{FELD: F(FELD) + 1})
 
 
+def version_von(instanz) -> int:
+    """Version der geladenen Instanz, für Schnittstellen nach außen
+    (Ereignisse, API)."""
+    return getattr(instanz, FELD)
+
+
+def version_pruefen(instanz, erwartet: int) -> None:
+    """Wirft ``VersionKonflikt``, wenn die Version in der Datenbank von
+    ``erwartet`` abweicht. Für Schreibzugriffe über die API; innerhalb der
+    Transaktion des Schreibzugriffs aufrufen, damit der Lock bis zum
+    Speichern hält."""
+    if _version_gesperrt(instanz) != erwartet:
+        raise VersionKonflikt(
+            'Der Datensatz wurde zwischenzeitlich geändert. Aktuelle Fassung '
+            'neu laden und die Änderung mit deren Version senden.')
+
+
 def _version_gesperrt(instanz) -> int | None:
     """Aktuelle Version mit ``SELECT … FOR UPDATE``.
 

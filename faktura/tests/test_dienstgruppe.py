@@ -14,8 +14,8 @@ import pytest
 class TestDienstgruppe:
     """Rechte der Gruppe "Faktura Dienst" nach faktura_rechte.
 
-    Ein Automatisierungslauf darf lesen und die Archivfelder setzen, sonst
-    nichts.
+    Ein Automatisierungslauf darf lesen, die Archivfelder setzen und
+    Kopffelder eines Entwurfs über die API ändern, sonst nichts.
     """
 
     @pytest.fixture(autouse=True)
@@ -42,6 +42,10 @@ class TestDienstgruppe:
 
     def test_darf_die_ablage_vermerken(self):
         assert self._hat('archivieren_beleg')
+
+    def test_darf_kopffelder_ueber_die_api_aendern(self):
+        """Für Workflows, die auf Ereignisse reagieren (docs/webhooks.md)."""
+        assert self._hat('kopf_aendern_beleg')
 
     def test_darf_belege_nicht_aendern(self):
         """Ohne ``change_beleg`` und damit ohne Festschreiben, weil

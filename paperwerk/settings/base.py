@@ -586,6 +586,14 @@ PAPER_WERK_TLS_MODE = env('PAPER_WERK_TLS_MODE', default='')
 # Konfigurierbar für einen anderen Dienstnamen.
 ZERTIFIKAT_PRUEFADRESSE = env('ZERTIFIKAT_PRUEFADRESSE', default='caddy')
 
+# Öffentliche Adresse der Installation für absolute Links in Ereignissen
+# (core/webhooks.py). Vorgabe aus PAPER_WERK_HOSTNAME; ohne beides enthalten
+# die Ereignisse nur Pfade.
+PAPER_WERK_URL = env(
+    'PAPER_WERK_URL',
+    default=f'https://{PAPER_WERK_HOSTNAME}' if PAPER_WERK_HOSTNAME else '',
+).rstrip('/')
+
 
 # --- Änderungshistorie (django-simple-history) -------------------------------
 # Kein Revert, weil frühere Stände als Nachweis dienen. Korrekturen laufen

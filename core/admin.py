@@ -1,4 +1,4 @@
-"""Benutzer, Gruppen und API-Schlüssel im Admin.
+"""Benutzer, Gruppen, API-Schlüssel und Ereignisregeln im Admin.
 
 Django, DRF, allauth und django-sequences registrieren ihre Modelle selbst,
 mit Djangos Widgets. Dieses Modul deregistriert sie und registriert sie neu mit
@@ -6,27 +6,33 @@ Unterklassen, die zusätzlich von Unfolds ``ModelAdmin`` erben. Die Klasse der
 Bibliothek steht in der MRO vorn, damit ihre Logik gilt.
 """
 
+import requests
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
 from django.contrib.auth.models import Group
+from django.shortcuts import redirect
+from django.urls import reverse
 from rest_framework.authtoken.admin import TokenAdmin as DRFTokenAdmin
 from rest_framework.authtoken.models import TokenProxy
 from sequences.models import Sequence
 from unfold.admin import ModelAdmin
+from unfold.decorators import action as unfold_action
 from unfold.forms import (
     AdminPasswordChangeForm,
     UnfoldReadOnlyPasswordHashWidget,
     UserChangeForm,
     UserCreationForm,
 )
+from unfold.widgets import UnfoldAdminCheckboxSelectMultipleWidget
 
-from .adminhilfen import Kopfleiste
-from .models import User
+from . import erweiterungen, webhooks
+from .adminhilfen import Kopfleiste, weitere
+from .models import Ereignisregel, User
 
 #: Flags, die ein Konto für den Admin und die Benutzerverwaltung braucht. Ohne
 #: ``is_active`` oder ``is_staff`` ist kein Login in den Admin möglich, ohne
@@ -240,3 +246,96 @@ class SocialAccountAdmin(Kopfleiste, ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+class EreignisregelForm(forms.ModelForm):
+    """Maske einer Ereignisregel. Die Auswahl für Ereignis, Aktionen und
+    Typen kommt aus den registrierten Ereignisquellen
+    (``core.erweiterungen.ereignisquelle``), weil ``core`` die Fachobjekte
+    nicht kennt."""
+
+    quelle = forms.ChoiceField(label='Ereignis')
+    aktionen = forms.MultipleChoiceField(
+        label='Aktionen', required=False,
+        widget=UnfoldAdminCheckboxSelectMultipleWidget,
+        help_text='Ohne Auswahl gilt die Regel für alle Aktionen.')
+    typen = forms.MultipleChoiceField(
+        label='Typen', required=False,
+        widget=UnfoldAdminCheckboxSelectMultipleWidget,
+        help_text='Ohne Auswahl gilt die Regel für alle Typen.')
+
+    class Meta:
+        model = Ereignisregel
+        fields = ['name', 'aktiv', 'quelle', 'aktionen', 'typen', 'url', 'token']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        quellen = erweiterungen.ereignisquellen().values()
+        self.fields['quelle'].choices = [(q.name, q.titel) for q in quellen]
+        self.fields['aktionen'].choices = _vereinigung(q.aktionen for q in quellen)
+        self.fields['typen'].choices = _vereinigung(q.typen for q in quellen)
+
+    def clean(self):
+        """Aktionen und Typen müssen zur gewählten Quelle gehören."""
+        daten = super().clean()
+        quelle = erweiterungen.ereignisquellen().get(daten.get('quelle'))
+        if quelle is None:
+            return daten
+        for feld, erlaubt in (('aktionen', quelle.aktionen), ('typen', quelle.typen)):
+            werte = {wert for wert, _ in erlaubt}
+            fremd = [w for w in daten.get(feld) or [] if w not in werte]
+            if fremd:
+                self.add_error(feld, f'Gehört nicht zu "{quelle.titel}": '
+                                     f'{", ".join(fremd)}.')
+        return daten
+
+
+def _vereinigung(listen) -> list[tuple[str, str]]:
+    """Choices mehrerer Quellen ohne Doppelte, in erster Reihenfolge."""
+    ergebnis: dict[str, str] = {}
+    for liste in listen:
+        for wert, titel in liste:
+            ergebnis.setdefault(wert, titel)
+    return list(ergebnis.items())
+
+
+@admin.register(Ereignisregel)
+class EreignisregelAdmin(Kopfleiste, ModelAdmin):
+    """Regeln, die Ereignisse an externe Ziele melden (``docs/webhooks.md``).
+
+    „Test senden“ ruft das Ziel im Request auf und zeigt Status oder Fehler
+    als Meldung, weil der Anwender auf das Ergebnis wartet.
+    """
+
+    form = EreignisregelForm
+    list_display = ('name', 'aktiv', 'beschreibung', 'url')
+    list_filter = ('aktiv',)
+    search_fields = ('name', 'url')
+    actions_detail = ['detail_test_senden', weitere()]
+
+    @admin.display(description='Wenn')
+    def beschreibung(self, regel) -> str:
+        """Filter als Satz, etwa "Rechnung, Angebot: festgeschrieben"."""
+        quelle = erweiterungen.ereignisquellen().get(regel.quelle)
+        if quelle is None:
+            return regel.quelle
+        titel_typ = dict(quelle.typen)
+        titel_aktion = dict(quelle.aktionen)
+        typen = ', '.join(titel_typ.get(t, t) for t in regel.typen) or quelle.titel
+        aktionen = ', '.join(titel_aktion.get(a, a) for a in regel.aktionen) or 'jede Aktion'
+        return f'{typen}: {aktionen}'
+
+    @unfold_action(description='Test senden', icon='send',
+                   permissions=['change'], url_path='test-senden')  # type: ignore
+    def detail_test_senden(self, request, object_id):
+        regel = Ereignisregel.objects.get(pk=object_id)
+        try:
+            antwort = webhooks.probe_senden(regel)
+        except requests.RequestException as fehler:
+            self.message_user(request, f'{regel.url} nicht erreicht: {fehler}',
+                              level=messages.ERROR)
+        else:
+            self.message_user(
+                request, f'{regel.url} antwortet mit Status {antwort.status_code}.',
+                level=messages.SUCCESS if antwort.ok else messages.WARNING)
+        return redirect(reverse('admin:core_ereignisregel_change', args=[object_id]))
