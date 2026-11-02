@@ -45,10 +45,10 @@ def nutzlast(beleg) -> dict:
     """
     from .admin.gemeinsam import adresse_im_admin
     from .models import Beleg
-    from .services import belegsummen
+    from .services import anschriftgeber, belegsummen
 
     pk = beleg.pk
-    beleg = (Beleg.objects.select_related('kunde', 'vorgaenger')
+    beleg = (Beleg.objects.select_related('kunde', 'projekt__kunde', 'vorgaenger')
              .filter(pk=pk).first())
     if beleg is None:
         # In derselben Transaktion wieder gelöscht.
@@ -65,7 +65,11 @@ def nutzlast(beleg) -> dict:
         'betreff': beleg.betreff,
         'brutto': f'{belegsummen(beleg).brutto:.2f}',
         'faellig_am': beleg.faellig_am,
-        'kunde': {'name': beleg.kunde.name} if beleg.kunde else None,
+        # Bei Projektbelegen der Kunde des Projekts.
+        'kunde': {'name': kunde.name} if (kunde := anschriftgeber(beleg)) else None,
+        'projekt': ({'id': beleg.projekt.pk, 'nummer': beleg.projekt.nummer,
+                     'bezeichnung': beleg.projekt.bezeichnung}
+                    if beleg.projekt else None),
         'vorgaenger': ({'id': vorgaenger.pk, 'typ': vorgaenger.typ,
                         'nummer': vorgaenger.nummer or None}
                        if vorgaenger else None),

@@ -22,7 +22,7 @@ from rest_framework.test import APIClient
 from core import erweiterungen, gruppen
 from core.optimistic_locking import FELD
 from faktura import ereignisse, services
-from faktura.models import Beleg, BelegTyp, Kontakt
+from faktura.models import Beleg, BelegTyp, Kontakt, Projekt
 from faktura.tests.test_gleichzeitig import formulardaten, gesichert, neue_position, setze
 
 pytestmark = pytest.mark.django_db
@@ -170,6 +170,7 @@ class TestNutzlast:
         assert nutzlast['faellig_am'] == rechnung.faellig_am
         assert nutzlast['kunde'] == {'name': 'Muster GmbH'}
         assert nutzlast['vorgaenger'] is None
+        assert nutzlast['projekt'] is None
         assert nutzlast[FELD] == Beleg.objects.values_list(FELD, flat=True).get(
             pk=rechnung.pk)
         assert nutzlast['admin_url'] == (
@@ -279,6 +280,44 @@ class TestLesen:
         assert daten['brutto'] == '1190.00'
         assert daten['vorgaenger_id'] is None
         assert daten[FELD] == _version(entwurf)
+
+    def test_kopffelder_sind_lesbar(self, n8n, entwurf):
+        Beleg.objects.filter(pk=entwurf.pk).update(bestellnummer='B-77')
+
+        daten = n8n.get(f'/api/v1/belege/{entwurf.pk}/').json()
+
+        assert daten['bestellnummer'] == 'B-77'
+        assert {'kopftext', 'fusstext', 'leitweg_id', 'empfaenger_email'} <= set(daten)
+
+    def test_projektstand_nur_in_der_einzelauskunft(self, n8n, kunde):
+        projekt = Projekt.objects.create(nummer='2026-099',
+                                         bezeichnung='Halle Nord', kunde=kunde)
+        auftrag = _entwurf(kunde, BelegTyp.AUFTRAG)
+        Beleg.objects.filter(pk=auftrag.pk).update(projekt=projekt, kunde=None)
+        services.beleg_festschreiben(beleg_id=auftrag.pk)
+        rechnung = _entwurf(kunde)
+        Beleg.objects.filter(pk=rechnung.pk).update(projekt=projekt, kunde=None)
+
+        einzeln = n8n.get(f'/api/v1/belege/{rechnung.pk}/').json()
+        liste = n8n.get('/api/v1/belege/').json()['results']
+
+        assert einzeln['projekt_id'] == projekt.pk
+        assert einzeln['projektstand']['beauftragt'] == '1000.00'
+        assert einzeln['projektstand']['fakturiert'] == '0.00'
+        assert einzeln['projektstand']['fortschritt'] == 0
+        assert all(b['projektstand'] is None for b in liste)
+
+    def test_nutzlast_nennt_projekt_und_dessen_kunden(self, kunde):
+        projekt = Projekt.objects.create(nummer='2026-099',
+                                         bezeichnung='Halle Nord', kunde=kunde)
+        rechnung = _entwurf(kunde)
+        Beleg.objects.filter(pk=rechnung.pk).update(projekt=projekt, kunde=None)
+
+        nutzlast = ereignisse.nutzlast(rechnung)
+
+        assert nutzlast['projekt'] == {'id': projekt.pk, 'nummer': '2026-099',
+                                       'bezeichnung': 'Halle Nord'}
+        assert nutzlast['kunde'] == {'name': 'Muster GmbH'}
 
     def test_nachfolger_ueber_den_vorgaenger(self, n8n, kunde):
         angebot = services.beleg_festschreiben(

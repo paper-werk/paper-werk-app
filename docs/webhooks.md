@@ -92,6 +92,7 @@ erfahren andere Workflows davon nichts.
     "brutto": "1487.50",
     "faellig_am": "2026-11-16",
     "kunde": {"name": "Muster GmbH"},
+    "projekt": {"id": 3, "nummer": "2026-003", "bezeichnung": "Halle 3"},
     "vorgaenger": {"id": 4690, "typ": "auftrag", "nummer": "AB-2026-0017"},
     "version": 7,
     "admin_url": "https://paper-werk.example/admin/faktura/rechnung/4711/change/",
@@ -101,7 +102,10 @@ erfahren andere Workflows davon nichts.
 ```
 
 - `nummer` ist im Entwurf `null`, ebenso `faellig_am` vor dem
-  Festschreiben und `kunde` und `vorgaenger`, wenn nicht gesetzt.
+  Festschreiben und `kunde`, `projekt` und `vorgaenger`, wenn nicht gesetzt.
+- `kunde` ist bei Projektbelegen der Kunde des Projekts
+  (`services.anschriftgeber`), weil ein Beleg Kunde oder Projekt trägt,
+  nie beides.
 - `brutto` ist der Zahlbetrag als Zeichenkette mit zwei Nachkommastellen,
   wie in der API.
 - `version` ist die Version für Optimistic Locking; ein `PATCH` übergibt
@@ -119,10 +123,17 @@ Bruch möglich, Entfernen nicht.
 
 Die Belegauskunft (`faktura/api.py`, `/api/v1/belege/`):
 
-- Lesen: zusätzlich zu den Feldern der Archiv-Anbindung `betreff`,
-  `faellig_am`, `kunde_name`, `vorgaenger_id`, `brutto` und `version`.
+- Lesen: zusätzlich zu den Feldern der Archiv-Anbindung `faellig_am`,
+  `kunde_name`, `vorgaenger_id`, `projekt_id`, `brutto`, `version` und die
+  Felder, die `PATCH` ändert, damit ein Workflow sie vorher prüfen kann.
   Die Namen folgen der bestehenden Auskunft (`typ_kennung`, `kunde_name`)
   und weichen deshalb von der verschachtelten Nutzlast ab.
+- `projektstand` in der Einzelauskunft eines Projektbelegs: `angeboten`,
+  `beauftragt` (samt Nachträgen), `fakturiert` (mit Abschlägen),
+  `abgerechnete_leistung` (ohne Abschläge), netto, und `fortschritt` in
+  Prozent, berechnet von `services.projektstaende` wie auf der
+  Projektseite. In der Liste `null`, weil er je Beleg zwei Abfragen
+  kostet.
 - `GET /api/v1/belege/?vorgaenger=<id>`: Nachfolger eines Belegs, etwa der
   Auftrag zu einem Angebot.
 - `GET /api/v1/belege/{id}/pdf/`: das beim Festschreiben gespeicherte PDF;
@@ -191,6 +202,7 @@ Regeln stehen unter „Verwaltung > Ereignisse“ (Modell `Ereignisregel`).
 ## Szenarien
 
 Die Szenarien legen fest, welche Felder Nutzlast und API brauchen.
+Ausgearbeitete Workflows dazu liegen im Repository `paper-werk-n8n`.
 
 **Angebot nachfassen.** Regel: Angebot, `versendet`. n8n wartet 14 Tage und
 fragt dann `?vorgaenger=<id>` ab. Gibt es keinen Auftrag, erhält der
@@ -211,6 +223,13 @@ Auftrag. Felder: `id`, `kunde.name`, `vorgaenger.nummer`, `version`. Kommt
 die Bestellung erst nach dem Auftrag, greift der Workflow nicht; robuster
 ist dann ein Workflow in Paperless, der bei Eingang der Bestellung den
 Auftrag über die API sucht.
+
+**Projektfortschritt.** Regel: Rechnung, `festgeschrieben`. n8n liest
+`projektstand` des Projekts und meldet, wenn der Fortschritt eine Schwelle
+überschreitet (etwa 80 und 100 Prozent), damit ein Nachtrag rechtzeitig
+angelegt wird. Rechnungen hängen über ihre Positionen am Auftrag, nicht
+über `vorgaenger`; deshalb rechnet der Workflow nicht selbst, sondern
+liest den Stand der App. Felder: `projekt.id`, `api_url`.
 
 ## Abgrenzung
 

@@ -29,7 +29,11 @@ from django.db import transaction
 from django.http import FileResponse
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_field,
+)
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -42,7 +46,7 @@ from core.permissions import Modellrechte
 
 from . import facturx
 from .models import Beleg
-from .services import belegsummen
+from .services import belegsummen, projektstaende
 
 #: Felder, die ``PATCH`` an einem Entwurf ändert. Ohne Wirkung auf Steuer,
 #: Summen, Fristen und die Zuordnung zu Kunde und Projekt; Positionen,
@@ -52,6 +56,19 @@ AENDERBARE_KOPFFELDER = [
     'betreff', 'kopftext', 'fusstext', 'bestellnummer', 'leitweg_id',
     'empfaenger_email',
 ]
+
+
+class ProjektstandSerializer(serializers.Serializer):
+    """Netto-Summen eines Projekts, wie auf der Projektseite: beauftragt
+    samt Nachträgen, fakturiert mit Abschlägen, abgerechnete Leistung ohne
+    Abschläge, Fortschritt in Prozent (fakturiert zu beauftragt)."""
+
+    angeboten = serializers.DecimalField(max_digits=14, decimal_places=2)
+    beauftragt = serializers.DecimalField(max_digits=14, decimal_places=2)
+    fakturiert = serializers.DecimalField(max_digits=14, decimal_places=2)
+    abgerechnete_leistung = serializers.DecimalField(max_digits=14,
+                                                     decimal_places=2)
+    fortschritt = serializers.IntegerField()
 
 
 class BelegAnbindungSerializer(serializers.ModelSerializer):
@@ -64,6 +81,7 @@ class BelegAnbindungSerializer(serializers.ModelSerializer):
     kunde_name = serializers.CharField(source='kunde.name', default=None,
                                        read_only=True)
     brutto = serializers.SerializerMethodField()
+    projektstand = serializers.SerializerMethodField()
 
     class Meta:
         model = Beleg
@@ -72,8 +90,11 @@ class BelegAnbindungSerializer(serializers.ModelSerializer):
             'festgeschrieben_am', 'archiviert', 'paperless_id',
             'erechnungsprofil', 'xml_sha256',
             # Eigenschaften wie im Ereignis (faktura/ereignisse.py).
-            'betreff', 'faellig_am', 'kunde_name', 'vorgaenger_id', 'brutto',
+            'faellig_am', 'kunde_name', 'vorgaenger_id', 'projekt_id', 'brutto',
             FELD,
+            # Was PATCH ändert, damit ein Workflow vorher lesen kann.
+            *AENDERBARE_KOPFFELDER,
+            'projektstand',
         ]
 
     def get_archiviert(self, beleg: Beleg) -> bool:
@@ -84,6 +105,17 @@ class BelegAnbindungSerializer(serializers.ModelSerializer):
     def get_brutto(self, beleg: Beleg) -> str:
         """Zahlbetrag aus ``belegsummen``, mit zwei Nachkommastellen."""
         return f'{belegsummen(beleg).brutto:.2f}'
+
+    @extend_schema_field(ProjektstandSerializer(allow_null=True))
+    def get_projektstand(self, beleg: Beleg) -> dict | None:
+        """Stand des Projekts (``services.projektstaende``), nur in der
+        Einzelauskunft, weil er je Beleg zwei Abfragen kostet; in der Liste
+        und ohne Projekt ``None``."""
+        view = self.context.get('view')
+        if beleg.projekt_id is None or getattr(view, 'action', None) != 'retrieve':
+            return None
+        staende = projektstaende(nur_laufende=False, projekte=[beleg.projekt_id])
+        return ProjektstandSerializer(staende[0]).data if staende else None
 
 
 class KopfaenderungSerializer(serializers.ModelSerializer):
@@ -174,7 +206,7 @@ class BelegAnbindungViewSet(ReadOnlyModelViewSet):
     filterset_class = BelegAnbindungFilter
     serializer_class = BelegAnbindungSerializer
     # ``positionen`` für ``brutto``.
-    queryset = (Beleg.objects.select_related('kunde')
+    queryset = (Beleg.objects.select_related('kunde', 'projekt')
                 .prefetch_related('positionen').order_by('-erstellt_am'))
 
     def get_permissions(self):
