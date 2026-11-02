@@ -3,7 +3,7 @@
 Paper-Werk meldet Aktionen an Belegen per HTTP-POST an konfigurierte Ziele,
 typischerweise einen Webhook-Knoten in n8n. Der Empfänger liest bei Bedarf
 weitere Daten über die API und kann unkritische Kopffelder eines Entwurfs
-ändern. Beschrieben sind Ereignismodell, Nutzlast, Auslösung, Zustellung und
+ändern. Beschrieben sind Ereignismodell, Nutzlast, Auslösung, Versand und
 die zugehörige API. Neue Aktionen oder Nutzlastfelder bitte vorher in einem
 Issue abstimmen, weil Workflows sich auf Namen und Felder verlassen.
 
@@ -13,8 +13,11 @@ Das Modell folgt den Workflows in Paperless: Ein Ereignis tritt ein, Filter
 entscheiden, ob eine Regel greift, die Regel ruft einen Webhook auf. Damit
 lassen sich Funktionen ergänzen, ohne Paper-Werk zu ändern.
 
-- Gemeldet wird nur nach außen. Paper-Werk wartet auf keine Antwort, damit
-  ein nicht erreichbares Ziel keinen Vorgang blockiert.
+- Ein Ereignis wird ausgelöst wie ein Event im Browser: Die Meldestelle
+  kennt die Empfänger nicht, und Paper-Werk übernimmt keine Verantwortung
+  dafür, ob ein Aufruf ankommt oder was der Empfänger damit tut. Es gibt
+  weder Wiederholung noch Protokoll, damit Paper-Werk keine
+  Fehlerbehandlung für fremde Systeme braucht.
 - Gemeldet wird erst nach dem Commit (`transaction.on_commit`), damit kein
   Empfänger von einer zurückgerollten Änderung erfährt.
 - Die Nutzlast enthält elementare Eigenschaften des Belegs. Alles Weitere
@@ -51,6 +54,18 @@ Mahnung …).
 
 Folge der Auslösung nur aus der Oberfläche: Ändert ein Workflow einen Beleg,
 erfahren andere Workflows davon nichts.
+
+## Auslösung und Empfänger
+
+- Meldestellen rufen `erweiterungen.ereignis(aktion, beleg)` auf. Die
+  Funktion registriert per `transaction.on_commit` den Aufruf aller
+  Empfänger und kehrt sofort zurück.
+- Empfänger melden sich mit `erweiterungen.ereignisempfaenger(funktion)` an
+  (Signatur `funktion(aktion, beleg)`). Der Versand an Webhooks ist ein
+  solcher Empfänger; weitere Apps können auf dieselben Ereignisse hören,
+  ohne dass sich die Meldestellen ändern.
+- Eine Ausnahme in einem Empfänger wird geloggt und erreicht die
+  Meldestelle nicht.
 
 ## Nutzlast
 
@@ -107,32 +122,40 @@ Eine Erweiterung kann den Endpunkt unter derselben URL ersetzen
 (`api_endpoint(ersetzt=True)`); sie liefert die hier beschriebenen Felder
 und Aktionen weiter.
 
-## Zustellung
+## Versand
 
-- Je Ereignis und zutreffender Regel entsteht eine `Zustellung` in
-  derselben Transaktion (Outbox), damit ein Absturz zwischen Commit und
-  Versand nichts verliert.
-- Nach dem Commit folgt ein Versuch mit 5 s Zeitlimit; Erfolg ist jeder
-  Status 2xx. Fehlschläge stellt der Befehl `ereignisse_zustellen` erneut zu,
-  mit wachsendem Abstand, höchstens zehnmal.
+- Der Webhook-Empfänger ermittelt die zutreffenden Regeln und sendet je
+  Regel einen POST in einem Hintergrund-Thread, damit die Maske nicht auf
+  das Ziel wartet. Zeitlimit 5 s.
+- Ergebnis und Antwort werden nicht ausgewertet. Ein Fehler (Zeitlimit,
+  Verbindungsfehler, Status außerhalb 2xx) erzeugt eine Warnung im Log.
+- Ereignisse können verloren gehen, etwa während eines Neustarts des
+  Ziels. Ein Empfänger, der jeden Beleg verarbeiten muss, gleicht
+  zusätzlich über die API ab, zum Beispiel täglich alle seit dem letzten
+  Lauf festgeschriebenen Belege.
 - Die Reihenfolge ist nicht garantiert. Wer einen Zustand braucht, liest
   ihn über `api_url`.
-- Signatur: Header `X-PaperWerk-Signatur: t=<Unix-Zeit>,v1=<hex>` mit
-  `HMAC-SHA256(secret, f"{t}.{rumpf}")`, Secret je Regel. Dazu
-  `X-PaperWerk-Zustellung` (UUID, bei Wiederholung gleich) zum Erkennen von
-  Doppelten.
+- Absicherung: Header `X-PaperWerk-Token` mit dem Token der Regel. Der
+  Webhook-Knoten in n8n prüft ihn als „Header Auth“ ohne eigenen Code.
+  Ziele verwenden `https` oder liegen im internen Netz der Installation.
+- `X-PaperWerk-Ereignis` enthält die Aktion, damit ein Ziel ohne Lesen des
+  Rumpfs verzweigen kann.
 
 ## Oberfläche
 
 Regeln stehen im Abschnitt „Verwaltung“ der Seitenleiste.
 
+- Arbeitstitel in der Seitenleiste: „Ereignisse“. Eine Regel liest sich
+  „Wenn Rechnung festgeschrieben, dann senden an …“.
 - Eine Regel hat Name, „aktiv“, Filter nach Aktion und Belegtyp
-  (Mehrfachauswahl, leer bedeutet alle) und eine Ziel-URL.
+  (Mehrfachauswahl, leer bedeutet alle), Ziel-URL und Token.
 - Der Rumpf ist die feste Nutzlast. Platzhalter wie in Paperless gibt es
   nicht, damit die Felder an einer Stelle definiert sind.
 
-Offen: Bezeichnung in der Seitenleiste, Einsicht in Zustellungen,
-Testaufruf.
+- „Test senden“ an der Regel schickt die Aktion `test` mit einem
+  Beispielbeleg und zeigt Status und Antwort des Ziels als Meldung an. Nur
+  dieser Aufruf läuft im Request, weil der Anwender auf das Ergebnis
+  wartet.
 
 ## Abgrenzung
 
@@ -156,16 +179,25 @@ Testaufruf.
   weil die API nicht meldet.
 - **Warten auf eine Antwort** (Hook, der einen Vorgang aufhält). Ein
   ausgefallenes n8n blockierte das Festschreiben.
+- **Zustellung mit Outbox, Wiederholung und Protokoll.** Garantierte
+  Zustellung macht Paper-Werk verantwortlich für die Erreichbarkeit fremder
+  Systeme und braucht eine Tabelle, einen Befehl und eine Zeitsteuerung in
+  der Installation. Empfänger, die Vollständigkeit brauchen, gleichen über
+  die API ab.
 - **Hintergrundwarteschlange (Celery, `django.tasks`).** Braucht einen
-  weiteren Dienst; Outbox und Befehl genügen für die zu erwartende Menge.
+  weiteren Dienst für einen Aufruf, dessen Ergebnis nicht ausgewertet wird.
+- **HMAC-Signatur des Rumpfs.** Die Prüfung erfordert in n8n einen
+  Code-Knoten; ein Token im Header prüft der Webhook-Knoten selbst.
+- **Synchroner Aufruf im Request.** Die Maske wartete bei nicht
+  erreichbarem Ziel bis zum Zeitlimit, je zutreffender Regel.
 
 ## Implementierung
 
 | Bereich | Datei |
 | --- | --- |
-| Andockstelle `ereignis(aktion, beleg)` | `core/erweiterungen.py` |
-| Modelle, Signatur, Versand | `core/models.py`, `core/webhooks.py` |
-| Befehl `ereignisse_zustellen` | `core/management/commands/` |
+| `ereignis()`, `ereignisempfaenger()` | `core/erweiterungen.py` |
+| Modell `Ereignisregel`, Admin | `core/models.py`, `core/admin.py` |
+| Versand | `core/webhooks.py` |
 | Meldestellen | `faktura/services/anlegen.py`, `festschreiben.py`, `versand.py`, `faktura/admin/belegarten.py` |
 | API | `faktura/api.py` |
 | n8n-Vorlage | `paper-werk-install`: `n8n/paper-werk-beleg.json` |
@@ -175,10 +207,11 @@ Testaufruf.
 - Jede Aktion erzeugt genau ein Ereignis; Speichern mit mehreren
   geänderten Positionen ergibt ein `geaendert`.
 - `PATCH` über die API erzeugt kein Ereignis.
-- Rollback nach der Meldung erzeugt keine Zustellung.
+- Rollback nach der Meldung ruft keinen Empfänger auf.
 - Filter nach Aktion und Belegtyp.
+- Ausnahme in einem Empfänger: die Meldestelle läuft durch, Warnung im Log.
 - `PATCH` mit veralteter `version`, auf festgeschriebenen Beleg und auf
   ausgeschlossene Felder wird abgewiesen.
-- Signatur gegen einen festen Vektor.
-- Ziel antwortet 500 oder gar nicht: Zustellung bleibt offen, der Befehl
-  stellt erneut zu.
+- Header `X-PaperWerk-Token` und `X-PaperWerk-Ereignis` werden gesetzt.
+- Ziel antwortet 500 oder gar nicht: Festschreiben ist davon nicht
+  betroffen, Warnung im Log.
