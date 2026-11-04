@@ -60,12 +60,20 @@ def jquery_entdoppeln(media, extra: str):
 
     Das Ergebnis ist ein neues ``Media``-Objekt, weil Media-Objekte zwischen
     Formularen geteilt werden.
+
+    Verglichen werden aufgelöste URLs: ``Script.path`` geht durch den
+    Storage, mit ``ManifestStaticFilesStorage`` also mit Hash im Namen
+    (``jquery.min.2c872dbe60f4.js``). Ein Vergleich auf das Dateiende
+    entfernte dort jedes jQuery.
     """
-    gewaehlt = f'jquery{extra}.js'
+    gewaehlt = static(f'admin/js/vendor/jquery/jquery{extra}.js')
+
+    def url(datei):
+        return getattr(datei, 'path', None) or static(str(datei))
+
     behalten = [
         datei for datei in media._js
-        if not ('vendor/jquery/jquery' in getattr(datei, 'path', str(datei))
-                and not getattr(datei, 'path', str(datei)).endswith(gewaehlt))
+        if 'vendor/jquery/jquery' not in str(datei) or url(datei) == gewaehlt
     ]
 
     bereinigt = forms.Media()
