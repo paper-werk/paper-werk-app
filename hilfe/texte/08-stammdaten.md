@@ -106,6 +106,10 @@ etwa für eine Preisrunde, und als Preisliste ausgeben.
   „Baustelleneinrichtung pauschal“.
 - **Art der Erfassung**: Zeit (über Von und Bis), Menge (über eine Zahl)
   oder Pauschale (Menge 1).
+- **Fremdschlüssel**: freiwillig, die Artikel- oder Paketnummer, unter
+  der ein Lieferant diese Leistung berechnet. Fremdleistungen mit
+  demselben Schlüssel lassen sich damit der Auftragsposition zuordnen, die
+  aus dieser Katalogposition stammt (siehe Fremdleistungen).
 
 Eine Preisänderung im Katalog wirkt nur auf neue Positionen. Bestehende
 Belege und Aufträge behalten ihren Preis.

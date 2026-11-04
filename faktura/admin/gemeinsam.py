@@ -386,9 +386,9 @@ class BelegpositionInline(unfold_admin.TabularInline):
     def get_fields(self, request, obj=None):
         """Am festgeschriebenen Beleg ohne Spalten Katalog und Zeilenart.
 
-        ``katalog`` ist ein Formularfeld ohne Modellfeld, das die
-        Read-only-Ansicht am Modell suchen würde. Die Zeilenart entfällt,
-        weil dort ``lesewert`` am Objekt bestimmt, was angezeigt wird.
+        Die Katalogsuche dient nur der Eingabe neuer Zeilen. Die Zeilenart
+        entfällt, weil dort ``lesewert`` am Objekt bestimmt, was angezeigt
+        wird.
         """
         felder = super().get_fields(request, obj)
         if obj is not None and not obj.ist_aenderbar:

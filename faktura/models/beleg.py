@@ -1063,6 +1063,20 @@ class Belegposition(ErhoehtElternversion):
         help_text='Kommt aus dem Katalog. Leer bei frei eingetragenen '
                   'Positionen.',
     )
+    #: Herkunft der Position. Die Werte sind Kopien; der Verweis dient der
+    #: Zuordnung von Fremdleistungen über ``Katalogposition.fremdschluessel``
+    #: (``erfassung.services.zuordnung``). SET_NULL, damit ein gelöschter
+    #: Katalogeintrag keinen Beleg blockiert.
+    katalog = models.ForeignKey(
+        'faktura.Katalogposition',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='belegpositionen',
+        verbose_name='Aus dem Katalog',
+        db_comment='Katalogposition, aus der die Position übernommen wurde. '
+                   'Nur für die Zuordnung von Fremdleistungen; Bezeichnung '
+                   'und Preis sind Kopien.',
+    )
 
     #: Abgerechnete Auftragsposition. An der Position, weil eine Rechnung
     #: Positionen mehrerer Aufträge enthalten kann. Leer für nicht

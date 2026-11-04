@@ -95,11 +95,8 @@ class TestLeistungskatalog:
     def test_preisaenderung_im_katalog_laesst_den_beleg_unberuehrt(
         self, buero, kunde, katalog
     ):
-        """Eine Preisänderung im Katalog ändert bestehende Belege nicht.
-
-        Ohne Fremdschlüssel trivial; der Test schlägt fehl, sobald einer
-        eingeführt wird.
-        """
+        """Eine Preisänderung im Katalog ändert bestehende Belege nicht,
+        obwohl die Position auf die Katalogposition verweist."""
         self._angebot_anlegen(buero, kunde, **{
             'positionen-0-katalog': str(katalog.pk),
         })
@@ -109,6 +106,55 @@ class TestLeistungskatalog:
 
         beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
         assert beleg.positionen.get().einzelpreis == Decimal('120.00')
+
+    def test_die_auswahl_bleibt_als_verweis_erhalten(self, buero, kunde,
+                                                     katalog):
+        """Der Verweis ist Grundlage der Zuordnung von Fremdleistungen über
+        den Fremdschlüssel."""
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+        })
+
+        beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        assert beleg.positionen.get().katalog == katalog
+
+    def test_erneutes_speichern_kopiert_den_katalog_nicht_noch_einmal(
+        self, buero, kunde, katalog
+    ):
+        """Die gespeicherte Position sendet ihren Verweis im verborgenen
+        Suchfeld mit. Kopiert wird nur bei geänderter Auswahl; sonst
+        überschriebe der neue Katalogpreis den des Belegs."""
+        from faktura.tests.test_gleichzeitig import formulardaten, gesichert
+
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+        })
+        beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        katalog.einzelpreis = Decimal('150.00')
+        katalog.save()
+
+        adresse = reverse('admin:faktura_angebot_change', args=[beleg.pk])
+        daten = formulardaten(buero.get(adresse), 'angebot')
+        assert daten['positionen-0-katalog'] == [str(katalog.pk)]
+        assert gesichert(buero.post(adresse, daten))
+
+        position = beleg.positionen.get()
+        assert position.einzelpreis == Decimal('120.00')
+        assert position.katalog == katalog
+
+    def test_der_auftrag_aus_dem_angebot_behaelt_den_verweis(
+        self, buero, kunde, katalog
+    ):
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+        })
+        angebot = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        services.beleg_festschreiben(beleg_id=angebot.pk)
+
+        auftrag = services.beleg_umwandeln(beleg_id=angebot.pk,
+                                           neuer_typ=BelegTyp.AUFTRAG)
+
+        assert auftrag.positionen.get().katalog == katalog
 
     def test_lieferschein_bleibt_auch_mit_katalog_preisfrei(
         self, buero, kunde, katalog
