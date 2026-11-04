@@ -60,11 +60,19 @@ django.jQuery(function ($) {
                     return;
                 }
                 ereignis.preventDefault();
-                $(auswahl).select2('open');
+                /* Weitere Tasten können eintreffen, bevor der Fokus im
+                 * Suchfeld liegt; sie hängen an, statt zu überschreiben
+                 * (tests/test_browser_erfassung.py,
+                 * test_schnell_getippte_zeichen_gehen_nicht_verloren). */
+                const offen = $(auswahl).select2('isOpen');
+                if (!offen) {
+                    $(auswahl).select2('open');
+                }
                 const suche = document.querySelector(
                     '.select2-container--open .select2-search__field');
                 if (suche) {
-                    suche.value = taste;
+                    suche.value = offen ? suche.value + taste : taste;
+                    suche.focus();
                     suche.dispatchEvent(new Event('input', {bubbles: true}));
                 }
             });
