@@ -647,6 +647,15 @@ class Fremdleistung(ErhoehtElternversion):
         help_text='Wie es auf der Rechnung des Lieferanten heißt; '
                   'Paketnummer, Analysenbezeichnung, Leistung.',
     )
+    fremdschluessel = models.CharField(
+        'Fremdschlüssel', max_length=50, blank=True, default='',
+        help_text='Artikel- oder Paketnummer des Lieferanten. Trägt genau '
+                  'eine Auftragsposition des Projekts denselben Schlüssel, '
+                  'wird sie über die Aktion „Über Fremdschlüssel zuordnen“ '
+                  'gesetzt.',
+        db_comment='Gleich Belegposition.fremdschluessel; Grundlage der '
+                   'automatischen Zuordnung (erfassung.services.zuordnung).',
+    )
     einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')
     menge = models.DecimalField(
         'Menge', max_digits=10, decimal_places=3, default=Decimal('1'),

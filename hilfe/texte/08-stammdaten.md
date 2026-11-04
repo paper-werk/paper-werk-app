@@ -89,8 +89,8 @@ Der Leistungskatalog enthält die Leistungen und Artikel, die in Belegen
 immer wieder vorkommen. Aus ihm füllt die Katalogsuche die Positionen, und
 die Erfassung bietet seine Leistungen für Arbeit ohne Auftrag an.
 
-**Die Liste** zeigt Artikelnummer, Bezeichnung, ob ein Langtext da ist,
-Einheit, Einzelpreis netto und Steuersatz. Filter nach Steuersatz, Art der
+**Die Liste** zeigt Artikelnummer, Bezeichnung, Fremdschlüssel, Einheit,
+Einzelpreis netto und Steuersatz. Filter nach Steuersatz, Art der
 Erfassung und „In der Erfassung“. Kataloge kommen oft als Tabelle von
 außen: Über **Importieren** und **Exportieren** lassen sie sich einlesen,
 etwa für eine Preisrunde, und als Preisliste ausgeben.
@@ -106,6 +106,10 @@ etwa für eine Preisrunde, und als Preisliste ausgeben.
   „Baustelleneinrichtung pauschal“.
 - **Art der Erfassung**: Zeit (über Von und Bis), Menge (über eine Zahl)
   oder Pauschale (Menge 1).
+- **Fremdschlüssel**: freiwillig, die Artikel- oder Paketnummer, unter
+  der ein Lieferant diese Leistung berechnet. Er wird mit der Position in
+  den Beleg kopiert; dort ordnet er Fremdleistungen der Auftragsposition zu
+  (siehe Fremdleistungen).
 
 Eine Preisänderung im Katalog wirkt nur auf neue Positionen. Bestehende
 Belege und Aufträge behalten ihren Preis.

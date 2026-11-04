@@ -530,18 +530,12 @@ class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
     # werden kann.
     export_form_class = SelectableFieldsExportForm
 
-    list_display = ['nummer', 'bezeichnung', 'hat_langtext', 'einheit',
+    list_display = ['nummer', 'bezeichnung', 'fremdschluessel', 'einheit',
                     'preis', 'satz']
     list_display_links = ['nummer', 'bezeichnung']
     list_filter = [SteuersatzFilter, 'art', 'kontierbar']
-    search_fields = ['nummer', 'bezeichnung', 'langtext']
+    search_fields = ['nummer', 'bezeichnung', 'langtext', 'fremdschluessel']
     ordering = ['nummer', 'bezeichnung']
-
-    @admin.display(description='Langtext', boolean=True)
-    def hat_langtext(self, position) -> bool:
-        """Ob ein Langtext vorhanden ist; der Text selbst passt in keine
-        Spalte."""
-        return bool(position.langtext)
 
     @admin.display(description='Einzelpreis netto', ordering='einzelpreis')
     def preis(self, position):
@@ -616,4 +610,5 @@ class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
             'einheit': position.einheit,
             'einzelpreis': str(position.einzelpreis),
             'steuersatz': position.steuersatz,
+            'fremdschluessel': position.fremdschluessel,
         })

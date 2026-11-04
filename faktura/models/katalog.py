@@ -89,8 +89,8 @@ class Katalogposition(models.Model):
     """Leistungskatalog: Positionen für Angebote und Stammdaten der
     Leistungserfassung.
 
-    Die Belegposition übernimmt Bezeichnung, Einheit, Preis und Steuersatz
-    als Kopie; deshalb kein Fremdschlüssel von dort hierher.
+    Die Belegposition übernimmt Bezeichnung, Einheit, Preis, Steuersatz und
+    Fremdschlüssel als Kopie; deshalb kein Fremdschlüssel von dort hierher.
     """
 
     # Optional und unique. Leer als NULL, weil zwei NULL in einem
@@ -103,6 +103,15 @@ class Katalogposition(models.Model):
                    'mehrere Positionen ohne Nummer nebeneinander bestehen.',
     )
     bezeichnung = models.CharField('Bezeichnung', max_length=300)
+    fremdschluessel = models.CharField(
+        'Fremdschlüssel', max_length=50, blank=True, default='',
+        db_index=True,
+        help_text='Freiwillig. Artikel- oder Paketnummer des Lieferanten, '
+                  'unter der diese Leistung eingekauft wird. Wird mit der '
+                  'Katalogposition in die Belegposition übernommen.',
+        db_comment='Vorgabe für Belegposition.fremdschluessel. Ohne Bezug '
+                   'auf den Lieferanten.',
+    )
     #: Ausführliche Leistungsbeschreibung unter der Bezeichnung.
     langtext = models.TextField(
         'Langtext', blank=True, default='',

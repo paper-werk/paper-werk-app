@@ -187,12 +187,13 @@ class Zeilenart(models.TextChoices):
         zuschlag = ('zuschlag_prozent', 'zuschlag_auf')
         if art in cls.ohne_betrag():
             return ('menge', 'einheit', 'einzelpreis', 'steuersatz',
-                    'optional', 'leistung_von', 'leistung_bis', *zuschlag)
+                    'optional', 'leistung_von', 'leistung_bis',
+                    'fremdschluessel', *zuschlag)
         if art == cls.ZUSCHLAG:
             # Menge 1 und der berechnete Betrag als Preis
             # (services.zuschlaege); der Steuersatz gilt für den Zuschlag.
             # Optional zulässig, etwa "Samstag 50 %" im Angebot.
-            return ('menge', 'einheit', 'einzelpreis')
+            return ('menge', 'einheit', 'einzelpreis', 'fremdschluessel')
         return zuschlag
 
 
@@ -1062,6 +1063,18 @@ class Belegposition(ErhoehtElternversion):
         'Art', max_length=20, choices=Leistungsart, blank=True, default='',
         help_text='Kommt aus dem Katalog. Leer bei frei eingetragenen '
                   'Positionen.',
+    )
+    #: Kopie aus dem Katalog wie Preis und Einheit, danach frei änderbar.
+    #: Grundlage der Zuordnung von Fremdleistungen
+    #: (``erfassung.services.zuordnung``); in der Maske nur an Angebot und
+    #: Auftrag.
+    fremdschluessel = models.CharField(
+        'Fremdschlüssel', max_length=50, blank=True, default='',
+        help_text='Artikel- oder Paketnummer des Lieferanten. Fremdleistungen '
+                  'mit diesem Schlüssel werden dieser Position zugeordnet, '
+                  'wenn keine andere Position des Projekts ihn trägt.',
+        db_comment='Gleich Fremdleistung.fremdschluessel; kopiert aus '
+                   'Katalogposition.fremdschluessel.',
     )
 
     #: Abgerechnete Auftragsposition. An der Position, weil eine Rechnung

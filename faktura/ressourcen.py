@@ -80,7 +80,8 @@ class KatalogpositionResource(resources.ModelResource):
         model = Katalogposition
         import_id_fields = ('nummer', 'bezeichnung')
         fields = ('nummer', 'bezeichnung', 'langtext', 'einheit',
-                  'einzelpreis', 'steuersatz', 'art', 'kontierbar')
+                  'einzelpreis', 'steuersatz', 'art', 'kontierbar',
+                  'fremdschluessel')
         export_order = fields
         # Zeigt bei Preisänderungen die Zahl geänderter und unveränderter
         # Zeilen.

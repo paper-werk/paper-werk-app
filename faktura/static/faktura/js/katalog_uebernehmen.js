@@ -37,8 +37,10 @@ django.jQuery(function ($) {
                 return antwort.json();
             })
             .then(function (daten) {
+                /* Wie BelegpositionForm.KATALOGFELDER. Felder, die die Maske
+                 * nicht hat (Fremdschlüssel an der Rechnung), entfallen. */
                 ['bezeichnung', 'langtext', 'einheit', 'einzelpreis',
-                    'steuersatz']
+                    'steuersatz', 'fremdschluessel']
                     .forEach(function (name) {
                         const feld = document.getElementById(
                             'id_' + zeile + '-' + name

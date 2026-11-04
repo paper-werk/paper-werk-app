@@ -320,7 +320,7 @@ class BelegpositionInline(unfold_admin.TabularInline):
     fields = ['zeilenart', 'katalog', 'position', 'bezeichnung',
               'zuschlag_prozent', 'zuschlag_auf', 'langtext',
               'menge', 'einheit', 'einzelpreis', 'steuersatz', 'zeilensumme',
-              'leistung_von', 'leistung_bis', 'optional']
+              'leistung_von', 'leistung_bis', 'optional', 'fremdschluessel']
     readonly_fields = ['zeilensumme']
     #: Felder in einer eigenen Zeile über die volle Breite über oder unter
     #: der Position; eigene Einstellungen, ausgewertet in
@@ -335,7 +335,8 @@ class BelegpositionInline(unfold_admin.TabularInline):
     #: (``Zeilenart.felder_ohne_bedeutung``, zeilenart.js).
     erste_zeile_felder = ['zeilenart', 'katalog']
     zweite_zeile_felder = ['zuschlag_prozent', 'zuschlag_auf', 'langtext',
-                           'leistung_von', 'leistung_bis', 'optional']
+                           'leistung_von', 'leistung_bis', 'optional',
+                           'fremdschluessel']
     #: Felder in der Spalte der Bezeichnung, wie im PDF. Zeitraum und Option
     #: stehen rechts daneben.
     zweite_zeile_links = ['zuschlag_prozent', 'zuschlag_auf', 'langtext']
@@ -343,8 +344,9 @@ class BelegpositionInline(unfold_admin.TabularInline):
     #: Ob die Spalten ihre BT-Nummer zeigen; gesetzt von
     #: ``FormularMixin.get_inline_instances``, nur bei Steuerbelegen.
     mit_bt_nummern = False
-    #: Ob die Checkbox "Optional" erscheint; ebenso gesetzt, nur an Angebot
-    #: und Auftrag (``BelegTyp.mit_optionen``).
+    #: Ob die Checkbox "Optional" und der Fremdschlüssel erscheinen; ebenso
+    #: gesetzt, nur an Angebot und Auftrag (``BelegTyp.mit_optionen``). Der
+    #: Fremdschlüssel ordnet Fremdleistungen Auftragspositionen zu.
     mit_optionen = False
 
     #: Pflichtfelder für die Anzeige des Sternchens im Spaltenkopf
@@ -398,7 +400,8 @@ class BelegpositionInline(unfold_admin.TabularInline):
             felder = [f for f in felder
                       if f not in ('leistung_von', 'leistung_bis')]
         if not self.mit_optionen:
-            felder = [f for f in felder if f != 'optional']
+            felder = [f for f in felder
+                      if f not in ('optional', 'fremdschluessel')]
         return felder
 
     @admin.display(description='Betrag')

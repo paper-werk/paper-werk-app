@@ -130,8 +130,8 @@ class KatalogsucheWidget(UnfoldAdminSelectWidget):
     Das HTML enthält nur die gewählte Position, weil hunderte Leistungen in
     einem Dutzend Zeilen tausende ``<option>`` ergäben, durchsuchbar nur über
     den Namensanfang. Gesucht wird über ``KatalogpositionAdmin.suche``, wie
-    in der Katalogliste (Nummer, Bezeichnung, Langtext); die Oberfläche
-    richtet katalog_suche.js ein.
+    in der Katalogliste (Nummer, Bezeichnung, Langtext, Fremdschlüssel);
+    die Oberfläche richtet katalog_suche.js ein.
 
     Validiert wird gegen den ganzen Katalog (``queryset`` am Feld); das
     Widget begrenzt nur die Ausgabe.
@@ -338,7 +338,7 @@ class BelegpositionForm(forms.ModelForm):
     #: Felder aus dem Katalog, mit denselben Namen im JSON-Endpunkt
     #: (``KatalogpositionAdmin.daten``) und in katalog_uebernehmen.js.
     KATALOGFELDER = ('bezeichnung', 'langtext', 'einheit', 'einzelpreis',
-                     'steuersatz')
+                     'steuersatz', 'fremdschluessel')
 
     class Meta:
         model = Belegposition

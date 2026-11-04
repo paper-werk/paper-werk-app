@@ -26,6 +26,8 @@ from faktura.ressourcen import (
 
 pytestmark = pytest.mark.django_db
 
+#: Ohne ``fremdschluessel``, damit die Tests auch Dateien aus der Zeit vor
+#: dieser Spalte abdecken.
 SPALTEN = ['nummer', 'bezeichnung', 'langtext', 'einheit', 'einzelpreis',
            'steuersatz', 'art', 'kontierbar']
 
@@ -52,6 +54,16 @@ class TestWasAusEinerDateiHereinkommt:
         assert position.steuersatz == '19.00'
         assert position.art == Leistungsart.ZEIT
         assert position.kontierbar is True
+
+    def test_der_fremdschluessel_kommt_mit(self):
+        daten = tablib.Dataset(headers=[*SPALTEN, 'fremdschluessel'])
+        daten.append(['2.20', 'Asbestanalyse', '', 'Stk', '174,00', '19 %',
+                      'Menge', 'nein', 'P-4711'])
+
+        ergebnis = KatalogpositionResource().import_data(daten, dry_run=False)
+
+        assert not ergebnis.has_errors()
+        assert Katalogposition.objects.get().fremdschluessel == 'P-4711'
 
     def test_das_dezimalkomma_kommt_aus_excel(self):
         """Das Dezimalkomma wird geparst; ohne eigenes Widget schlüge jede
@@ -192,7 +204,7 @@ class TestWasHinausgeht:
 
         daten = KatalogpositionResource().export()
 
-        assert daten.headers == SPALTEN
+        assert daten.headers == [*SPALTEN, 'fremdschluessel']
         assert daten[0][0] == '2.10'
         assert 'DIN ISO 10381-1' in daten[0][2]
 
