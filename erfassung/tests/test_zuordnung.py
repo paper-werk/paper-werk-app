@@ -32,7 +32,8 @@ def analyse(db):
 
 def auftrag_mit(projekt, *katalogpositionen, status=BelegStatus.FESTGESCHRIEBEN,
                 nummer='AU-2026-0007'):
-    """Auftrag mit einer Leistungsposition je Katalogposition, über
+    """Auftrag mit einer Leistungsposition je Katalogposition (Werte und
+    Fremdschlüssel kopiert), über
     ``bulk_create``, weil ``save()`` festgeschriebene Belege ablehnt. Ein
     Entwurf ohne Nummer, wie im Betrieb."""
     if status == BelegStatus.ENTWURF:
@@ -44,7 +45,7 @@ def auftrag_mit(projekt, *katalogpositionen, status=BelegStatus.FESTGESCHRIEBEN,
                       sortierung=f'{10 * (i + 1):08d}',
                       bezeichnung=k.bezeichnung, menge=Decimal('10'),
                       einheit=k.einheit, einzelpreis=k.einzelpreis,
-                      katalog=k)
+                      fremdschluessel=k.fremdschluessel)
         for i, k in enumerate(katalogpositionen)
     ])
 
@@ -123,7 +124,7 @@ class TestUeberFremdschluesselZuordnen:
         assert befund.geaendert == 1
 
     def test_eine_vorhandene_position_bleibt(self, projekt, analyse, eingang):
-        """Auch eine von Hand gesetzte, die vom Katalog abweicht."""
+        """Auch eine von Hand gesetzte mit anderem Fremdschlüssel."""
         andere = Katalogposition.objects.create(
             bezeichnung='Probenahme', einzelpreis=Decimal('60.00'))
         analyse_position, von_hand = auftrag_mit(projekt, analyse, andere)

@@ -4,8 +4,7 @@ Vorlagen gelangen auf zwei Wegen in einen Beleg:
 
 * **Leistungskatalog:** Suche über der Positionszeile. JavaScript füllt
   vor, maßgeblich ist ``BelegpositionForm.clean()``; vom Benutzer geänderte
-  Felder (``changed_data``) haben Vorrang. Die Auswahl wird als
-  ``Belegposition.katalog`` gespeichert.
+  Felder (``changed_data``) haben Vorrang.
 * **Textbausteine:** Menü am Textfeld, das den Text ins Feld kopiert.
   Danach ist es freier Text; die Auswahl wird nicht an den Server
   übertragen.
@@ -324,12 +323,11 @@ class BelegForm(forms.ModelForm):
 
 
 class BelegpositionForm(forms.ModelForm):
-    """Positionszeile mit Katalogauswahl. Die Werte werden kopiert; der
-    Verweis (``Belegposition.katalog``) bleibt nur für die Zuordnung von
-    Fremdleistungen."""
+    """Positionszeile mit Katalogauswahl; die Werte werden kopiert, ohne
+    Fremdschlüssel."""
 
-    # Explizit statt aus dem Modell, wegen der Suche (``KatalogsucheWidget``)
-    # und weil Unfolds Austausch das Widget sonst ersetzt.
+    # Formularfeld ohne Modellfeld, das Unfolds Austausch nicht erfasst;
+    # daher das Widget explizit.
     katalog = forms.ModelChoiceField(
         queryset=Katalogposition.objects.all(),
         required=False,
@@ -340,7 +338,7 @@ class BelegpositionForm(forms.ModelForm):
     #: Felder aus dem Katalog, mit denselben Namen im JSON-Endpunkt
     #: (``KatalogpositionAdmin.daten``) und in katalog_uebernehmen.js.
     KATALOGFELDER = ('bezeichnung', 'langtext', 'einheit', 'einzelpreis',
-                     'steuersatz')
+                     'steuersatz', 'fremdschluessel')
 
     class Meta:
         model = Belegposition
@@ -454,11 +452,8 @@ class BelegpositionForm(forms.ModelForm):
     def clean(self):
         daten = super().clean()
 
-        # Nur bei geänderter Auswahl, weil gespeicherte Positionen den
-        # Verweis im (verborgenen) Feld mitsenden; sonst überschriebe ein
-        # inzwischen geänderter Katalogpreis die Kopie.
         katalog = daten.get('katalog')
-        if katalog and 'katalog' in self.changed_data:
+        if katalog:
             for name in self.KATALOGFELDER:
                 # Unabhängig davon, ob das Feld leer ist, weil Einheit und
                 # Steuersatz einen Default haben. Unverändert gilt der

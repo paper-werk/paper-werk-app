@@ -1,10 +1,11 @@
 """Zuordnung von Fremdleistungen zu Auftragspositionen.
 
 * ``auftragsposition_zum_fremdschluessel``: die Leistungsposition der
-  festgeschriebenen Aufträge des Projekts, deren Katalogposition den
-  Fremdschlüssel trägt. Nur bei genau einem Treffer, weil gleichartige
-  Positionen (je Geschoss, je Bauteil) aus derselben Katalogposition stammen
-  und die Auftragsposition beim Übernehmen den Verkaufspreis bestimmt.
+  festgeschriebenen Aufträge des Projekts mit diesem Fremdschlüssel
+  (``Belegposition.fremdschluessel``). Nur bei genau einem Treffer, weil
+  gleichartige Positionen (je Geschoss, je Bauteil) denselben Schlüssel
+  tragen und die Auftragsposition beim Übernehmen den Verkaufspreis
+  bestimmt.
 * ``ueber_fremdschluessel_zuordnen``: wendet das auf Fremdleistungen ohne
   Position an; für Importe und als Aktion in der Liste.
 * ``auftragsposition_setzen``: von Hand für eine Auswahl eines Projekts.
@@ -42,14 +43,14 @@ def zuordenbare_positionen(projekt: Projekt):
 
 def auftragsposition_zum_fremdschluessel(
         projekt: Projekt | None, schluessel: str) -> Belegposition | None:
-    """Die eine Auftragsposition des Projekts aus einer Katalogposition mit
-    diesem Fremdschlüssel; ``None`` bei keinem oder mehreren Treffern und in
-    abgeschlossenen Projekten."""
+    """Die eine Auftragsposition des Projekts mit diesem Fremdschlüssel;
+    ``None`` bei keinem oder mehreren Treffern und in abgeschlossenen
+    Projekten."""
     schluessel = (schluessel or '').strip()
     if not schluessel or projekt is None or projekt.abgeschlossen:
         return None
     treffer = list(zuordenbare_positionen(projekt)
-                   .filter(katalog__fremdschluessel=schluessel)[:2])
+                   .filter(fremdschluessel=schluessel)[:2])
     return treffer[0] if len(treffer) == 1 else None
 
 

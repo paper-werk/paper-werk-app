@@ -234,9 +234,9 @@ Auftragsposition zu:
   Zuordnung. Aus der Projektakte führt die Zeile „noch nicht zugeordnet“
   direkt zu den passenden Fremdleistungen.
 - **Über Fremdschlüssel zuordnen**: Trägt eine Fremdleistung im Feld
-  **Fremdschlüssel** die Artikelnummer des Lieferanten, und stammt genau
-  eine Auftragsposition des Projekts aus einer Katalogposition mit
-  demselben Fremdschlüssel, wird diese gesetzt. Gibt es mehrere passende
+  **Fremdschlüssel** die Artikelnummer des Lieferanten, und hat genau
+  eine Auftragsposition des Projekts denselben Fremdschlüssel, wird diese
+  gesetzt. Gibt es mehrere passende
   Positionen, etwa dieselbe Leistung je Geschoss, bleibt die Zeile offen.
 
 Beide ändern nur Fremdleistungen, die noch auf keiner Rechnung stehen,
