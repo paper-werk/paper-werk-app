@@ -215,6 +215,26 @@ class TestAuswahlMitSuche:
         expect(page.locator('#id_von')).to_be_hidden()
         expect(page.locator('.field-leistung')).to_be_hidden()
 
+    def test_schnell_getippte_zeichen_gehen_nicht_verloren(
+            self, live_server, page, chefin, bestand):
+        """Tastendrücke, die das geschlossene Feld erreichen, bevor der Fokus
+        im Suchfeld liegt, hängen an, statt zu überschreiben. Ausgelöst in
+        einem Aufruf, damit der Fokus nicht dazwischen wechseln kann."""
+        _anmelden(page, live_server.url)
+        page.goto(f'{live_server.url}/admin/erfassung/erfassungszeile/add/')
+        page.wait_for_load_state('networkidle')
+
+        page.evaluate('''() => {
+            const feld = document.querySelector(
+                '#id_projekt + .select2 .select2-selection');
+            for (const taste of ['S', 'ü', 'd']) {
+                feld.dispatchEvent(new KeyboardEvent(
+                    'keydown', {key: taste, bubbles: true}));
+            }
+        }''')
+
+        expect(page.locator('.select2-search__field')).to_have_value('Süd')
+
     def test_projektwechsel_leert_die_position(self, live_server, page,
                                                 chefin, bestand):
         _anmelden(page, live_server.url)
