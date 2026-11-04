@@ -649,11 +649,11 @@ class Fremdleistung(ErhoehtElternversion):
     )
     fremdschluessel = models.CharField(
         'Fremdschlüssel', max_length=50, blank=True, default='',
-        help_text='Artikel- oder Paketnummer des Lieferanten. Stammt genau '
-                  'eine Auftragsposition des Projekts aus einer '
-                  'Katalogposition mit diesem Schlüssel, wird sie über die '
-                  'Aktion „Über Fremdschlüssel zuordnen“ gesetzt.',
-        db_comment='Gleich Katalogposition.fremdschluessel; Grundlage der '
+        help_text='Artikel- oder Paketnummer des Lieferanten. Trägt genau '
+                  'eine Auftragsposition des Projekts denselben Schlüssel, '
+                  'wird sie über die Aktion „Über Fremdschlüssel zuordnen“ '
+                  'gesetzt.',
+        db_comment='Gleich Belegposition.fremdschluessel; Grundlage der '
                    'automatischen Zuordnung (erfassung.services.zuordnung).',
     )
     einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')

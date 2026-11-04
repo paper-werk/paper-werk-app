@@ -16,9 +16,9 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   Browsertests in `tests/test_browser_*.py` decken die betroffenen Masken
   ab.
 - **Stammdaten werden in den Beleg kopiert**, nicht verknüpft: Anschrift,
-  Preis, Steuersatz, Texte. Fremdschlüssel dienen nur der Navigation und der
-  Zuordnung (`Belegposition.katalog`), damit ein festgeschriebener Beleg sich
-  nicht mit den Stammdaten ändert (`faktura/models/beleg.py`).
+  Preis, Steuersatz, Texte. Fremdschlüssel dienen nur der Navigation, damit
+  ein festgeschriebener Beleg sich nicht mit den Stammdaten ändert
+  (`faktura/models/beleg.py`).
 - **Die Belegnummer entsteht beim Festschreiben**, ein Entwurf hat keine. Sie
   kommt aus einem lückenlosen Nummernkreis (`django-sequences`, in der
   Transaktion des Festschreibens) (`services.naechste_belegnummer`).
@@ -208,14 +208,18 @@ Die Begründung für Anwender steht in der Hilfe, Kapitel 06
   Eingangsrechnung oder per Sammelaktion in der Liste (`erfassung/models.py`).
 - Die Auftragsposition einer Fremdleistung ergibt sich automatisch nur aus
   dem Feld `fremdschluessel` (Artikelnummer des Lieferanten): Gesetzt wird
-  die Leistungsposition der festgeschriebenen Aufträge des Projekts, deren
-  `Belegposition.katalog` denselben Schlüssel trägt, und nur bei genau einem
-  Treffer (`erfassung/services/zuordnung.py`). Gleichartige Positionen je
-  Geschoss oder Bauteil stammen aus derselben Katalogposition, und die
-  Auftragsposition bestimmt beim Übernehmen den Verkaufspreis. Verworfen:
-  Auffüllen der Positionen bis zur beauftragten Menge, weil die Reihenfolge
-  der Proben nicht der der Positionen folgt; Vergleich der Bezeichnungen,
-  weil Freitext. Der Schlüssel gilt ohne Bezug auf den Lieferanten.
+  die Leistungsposition der festgeschriebenen Aufträge des Projekts mit
+  demselben `Belegposition.fremdschluessel`, und nur bei genau einem Treffer
+  (`erfassung/services/zuordnung.py`). Gleichartige Positionen je Geschoss
+  oder Bauteil tragen denselben Schlüssel, und die Auftragsposition bestimmt
+  beim Übernehmen den Verkaufspreis. Der Schlüssel an der Position ist eine
+  Kopie aus dem Katalog, damit auch frei geschriebene und aus einem LV
+  übernommene Positionen einen tragen können. Verworfen: ein Verweis der
+  Position auf die Katalogposition, weil er sich an gespeicherten Positionen
+  nicht pflegen lässt; Auffüllen der Positionen bis zur beauftragten Menge,
+  weil die Reihenfolge der Proben nicht der der Positionen folgt; Vergleich
+  der Bezeichnungen, weil Freitext. Der Schlüssel gilt ohne Bezug auf den
+  Lieferanten.
 - Erfasste Zeiten und Fremdleistungen haben eine Änderungsgeschichte
   (`simple_history`), nur lesend; einen früheren Stand zurückzuholen ist
   gesperrt (`core/adminhilfen.py`).

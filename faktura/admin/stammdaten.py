@@ -610,4 +610,5 @@ class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
             'einheit': position.einheit,
             'einzelpreis': str(position.einzelpreis),
             'steuersatz': position.steuersatz,
+            'fremdschluessel': position.fremdschluessel,
         })
