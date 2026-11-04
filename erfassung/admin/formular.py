@@ -168,8 +168,15 @@ class FormularMixin:
         'leistung': {'can_add_related'},
     }
 
+    #: Auswahlfelder mit Suche über die Einträge im HTML (suchauswahl.js).
+    #: Ohne Autocomplete-Endpunkt, weil die Querysets aus
+    #: ``formfield_for_foreignkey`` und die Attribute ``data-art`` und
+    #: ``data-projekt`` sonst in einer zweiten Implementierung stünden.
+    MIT_SUCHE = {'projekt', 'auftragsposition', 'leistung', 'benutzer'}
+
     def formfield_for_dbfield(self, db_field, request, **kwargs):
-        """Blendet die Symbole an den Auswahlfeldern aus; Von und Bis erhalten
+        """Blendet die Symbole an den Auswahlfeldern aus, markiert die Felder
+        aus ``MIT_SUCHE`` mit ``data-suche``; Von und Bis erhalten
         ``UhrzeitWidget``.
 
         In dieser Methode, weil Django das Widget erst nach
@@ -187,6 +194,9 @@ class FormularMixin:
             for schalter in ('can_add_related', 'can_change_related',
                              'can_delete_related', 'can_view_related'):
                 setattr(feld.widget, schalter, schalter in erlaubt)
+        if feld is not None and db_field.name in self.MIT_SUCHE:
+            auswahl = getattr(feld.widget, 'widget', feld.widget)
+            auswahl.attrs['data-suche'] = ''
         return feld
 
     def _zeile_aus_adresse(self, request):

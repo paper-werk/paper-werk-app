@@ -3,6 +3,7 @@ Formular."""
 
 
 from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -18,6 +19,7 @@ from unfold.contrib.import_export.forms import (
 from core.adminhilfen import (
     GeschichteZumLesen,
     Kopfleiste,
+    jquery_entdoppeln,
     mit_stand,
     skript_mit_stand,
 )
@@ -112,13 +114,29 @@ class ErfassungszeileAdmin(
 
     @property
     def media(self):
-        """Skripte ohne jQuery-Abhängigkeit, am Ende eingebunden. ``?stand=``
-        dient als Cache-Buster.
+        """Eigene Skripte am Ende; ``?stand=`` dient als Cache-Buster.
+
+        Select2 für die Auswahlfelder mit Suche, eingebunden wie in
+        ``BelegAdmin.media``: jQuery mit Djangos Pfaden erneut aufgeführt,
+        damit Select2 und suchauswahl.js danach geladen werden.
         """
-        return super().media + forms.Media(
-            css={'all': [mit_stand('erfassung/css/erfassung_admin.css')]},
+        extra = '' if settings.DEBUG else '.min'
+        zusammen = super().media + forms.Media(
+            css={'all': [
+                f'admin/css/vendor/select2/select2{extra}.css',
+                'admin/css/autocomplete.css',
+                mit_stand('erfassung/css/erfassung_admin.css'),
+            ]},
             js=[  # type: ignore[list-item]  (Media nimmt auch __html__-Objekte)
+                f'admin/js/vendor/jquery/jquery{extra}.js',
+                # Select2 registriert sich am zuvor geladenen jQuery, vor
+                # jquery.init.js, das es zu django.jQuery macht.
+                f'admin/js/vendor/select2/select2.full{extra}.js',
+                'admin/js/vendor/select2/i18n/de.js',
+                'admin/js/jquery.init.js',
                 skript_mit_stand('erfassung/js/erfassungsart.js'),
                 skript_mit_stand('erfassung/js/erfassungsauswahl.js'),
+                skript_mit_stand('erfassung/js/suchauswahl.js'),
             ],
         )
+        return jquery_entdoppeln(zusammen, extra)
