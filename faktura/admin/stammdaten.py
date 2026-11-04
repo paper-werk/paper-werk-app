@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 from import_export.admin import ImportExportModelAdmin
 from unfold import admin as unfold_admin
 from unfold.contrib.filters.admin import AutocompleteSelectFilter
@@ -389,7 +390,7 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
 
     actions_detail = ['detail_akte', weitere()]
     list_display = ['akte', 'nummer', 'bezeichnung', 'kunde', 'anzahl_belege',
-                    'abgeschlossen']
+                    'archiv']
     list_display_links = ['nummer', 'bezeichnung']
     # Kunde als Autocomplete, weil eine Liste alle Kunden enthielte.
     list_filter = [ProjektAbgeschlossenFilter, ('kunde', AutocompleteSelectFilter)]
@@ -431,6 +432,18 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
         return format_html(
             '<a href="{}" class="text-primary-600 dark:text-primary-500">'
             'ansehen</a>', url)
+
+    @admin.display(description='', ordering='abgeschlossen')
+    def archiv(self, projekt):
+        """Abschluss als Symbol in der letzten Spalte, dargestellt wie
+        ``SpaltenMixin.schloss``; am laufenden Projekt leer. Ein Archivsymbol,
+        weil das Schloss für festgeschriebene Belege steht und ein
+        abgeschlossenes Projekt änderbar bleibt."""
+        if not projekt.abgeschlossen:
+            return ''
+        return mark_safe(
+            '<span class="material-symbols-outlined text-base-400" '
+            'title="Abgeschlossen">inventory_2</span>')
 
     @admin.display(description='Belege', ordering='belege__count')
     def anzahl_belege(self, projekt):
