@@ -6,6 +6,10 @@ die Liste oder Maske, an der Sie gerade arbeiten. Welche Einträge und Knöpfe
 Sie sehen, hängt von Ihren Rechten ab. Fehlt Ihnen etwas, das eine
 Kollegin sieht, fragen Sie den Administrator.
 
+Die wichtigsten Abläufe zeigt auch die Videoreihe
+[Paper-Werk Schritt für Schritt](https://www.youtube.com/playlist?list=PLKeCubtFlVkA){: target="_blank" rel="noopener" }
+auf YouTube im Ablauf, vom ersten Anmelden bis zur Verwaltung.
+
 ## Die Seitenleiste {#seitenleiste}
 
 Die Seitenleiste folgt dem Arbeitsablauf:
