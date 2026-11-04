@@ -19,7 +19,11 @@
  * 1. Gefüllt wird nur bei einer Auswahl durch den Benutzer. Bei
  *    Autocomplete-Feldern daher select2:select, weil change auch beim
  *    Laden ausgelöst wird, wenn Select2 den gespeicherten Kunden setzt. Bei
- *    einem gewöhnlichen <select> genügt change.
+ *    einem gewöhnlichen <select> change, aber nur als Browserereignis:
+ *    Djangos RelatedObjectLookups.js löst beim Laden per jQuery change an
+ *    jedem Auswahlfeld mit Bearbeiten-Link aus, um die Links zu
+ *    aktualisieren (tests/test_browser_formular.py,
+ *    test_beim_oeffnen_wird_nichts_uebernommen).
  * 2. Gefüllt wird nur ein Feld, das der Benutzer nicht selbst ausgefüllt
  *    hat, ohne Rückfrage. Für eine neue Übernahme das Feld leeren und neu
  *    wählen.
@@ -125,7 +129,11 @@ django.jQuery(function ($) {
         const ereignis = $(this).hasClass('admin-autocomplete')
             ? 'select2:select'
             : 'change';
-        $(this).on(ereignis, function () {
+        $(this).on(ereignis, function (ereignisdaten) {
+            /* Ohne originalEvent per jQuery ausgelöst, siehe Regel 1. */
+            if (ereignis === 'change' && !ereignisdaten.originalEvent) {
+                return;
+            }
             uebernehmen(this);
         });
     });
