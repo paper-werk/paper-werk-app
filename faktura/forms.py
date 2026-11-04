@@ -4,7 +4,8 @@ Vorlagen gelangen auf zwei Wegen in einen Beleg:
 
 * **Leistungskatalog:** Suche über der Positionszeile. JavaScript füllt
   vor, maßgeblich ist ``BelegpositionForm.clean()``; vom Benutzer geänderte
-  Felder (``changed_data``) haben Vorrang.
+  Felder (``changed_data``) haben Vorrang. Die Auswahl wird als
+  ``Belegposition.katalog`` gespeichert.
 * **Textbausteine:** Menü am Textfeld, das den Text ins Feld kopiert.
   Danach ist es freier Text; die Auswahl wird nicht an den Server
   übertragen.
@@ -130,8 +131,8 @@ class KatalogsucheWidget(UnfoldAdminSelectWidget):
     Das HTML enthält nur die gewählte Position, weil hunderte Leistungen in
     einem Dutzend Zeilen tausende ``<option>`` ergäben, durchsuchbar nur über
     den Namensanfang. Gesucht wird über ``KatalogpositionAdmin.suche``, wie
-    in der Katalogliste (Nummer, Bezeichnung, Langtext); die Oberfläche
-    richtet katalog_suche.js ein.
+    in der Katalogliste (Nummer, Bezeichnung, Langtext, Fremdschlüssel);
+    die Oberfläche richtet katalog_suche.js ein.
 
     Validiert wird gegen den ganzen Katalog (``queryset`` am Feld); das
     Widget begrenzt nur die Ausgabe.
@@ -323,11 +324,12 @@ class BelegForm(forms.ModelForm):
 
 
 class BelegpositionForm(forms.ModelForm):
-    """Positionszeile mit Katalogauswahl; die Werte werden kopiert, ohne
-    Fremdschlüssel."""
+    """Positionszeile mit Katalogauswahl. Die Werte werden kopiert; der
+    Verweis (``Belegposition.katalog``) bleibt nur für die Zuordnung von
+    Fremdleistungen."""
 
-    # Formularfeld ohne Modellfeld, das Unfolds Austausch nicht erfasst;
-    # daher das Widget explizit.
+    # Explizit statt aus dem Modell, wegen der Suche (``KatalogsucheWidget``)
+    # und weil Unfolds Austausch das Widget sonst ersetzt.
     katalog = forms.ModelChoiceField(
         queryset=Katalogposition.objects.all(),
         required=False,
@@ -452,8 +454,11 @@ class BelegpositionForm(forms.ModelForm):
     def clean(self):
         daten = super().clean()
 
+        # Nur bei geänderter Auswahl, weil gespeicherte Positionen den
+        # Verweis im (verborgenen) Feld mitsenden; sonst überschriebe ein
+        # inzwischen geänderter Katalogpreis die Kopie.
         katalog = daten.get('katalog')
-        if katalog:
+        if katalog and 'katalog' in self.changed_data:
             for name in self.KATALOGFELDER:
                 # Unabhängig davon, ob das Feld leer ist, weil Einheit und
                 # Steuersatz einen Default haben. Unverändert gilt der

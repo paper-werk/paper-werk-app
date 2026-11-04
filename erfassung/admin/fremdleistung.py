@@ -23,7 +23,7 @@ from unfold.contrib.filters.admin import (
 )
 from unfold.decorators import action as unfold_action
 from unfold.enums import ActionVariant
-from unfold.widgets import UnfoldAdminFileFieldWidget
+from unfold.widgets import UnfoldAdminFileFieldWidget, UnfoldAdminSelectWidget
 
 from core import erweiterungen
 from core.adminhilfen import (
@@ -45,9 +45,13 @@ from ..models import (
 )
 from ..services import (
     ErfassungError,
+    Zuordnungsbefund,
     abrechnungsvorschau,
+    auftragsposition_setzen,
     eingangsrechnung_aus_xml,
     in_rechnung_uebernehmen,
+    ueber_fremdschluessel_zuordnen,
+    zuordenbare_positionen,
 )
 from .gemeinsam import (
     NEUE_ZIELE,
@@ -467,13 +471,13 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
     list_filter = [FremdZustandFilter, 'weiterberechenbar',
                    'rechnung__lieferant', ('projekt', AutocompleteSelectFilter),
                    'rechnung__datum']
-    search_fields = ['bezeichnung', 'projekt__nummer', 'projekt__bezeichnung',
-                     'rechnung__nummer']
+    search_fields = ['bezeichnung', 'fremdschluessel', 'projekt__nummer',
+                     'projekt__bezeichnung', 'rechnung__nummer']
     autocomplete_fields = ['projekt', 'rechnung']
     fields = ['rechnung', 'projekt', 'auftragsposition', 'bezeichnung',
-              'leistungsdatum', 'einheit', 'menge', 'einkaufspreis',
-              'einkauf_netto', 'weiterberechenbar']
-    actions = ['in_rechnung']
+              'fremdschluessel', 'leistungsdatum', 'einheit', 'menge',
+              'einkaufspreis', 'einkauf_netto', 'weiterberechenbar']
+    actions = ['in_rechnung', 'position_setzen', 'ueber_fremdschluessel']
 
     #: Lookups der Links aus den Akten (``auswertung/zuordnung.py``), wie in
     #: der Erfassungsliste. Ohne Eintrag lehnt Django sie ab, weil kein
@@ -616,6 +620,97 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
                 ', '.join(sorted({grund for _, grund in ergebnis.uebergangen})),
             ), level=messages.WARNING)
         return None
+
+    @admin.action(description='Auftragsposition setzen',
+                  permissions=['change'])
+    def position_setzen(self, request, queryset):
+        """Zwischenseite mit den Positionen der festgeschriebenen Aufträge
+        des Projekts; ``services.auftragsposition_setzen`` prüft und
+        schreibt. Nur für eine Auswahl aus einem Projekt, weil die
+        Positionen zu einem Projekt gehören."""
+        projekte = list(Projekt.objects.filter(
+            pk__in=queryset.values('projekt')))
+        if len(projekte) != 1:
+            self.message_user(
+                request, 'Bitte Fremdleistungen genau eines Projekts '
+                         'auswählen, etwa über den Filter Projekt.',
+                level=messages.WARNING)
+            return None
+        (projekt,) = projekte
+
+        if request.POST.get('bestaetigt'):
+            formular = AuftragspositionSetzenForm(request.POST,
+                                                  projekt=projekt)
+            if formular.is_valid():
+                try:
+                    befund = auftragsposition_setzen(
+                        queryset, formular.cleaned_data['auftragsposition'])
+                except ErfassungError as fehler:
+                    self.message_user(request, str(fehler),
+                                      level=messages.ERROR)
+                    return None
+                self._zuordnung_melden(request, befund)
+                return None
+        else:
+            formular = AuftragspositionSetzenForm(projekt=projekt)
+
+        return render(request, 'admin/erfassung/auftragsposition_setzen.html', {
+            **self.admin_site.each_context(request),
+            'title': 'Auftragsposition setzen',
+            'opts': self.opts,
+            'projekt': projekt,
+            'anzahl': queryset.count(),
+            'gesperrt': queryset.filter(abgerechnet_in__isnull=False).count(),
+            'form': formular,
+            'auswahl': request.POST.getlist(ACTION_CHECKBOX_NAME),
+            'aktion': 'position_setzen',
+        })
+
+    @admin.action(description='Über Fremdschlüssel zuordnen',
+                  permissions=['change'])
+    def ueber_fremdschluessel(self, request, queryset):
+        """Setzt an Fremdleistungen ohne Position die eindeutige Position
+        zum Fremdschlüssel (``services.ueber_fremdschluessel_zuordnen``).
+        Vorhandene Positionen bleiben."""
+        self._zuordnung_melden(request,
+                               ueber_fremdschluessel_zuordnen(queryset))
+
+    def _zuordnung_melden(self, request, befund: Zuordnungsbefund) -> None:
+        self.message_user(
+            request, f'{_fremdleistungen(befund.geaendert)} zugeordnet.',
+            level=messages.SUCCESS if befund.geaendert else messages.INFO)
+        if befund.gesperrt:
+            self.message_user(
+                request, f'{_fremdleistungen(befund.gesperrt)} stehen auf '
+                         f'einer Rechnung oder einem Entwurf und wurden nicht '
+                         f'geändert.', level=messages.WARNING)
+        if befund.ohne_treffer:
+            self.message_user(
+                request, f'{_fremdleistungen(befund.ohne_treffer)} ohne '
+                         f'eindeutige Auftragsposition zum Fremdschlüssel. '
+                         f'Bitte über „Auftragsposition setzen“ zuordnen.',
+                level=messages.WARNING)
+
+
+def _fremdleistungen(anzahl: int) -> str:
+    return '1 Fremdleistung' if anzahl == 1 else f'{anzahl} Fremdleistungen'
+
+
+class AuftragspositionSetzenForm(forms.Form):
+    """Auswahl einer Auftragsposition des Projekts; leer entfernt die
+    Zuordnung."""
+
+    auftragsposition = AuftragspositionsAuswahl(
+        queryset=Belegposition.objects.none(), required=False,
+        label='Auftragsposition', empty_label='Keine (Zuordnung entfernen)',
+        widget=UnfoldAdminSelectWidget)
+
+    def __init__(self, *args, projekt, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['auftragsposition'].queryset = (
+            zuordenbare_positionen(projekt)
+            .select_related('beleg__projekt')
+            .order_by('beleg__nummer', 'sortierung'))
 
 
 @admin.register(Kostensatz)

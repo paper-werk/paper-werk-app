@@ -534,7 +534,7 @@ class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
                     'preis', 'satz']
     list_display_links = ['nummer', 'bezeichnung']
     list_filter = [SteuersatzFilter, 'art', 'kontierbar']
-    search_fields = ['nummer', 'bezeichnung', 'langtext']
+    search_fields = ['nummer', 'bezeichnung', 'langtext', 'fremdschluessel']
     ordering = ['nummer', 'bezeichnung']
 
     @admin.display(description='Langtext', boolean=True)

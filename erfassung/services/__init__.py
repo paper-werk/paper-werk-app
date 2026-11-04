@@ -5,6 +5,8 @@
 ``abrechnen``   Vorschau und Übernahme in Rechnungen
 ``eingang``     Eingangsrechnungen aus Archiv und E-Rechnung
 ``auswertung``  Kosten, Stunden, offene Leistung, Auslastung, Altersstaffel
+``zuordnung``   Fremdleistungen zu Auftragspositionen, auch über den
+                Fremdschlüssel
 
 Importiert wird über ``erfassung.services``.
 """
@@ -85,6 +87,13 @@ from .fehler import (
     ZeileAbgerechnet,
     ZielUngeeignet,
 )
+from .zuordnung import (
+    Zuordnungsbefund,
+    auftragsposition_setzen,
+    auftragsposition_zum_fremdschluessel,
+    ueber_fremdschluessel_zuordnen,
+    zuordenbare_positionen,
+)
 
 __all__ = [
     'GRUND_NICHT_ABRECHENBAR', 'GRUND_OHNE_UMFANG', 'GRUND_OHNE_WERT',
@@ -110,4 +119,7 @@ __all__ = [
     'unvollstaendige_eingangsrechnungen', 'zeile_aendern', 'zeile_erfassen',
     'hat_nachweis', 'nachweis_zur_rechnung',
     'zeitaufstellung', 'zeitsumme',
+    'Zuordnungsbefund', 'auftragsposition_setzen',
+    'auftragsposition_zum_fremdschluessel', 'ueber_fremdschluessel_zuordnen',
+    'zuordenbare_positionen',
 ]
