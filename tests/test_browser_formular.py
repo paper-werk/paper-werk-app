@@ -9,6 +9,7 @@ from playwright.sync_api import expect
 from faktura import services
 from faktura.models import (
     Beleg,
+    BelegTyp,
     Katalogposition,
     Kontakt,
     Projekt,
@@ -49,6 +50,26 @@ class TestStammdatenImFormular:
         page.select_option('#id_projekt', value=str(projekt.pk))
 
         expect(page.locator('#id_kunde')).to_have_value('')
+
+    def test_beim_oeffnen_wird_nichts_uebernommen(self, live_server, page,
+                                                 chefin, kunde):
+        """Die Übernahme läuft nur nach einer Auswahl durch den Benutzer, nicht
+        beim Laden eines gespeicherten Belegs mit Projekt. Sonst färbt das
+        Skript leere Felder (E-Mail) gelb und füllt sie neu."""
+        projekt = Projekt.objects.create(
+            nummer='2026-001', bezeichnung='Ludwigsplatz 9', kunde=kunde)
+        auftrag = services.beleg_anlegen(
+            projekt=projekt, typ=BelegTyp.AUFTRAG, betreff='Sanierung')
+        abrufe = []
+        page.on('request', lambda anfrage: abrufe.append(anfrage.url)
+                if 'kundendaten' in anfrage.url else None)
+        _anmelden(page, live_server.url)
+
+        page.goto(f'{live_server.url}/admin/faktura/auftrag/'
+                  f'{auftrag.pk}/change/')
+        page.wait_for_load_state('networkidle')
+
+        assert abrufe == []
 
     def test_textvorlage_landet_im_feld(self, live_server, page, chefin):
         Textbaustein.objects.create(
