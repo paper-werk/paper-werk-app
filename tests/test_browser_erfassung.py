@@ -167,3 +167,68 @@ class TestErfassungsmaske:
 
         assert page.locator('#id_von').get_attribute('type') == 'time'
         assert page.locator('.field-von .clock-icon').count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+class TestAuswahlMitSuche:
+    """Projekt und Auftragsposition der Erfassungsmaske mit Select2-Suche
+    (suchauswahl.js): Filterung nach Projekt und Ein- und Ausblenden der
+    Felder bleiben erhalten."""
+
+    @pytest.fixture
+    def bestand(self, kunde):
+        nord = Projekt.objects.create(nummer='2026-071', bezeichnung='Nord',
+                                      kunde=kunde)
+        sued = Projekt.objects.create(nummer='2026-072', bezeichnung='Süd',
+                                      kunde=kunde)
+        return {
+            'labor_nord': _auftrag_mit_position(nord, 'AU-2026-0071',
+                                                'Labor Nord'),
+            'labor_sued': _auftrag_mit_position(sued, 'AU-2026-0072',
+                                                'Labor Süd'),
+        }
+
+    def test_projekt_per_tastatur_dann_position_des_projekts(
+            self, live_server, page, chefin, bestand):
+        _anmelden(page, live_server.url)
+        page.goto(f'{live_server.url}/admin/erfassung/erfassungszeile/add/')
+        page.wait_for_load_state('networkidle')
+
+        # Tippen auf dem geschlossenen Feld öffnet die Suche.
+        page.locator('#id_projekt + .select2 .select2-selection').focus()
+        page.keyboard.type('Süd')
+        expect(page.locator('.select2-search__field')).to_have_value('Süd')
+        page.keyboard.press('Enter')
+        expect(page.locator('#id_projekt')).to_have_value(
+            str(bestand['labor_sued'].beleg.projekt_id))
+
+        page.locator('#id_auftragsposition + .select2 .select2-selection'
+                     ).click()
+        treffer = page.locator('.select2-results__option')
+        expect(treffer.filter(has_text='Labor Süd')).to_have_count(1)
+        expect(treffer.filter(has_text='Labor Nord')).to_have_count(0)
+        treffer.filter(has_text='Labor Süd').click()
+
+        # Alpine hat das native change erhalten: Position ohne Art gilt als
+        # Menge, die Katalogleistung entfällt.
+        expect(page.locator('#id_menge')).to_be_visible()
+        expect(page.locator('#id_von')).to_be_hidden()
+        expect(page.locator('.field-leistung')).to_be_hidden()
+
+    def test_projektwechsel_leert_die_position(self, live_server, page,
+                                                chefin, bestand):
+        _anmelden(page, live_server.url)
+        page.goto(f'{live_server.url}/admin/erfassung/erfassungszeile/add/')
+        page.wait_for_load_state('networkidle')
+
+        for feld, suchtext in (('projekt', 'Nord'),
+                               ('auftragsposition', 'Labor Nord'),
+                               ('projekt', 'Süd')):
+            page.locator(f'#id_{feld} + .select2 .select2-selection').click()
+            page.locator('.select2-search__field').fill(suchtext)
+            page.locator('.select2-results__option',
+                         has_text=suchtext).first.click()
+
+        expect(page.locator('#id_auftragsposition')).to_have_value('')
+        expect(page.locator('#id_auftragsposition + .select2')
+               ).not_to_contain_text('Labor Nord')
