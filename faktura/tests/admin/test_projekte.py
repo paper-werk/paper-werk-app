@@ -70,6 +70,21 @@ class TestProjektAdmin:
         assert antwort.status_code == 302
         assert Projekt.objects.filter(nummer='BV-Halle-Nord').exists()
 
+    def test_die_liste_zeigt_den_abschluss_als_archivsymbol(self, buero,
+                                                           kunde):
+        """Archivsymbol ohne Spaltenüberschrift, nur am abgeschlossenen
+        Projekt."""
+        Projekt.objects.create(nummer='2026-001', bezeichnung='Laufend',
+                               kunde=kunde)
+        Projekt.objects.create(nummer='2026-002', bezeichnung='Fertig',
+                               kunde=kunde, abgeschlossen=True)
+
+        html = buero.get(reverse('admin:faktura_projekt_changelist'),
+                         {'stand': 'alle'}).content.decode()
+
+        assert html.count('title="Abgeschlossen">inventory_2<') == 1
+        assert 'column-abgeschlossen' not in html
+
 
 @pytest.mark.django_db
 class TestProjektAlsKlammer:
