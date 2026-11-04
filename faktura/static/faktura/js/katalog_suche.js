@@ -3,7 +3,7 @@
  * Das HTML enthält nur die gewählte Position (KatalogsucheWidget); die
  * Treffer liefert der Endpunkt in data-katalog-suche
  * (KatalogpositionAdmin.suche), dieselbe Suche wie in der Katalogliste
- * (Nummer, Bezeichnung, Langtext), mit Pagination.
+ * (Nummer, Bezeichnung, Langtext, Fremdschlüssel), mit Pagination.
  *
  * Die Übernahme nach der Auswahl steht in katalog_uebernehmen.js; Select2
  * löst ein 'change' am <select> aus.

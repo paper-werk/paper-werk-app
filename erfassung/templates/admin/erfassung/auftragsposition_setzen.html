@@ -1,0 +1,57 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls unfold %}
+
+{% comment %} Zwischenseite der Aktion „Auftragsposition setzen“
+   (``FremdleistungAdmin.position_setzen``), aufgebaut wie uebernehmen.html.
+
+   Zur Wahl stehen die Leistungspositionen der festgeschriebenen Aufträge
+   des Projekts. Fremdleistungen auf einer Rechnung oder einem Entwurf
+   werden nicht geändert; die Seite nennt ihre Zahl vorab. {% endcomment %}
+
+{% block content %}
+<div class="max-w-3xl">
+  <div class="font-semibold mb-2 text-2xl text-font-important-light dark:text-font-important-dark">
+    Auftragsposition setzen
+  </div>
+
+  <p class="mb-6 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+    Projekt:
+    <strong class="font-medium text-font-important-light dark:text-font-important-dark">
+      {{ projekt }}
+    </strong>
+    &middot; {{ anzahl }} ausgewählt{% if gesperrt %}, davon {{ gesperrt }} auf einer Rechnung oder einem Entwurf und nicht änderbar{% endif %}
+  </p>
+
+  <form method="post">{% csrf_token %}
+    {% for kennung in auswahl %}
+      <input type="hidden" name="_selected_action" value="{{ kennung }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="{{ aktion }}">
+    <input type="hidden" name="index" value="0">
+    <input type="hidden" name="bestaetigt" value="ja">
+
+    {% component "unfold/components/card.html" %}
+      <div class="flex flex-col gap-6">
+        {{ form.as_div }}
+      </div>
+      {% if not form.auftragsposition.field.queryset.exists %}
+        <p class="mt-2 text-font-subtle-light text-xs dark:text-font-subtle-dark">
+          Das Projekt hat keinen festgeschriebenen Auftrag mit Leistungspositionen.
+        </p>
+      {% endif %}
+    {% endcomponent %}
+
+    {% url opts|admin_urlname:'changelist' as liste_url %}
+
+    <div class="flex gap-3 justify-end mt-6">
+      {% component "unfold/components/button.html" with href=liste_url variant="default" %}
+        Abbrechen
+      {% endcomponent %}
+
+      {% component "unfold/components/button.html" with submit=1 %}
+        Setzen
+      {% endcomponent %}
+    </div>
+  </form>
+</div>
+{% endblock %}

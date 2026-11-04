@@ -140,14 +140,16 @@ Unter dem Kopf stehen die Positionen. Die Spalten:
 Unter jeder Position steht in einer zweiten Zeile der **Langtext**, die
 ausführliche Beschreibung; er wächst mit dem Text. An Rechnungen stehen
 daneben „Leistung von“ und „Leistung bis“ je Position, an Angebot und
-Auftrag der Haken **Optional**.
+Auftrag der Haken **Optional** und der **Fremdschlüssel**: die Artikel-
+oder Paketnummer, unter der ein Lieferant diese Leistung berechnet. Über
+ihn finden Fremdleistungen ihre Auftragsposition (siehe Fremdleistungen).
 
 ### Aus dem Katalog
 
 Über jeder neuen Zeile steht die Katalogsuche. Tippen Sie einen Teil von
 Nummer, Bezeichnung oder Langtext; die Treffer kommen aus dem
-Leistungskatalog. Die Auswahl füllt Bezeichnung, Langtext, Einheit, Preis
-und Steuersatz. Alles bleibt danach änderbar und betrifft nur diesen
+Leistungskatalog. Die Auswahl füllt Bezeichnung, Langtext, Einheit,
+Preis, Steuersatz und Fremdschlüssel. Alles bleibt danach änderbar und betrifft nur diesen
 Beleg, nicht den Katalog.
 
 Eine gespeicherte Position hat keine Katalogsuche mehr. Soll eine andere

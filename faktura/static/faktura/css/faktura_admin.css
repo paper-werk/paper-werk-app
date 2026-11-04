@@ -530,6 +530,25 @@ tr.form-row.positionszeile > td.delete :hover > .material-symbols-outlined {
     white-space: nowrap;
 }
 
+/* Fremdschlüssel (Angebot und Auftrag) neben "Optional", ebenso mit Label
+ * links; schmal, weil Artikelnummern kurz sind. */
+.form-row-zweite-zeile .field-fremdschluessel {
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-row-zweite-zeile .field-fremdschluessel > .pw-zusatzbeschriftung {
+    font-size: 0.6875rem;
+    white-space: nowrap;
+}
+
+.form-row-zweite-zeile .field-fremdschluessel input {
+    width: 9rem;
+    min-width: 0;
+}
+
 /* ── Zeilenart: links neben der Katalogsuche ────────────────────────────
  *
  * Beide stehen in der ersten Zeile einer neuen Position und entfallen

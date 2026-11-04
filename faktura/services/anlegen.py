@@ -180,6 +180,7 @@ def position_hinzufuegen(
     abgesetzte_position=None, ist_abschlagsrest: bool = False,
     optional: bool = False, zeilenart: str = Zeilenart.LEISTUNG,
     zuschlag_prozent: Decimal | None = None, zuschlag_auf: str = '',
+    fremdschluessel: str = '',
 ) -> Belegposition:
     """Fügt eine Position an. Ohne Nummer bei ganzen Zahlen die höchste plus
     10, damit Positionen dazwischen passen; sonst die nächste nach
@@ -214,6 +215,7 @@ def position_hinzufuegen(
         einzelpreis=einzelpreis,
         steuersatz=steuersatz,
         art=art,
+        fremdschluessel=fremdschluessel,
         auftragsposition=auftragsposition,
         ist_abzug=ist_abzug,
         leistung_von=leistung_von,
@@ -429,6 +431,9 @@ def _beleg_kopieren(
             # Mit Art, damit auf eine aus einem Angebot entstandene
             # Auftragsposition kontiert werden kann.
             art=p.art,
+            # Ebenso der Fremdschlüssel, für die Zuordnung von
+            # Fremdleistungen zur Auftragsposition.
+            fremdschluessel=p.fremdschluessel,
             ist_abzug=p.ist_abzug,
             # Auch im Storno, wo die Restzeile die der Rechnung aufhebt;
             # beide zählen nicht zum Umsatz (R-174).

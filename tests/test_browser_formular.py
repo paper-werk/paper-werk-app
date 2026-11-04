@@ -100,7 +100,8 @@ class TestPositionenImFormular:
         return Katalogposition.objects.create(
             nummer='E-210', bezeichnung='Unterverteilung setzen',
             langtext='Aufputz, bis 24 Module, inkl. Hutschiene',
-            einheit='Stk', einzelpreis=Decimal('340.00'))
+            einheit='Stk', einzelpreis=Decimal('340.00'),
+            fremdschluessel='UV-24')
 
     def test_die_suche_findet_ueber_den_langtext_und_fuellt_die_zeile(
             self, live_server, page, chefin, kunde, katalog):
@@ -115,6 +116,8 @@ class TestPositionenImFormular:
             '340.00')
         expect(page.locator('#id_positionen-0-langtext')).to_have_value(
             re.compile('Hutschiene'))
+        expect(page.locator('#id_positionen-0-fremdschluessel')).to_have_value(
+            'UV-24')
 
     def test_eine_angefuegte_zeile_hat_nummer_und_suche(
             self, live_server, page, chefin, kunde, katalog):

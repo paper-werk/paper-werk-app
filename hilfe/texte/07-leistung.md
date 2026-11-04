@@ -224,3 +224,21 @@ abrechenbar), Lieferant, Projekt und Datum. Die Aktion **In Rechnung
 übernehmen** funktioniert wie in der Erfassung, mit Vorschau und Wahl des
 Rechnungsentwurfs. Bearbeitet werden die Positionen in ihrer
 Eingangsrechnung oder hier; alle Änderungen stehen im Verlauf.
+
+Zwei Aktionen ordnen mehrere Fremdleistungen auf einmal einer
+Auftragsposition zu:
+
+- **Auftragsposition setzen**: Filtern Sie nach Projekt, markieren Sie die
+  Zeilen und wählen Sie auf der folgenden Seite eine Position aus den
+  festgeschriebenen Aufträgen des Projekts. „Keine“ entfernt die
+  Zuordnung. Aus der Projektakte führt die Zeile „noch nicht zugeordnet“
+  direkt zu den passenden Fremdleistungen.
+- **Über Fremdschlüssel zuordnen**: Trägt eine Fremdleistung im Feld
+  **Fremdschlüssel** die Artikelnummer des Lieferanten, und hat genau
+  eine Auftragsposition des Projekts denselben Fremdschlüssel, wird diese
+  gesetzt. Gibt es mehrere passende
+  Positionen, etwa dieselbe Leistung je Geschoss, bleibt die Zeile offen.
+
+Beide ändern nur Fremdleistungen, die noch auf keiner Rechnung stehen,
+auch auf keinem Entwurf. Die Auftragsposition bestimmt beim Übernehmen
+den Preis, wenn die Einheit passt.

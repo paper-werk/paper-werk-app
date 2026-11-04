@@ -95,11 +95,7 @@ class TestLeistungskatalog:
     def test_preisaenderung_im_katalog_laesst_den_beleg_unberuehrt(
         self, buero, kunde, katalog
     ):
-        """Eine Preisänderung im Katalog ändert bestehende Belege nicht.
-
-        Ohne Fremdschlüssel trivial; der Test schlägt fehl, sobald einer
-        eingeführt wird.
-        """
+        """Eine Preisänderung im Katalog ändert bestehende Belege nicht."""
         self._angebot_anlegen(buero, kunde, **{
             'positionen-0-katalog': str(katalog.pk),
         })
@@ -109,6 +105,63 @@ class TestLeistungskatalog:
 
         beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
         assert beleg.positionen.get().einzelpreis == Decimal('120.00')
+
+    def test_der_fremdschluessel_wird_mitkopiert(self, buero, kunde,
+                                                 katalog):
+        """Grundlage der Zuordnung von Fremdleistungen; in der Position
+        danach frei änderbar."""
+        katalog.fremdschluessel = 'P-4711'
+        katalog.save()
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+        })
+
+        beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        assert beleg.positionen.get().fremdschluessel == 'P-4711'
+
+    def test_ein_eigener_fremdschluessel_gewinnt(self, buero, kunde,
+                                                 katalog):
+        katalog.fremdschluessel = 'P-4711'
+        katalog.save()
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+            'positionen-0-fremdschluessel': 'P-0815',
+        })
+
+        beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        assert beleg.positionen.get().fremdschluessel == 'P-0815'
+
+    def test_der_auftrag_aus_dem_angebot_behaelt_den_fremdschluessel(
+        self, buero, kunde, katalog
+    ):
+        katalog.fremdschluessel = 'P-4711'
+        katalog.save()
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+        })
+        angebot = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        services.beleg_festschreiben(beleg_id=angebot.pk)
+
+        auftrag = services.beleg_umwandeln(beleg_id=angebot.pk,
+                                           neuer_typ=BelegTyp.AUFTRAG)
+
+        assert auftrag.positionen.get().fremdschluessel == 'P-4711'
+
+    def test_der_festgeschriebene_beleg_zeigt_den_fremdschluessel(
+        self, buero, kunde, katalog
+    ):
+        katalog.fremdschluessel = 'P-4711'
+        katalog.save()
+        self._angebot_anlegen(buero, kunde, **{
+            'positionen-0-katalog': str(katalog.pk),
+        })
+        angebot = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
+        services.beleg_festschreiben(beleg_id=angebot.pk)
+
+        inhalt = buero.get(reverse('admin:faktura_angebot_change',
+                                   args=[angebot.pk])).content.decode()
+
+        assert 'P-4711' in inhalt
 
     def test_lieferschein_bleibt_auch_mit_katalog_preisfrei(
         self, buero, kunde, katalog
