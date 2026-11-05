@@ -549,9 +549,9 @@ class TestNurDerEinkauf:
         assert 'field-verkauf_anzeige' not in inhalt
         assert 'field-spanne_anzeige' not in inhalt
 
-    def test_im_menue_steht_sie_nicht_mehr(self):
-        """Kein Menüeintrag; die Liste bleibt registriert, weil die
-        Projektakte auf sie verlinkt."""
+    def test_im_menue_unter_leistung(self):
+        """Menüeintrag neben den Eingangsrechnungen, weil dort per
+        Sammelaktion zugeordnet wird."""
         from core import erweiterungen
 
         ziel = reverse('admin:erfassung_fremdleistung_changelist')
@@ -561,5 +561,5 @@ class TestNurDerEinkauf:
             for eintrag in gruppe.get('items', [])
         ]
 
-        assert ziel not in links
+        assert ziel in links
         assert reverse('admin:erfassung_eingangsrechnung_changelist') in links

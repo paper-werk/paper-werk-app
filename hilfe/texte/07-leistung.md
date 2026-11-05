@@ -213,20 +213,23 @@ sonst steht genau der Einkaufsbetrag auf der Rechnung. Einen Aufschlag
 tragen Sie danach in der Rechnung ein. Abschlags-, Teilschluss- und
 Schlussrechnung rechnen gegen den Auftrag ab und nehmen Fremdleistungen
 nur mit Auftragsposition und passender Einheit auf. Die übrigen nennt
-„Erbrachte Leistungen hinzufügen“ in einem Hinweis mit Link auf die
-Liste der Fremdleistungen; dort ordnen Sie sie zu. In der Projektakte
-zählen sie weiter als nicht abgerechnet. Eine weiterberechnete Position
-lässt sich nicht mehr ändern; die Spalte „Abgerechnet“ nennt die Rechnung.
+„Erbrachte Leistungen hinzufügen“ in einem Hinweis. Lassen Sie die
+Rechnung als Entwurf liegen, ordnen Sie unter **Leistung › Fremdleistungen**
+zu (Filter Projekt und Zuordnung) und fügen Sie die Leistungen danach
+hinzu. In der Projektakte zählen sie weiter als nicht abgerechnet.
+
+Eine weiterberechnete Position lässt sich nicht mehr ändern; die Spalte
+„Abgerechnet“ nennt die Rechnung.
 
 ### Fremdleistungen {#fremdleistung}
 
 Die Liste aller zugekauften Positionen quer über die Eingangsrechnungen
-erreichen Sie aus der Projektakte („Zugekaufte Leistung“); in der
-Seitenleiste steht sie nicht. Sie zeigt Datum, Projekt,
-Auftragsposition, Bezeichnung, Menge, Einkauf, Zustand und die
-Eingangsrechnung. Filter nach Zustand (offen, abgerechnet, nicht
-abrechenbar), Auftragsposition (leer oder gesetzt), Lieferant, Projekt
-und Datum. Die Aktion **In Rechnung
+steht unter **Leistung › Fremdleistungen** und ist aus der Projektakte
+verlinkt („Zugekaufte Leistung“). Sie zeigt Datum, Projekt,
+Eingangsrechnung, Fremdschlüssel, Auftragsposition, Bezeichnung, Menge,
+Einkauf, Zustand und die Rechnung an den Kunden. Filter nach Zustand (offen, abgerechnet, nicht
+abrechenbar), Zuordnung (ohne Auftragsposition, Einheit passt nicht,
+zugeordnet), Lieferant, Projekt und Datum. Die Aktion **In Rechnung
 übernehmen** funktioniert wie in der Erfassung, mit Vorschau und Wahl des
 Rechnungsentwurfs. Bearbeitet werden die Positionen in ihrer
 Eingangsrechnung oder hier; alle Änderungen stehen im Verlauf.

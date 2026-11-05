@@ -219,7 +219,7 @@ class TestMaskeAnDerRechnung:
         assert 'data-ausschluesse' in inhalt
         assert '2 &times; KI-Index Mineralfasern' in inhalt
         assert 'Stk, Pos. 20 hat pausch' in inhalt
-        assert f'projekt__id__exact={projekt.pk}' in inhalt
+        assert 'Filtern Sie dazu nach dem Projekt' in inhalt
 
     def test_gewoehnliche_rechnung_ohne_hinweis(self, admin_client, projekt,
                                                 bestand):
@@ -243,28 +243,34 @@ class TestMaskeAnDerRechnung:
             pk__in=_pks(bestand['ohne']),
             abgerechnet_in__isnull=False).exists()
 
-    def test_nur_ohne_position_verlinkt_den_filter(self, admin_client,
-                                                   projekt, bestand):
-        Fremdleistung.objects.filter(
-            pk__in=_pks(bestand['einheit'])).update(auftragsposition=None)
-        rechnung = _rechnung(projekt, Rechnungsart.ABSCHLAG)
-
-        inhalt = admin_client.get(self._adresse(rechnung)).content.decode()
-
-        assert 'auftragsposition__isempty=1' in inhalt
 
 
 class TestListe:
 
-    def test_filter_ohne_auftragsposition(self, admin_client, projekt,
-                                          bestand):
+    @pytest.mark.parametrize('wert, gruppe', [
+        ('ohne', 'ohne'), ('einheit', 'einheit'), ('zugeordnet', 'passend')])
+    def test_filter_zuordnung(self, admin_client, projekt, bestand, wert,
+                              gruppe):
         antwort = admin_client.get(
             reverse('admin:erfassung_fremdleistung_changelist'),
-            {'projekt__id__exact': projekt.pk,
-             'auftragsposition__isempty': '1'})
+            {'projekt__id__exact': projekt.pk, 'zuordnung': wert})
 
         assert antwort.status_code == 200
-        assert antwort.context['anzahl'] == 2
+        gefunden = {f.pk for f in antwort.context['cl'].queryset}
+        assert gefunden == set(_pks(bestand[gruppe]))
+
+    def test_einheit_ohne_schreibweise_verglichen(self, admin_client,
+                                                  projekt, bestand):
+        """„ stk “ passt zu „Stk“ wie beim Übernehmen."""
+        Fremdleistung.objects.filter(
+            pk__in=_pks(bestand['passend'])).update(einheit=' stk ')
+
+        antwort = admin_client.get(
+            reverse('admin:erfassung_fremdleistung_changelist'),
+            {'zuordnung': 'einheit'})
+
+        gefunden = {f.pk for f in antwort.context['cl'].queryset}
+        assert gefunden == set(_pks(bestand['einheit']))
 
     def test_vorschau_nennt_die_zum_einkaufspreis(self, admin_client,
                                                   projekt, bestand):
@@ -296,3 +302,17 @@ def _werte(inhalt: str, name: str) -> list[str]:
     import re
 
     return re.findall(rf'name="{name}" value="(\d+)"', inhalt)
+
+
+def test_liste_zeigt_eingangsrechnung_und_fremdschluessel(
+        admin_client, laborrechnung, bestand):
+    antwort = admin_client.get(
+        reverse('admin:erfassung_fremdleistung_changelist'))
+    inhalt = antwort.content.decode()
+
+    assert 'field-eingangsrechnung_spalte' in inhalt
+    assert reverse('admin:erfassung_eingangsrechnung_change',
+                   args=[laborrechnung.pk]) in inhalt
+    assert 'RE-2026-0815' in inhalt
+    assert '<td class="field-fremdschluessel' in inhalt
+    assert '65736' in inhalt
