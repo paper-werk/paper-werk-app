@@ -135,7 +135,9 @@ def test_stueckleistung_zeigt_den_umfang_nicht_die_stunden(projekt, kollege):
 
     assert a.minuten == 0
     assert '1 Stk' in html
-    assert '9:30' not in html
+    # Die Zelle selbst, weil die Fußzeile die Uhrzeit der Erzeugung trägt
+    # und um 19:30 Uhr "9:30" enthält.
+    assert '<td class="dauer"></td>' in html
     assert 'Summe der Stunden' not in html
 
 
