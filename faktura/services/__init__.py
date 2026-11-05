@@ -51,6 +51,7 @@ from .anlegen import (
     position_hinzufuegen,
     stammdaten_uebernehmen,
     stammdatenwerte,
+    titel_ergaenzen,
 )
 from .archivierung import (
     Archivbefund,
@@ -206,6 +207,7 @@ __all__ = [
     'mengenueberschreitungen', 'nachlaesse', 'nachlaesse_vorladen', 'nachlass',
     'naechste_belegnummer', 'nachtrag_anlegen',
     'offene_posten', 'offener_betrag', 'position_hinzufuegen',
+    'titel_ergaenzen',
     'positionssumme', 'projekt_aufloesen', 'projektakte', 'projektstaende',
     'nachlass_stornieren', 'rechnung_korrigieren',
     'rechnungskorrektur_erstellen',

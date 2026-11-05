@@ -72,7 +72,10 @@ allem, was auf dem Projekt geleistet und noch nicht berechnet ist:
 erfasste Stunden und Mengen, nach Leistung gruppiert, und zugekaufte
 Leistungen aus Eingangsrechnungen. Haken Sie an, was auf diese Rechnung
 soll; die Positionen werden angefügt und die Zeilen gelten danach als
-abgerechnet. Mehr dazu im Kapitel Leistung.
+abgerechnet. Positionen eines Auftrags bringen ihren Titel mit, und eine
+Auftragsposition steht nur einmal auf der Rechnung: Wer zweimal dazu
+übernimmt, erhöht ihre Menge. Mehr dazu im Kapitel Leistung unter
+[In Rechnung übernehmen](#in-rechnung-uebernehmen).
 
 An Abschlags-, Teilschluss- und Schlussrechnung stehen Fremdleistungen nur
 zur Auswahl, wenn sie einer Auftragsposition mit passender Einheit
@@ -159,7 +162,8 @@ Abschläge ab.
 **Entstehen** sollte sie aus einer Gesamtabnahme („Rechnung erzeugen“ an
 der Abnahme). Dann übernimmt sie Leistungsdatum und Zeitraum aus der
 Abnahme, die Leistung aus den Abschlägen und setzt die Abschläge gleich
-ab. Was in keinem Abschlag stand, holen Sie mit „Erbrachte Leistungen
+ab. Die Titel des Auftrags kommen mit, damit die Zwischensummen stehen.
+Was in keinem Abschlag stand, holen Sie mit „Erbrachte Leistungen
 hinzufügen“ dazu. Von Hand angelegt (Liste, „+“) fehlen die Abzüge, bis
 Sie **Abschläge absetzen** klicken.
 

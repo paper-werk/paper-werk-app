@@ -232,6 +232,45 @@ def position_hinzufuegen(
     return neu
 
 
+def titel_ergaenzen(beleg: Beleg) -> list[Belegposition]:
+    """Legt die Titel der Aufträge an, unter denen Positionen des Belegs
+    stehen, soweit der Beleg die Nummer noch nicht hat.
+
+    Ein Titel gehört zu einer Position, wenn seine Nummer Präfix ihrer
+    Nummer ist („2“ zu „2.20“, „01“ und „01.02“ zu „01.02.0010“), dieselbe
+    Regel wie ``titelsummen``. Gesucht wird in den Aufträgen der
+    Auftragspositionen. Ohne den Titel fehlten in einer Rechnung aus
+    erbrachter Leistung Überschrift und Zwischensumme. Texte werden nicht
+    übernommen, weil sie meist Vorbemerkungen des Auftrags sind.
+    """
+    positionen = list(beleg.positionen.select_related('auftragsposition'))
+    vergeben = {p.position for p in positionen}
+    auftraege = {p.auftragsposition.beleg_id for p in positionen
+                 if p.auftragsposition_id and not p.ist_abzug}
+    if not auftraege:
+        return []
+
+    titel = (Belegposition.objects
+             .filter(beleg_id__in=auftraege, zeilenart=Zeilenart.TITEL)
+             .exclude(position='')
+             .order_by('beleg_id', 'sortierung'))
+    angelegt = []
+    for t in titel:
+        if t.position in vergeben:
+            continue
+        if not any(p.position.startswith(t.position + '.')
+                   for p in positionen
+                   if p.auftragsposition_id and not p.ist_abzug):
+            continue
+        angelegt.append(position_hinzufuegen(
+            beleg=beleg, position=t.position, bezeichnung=t.bezeichnung,
+            langtext=t.langtext, zeilenart=Zeilenart.TITEL,
+            menge=Decimal('0'), einzelpreis=Decimal('0'),
+            steuersatz=t.steuersatz))
+        vergeben.add(t.position)
+    return angelegt
+
+
 @transaction.atomic
 def nachtrag_anlegen(*, beleg_id: int) -> Beleg:
     """Legt einen Nachtrag zu einem festgeschriebenen Hauptauftrag als
