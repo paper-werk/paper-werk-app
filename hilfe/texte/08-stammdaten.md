@@ -180,6 +180,10 @@ Eintrag; „Hinzufügen“ verschwindet, sobald er angelegt ist.
 
 - **Firmenname**, **Namenszusatz** und **Logo** für den Briefkopf.
 - **Anschrift** mit Land (zwei Buchstaben, etwa DE, für die E-Rechnung).
+- **Absenderzeile**: die kleine Zeile über der Empfängeranschrift, so wie
+  sie gedruckt wird, also mit Name, Straße, PLZ und Ort. Kürzen Sie hier,
+  wenn der volle Firmenname zu lang ist; Briefkopf und Fußzeile behalten
+  ihn.
 - **Kontakt**: Telefon, E-Mail, Web.
 - **Steuerlich**: **Steuernummer** oder **USt-IdNr.**; eine Rechnung
   braucht eines von beiden. **Kleinunternehmer**: Dann weist kein Beleg
