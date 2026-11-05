@@ -6,9 +6,8 @@
   <div class="mb-6" data-ausschluesse>
     {% component "unfold/components/card.html" with title="Fremdleistungen, die nicht übernommen werden können" %}
       <p class="mb-3 text-font-subtle-light text-sm dark:text-font-subtle-dark">
-        {{ beleg.rechnungsbezeichnung|default:"Diese Rechnung" }} rechnet gegen den Auftrag ab und
-        nimmt Fremdleistungen nur zum Preis einer Auftragsposition mit passender Einheit auf.
-        Prüfen Sie diese unter Fremdleistungen. Filtern Sie dazu nach dem Projekt.
+        Prüfen Sie diese unter
+        <a href="{{ ausschluss_liste }}" class="text-primary-600 dark:text-primary-500">Fremdleistungen</a>.
       </p>
       {% regroup ausschluesse by grund as nach_grund %}
       {% for gruppe in nach_grund %}

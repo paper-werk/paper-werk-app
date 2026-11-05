@@ -213,10 +213,10 @@ sonst steht genau der Einkaufsbetrag auf der Rechnung. Einen Aufschlag
 tragen Sie danach in der Rechnung ein. Abschlags-, Teilschluss- und
 Schlussrechnung rechnen gegen den Auftrag ab und nehmen Fremdleistungen
 nur mit Auftragsposition und passender Einheit auf. Die übrigen nennt
-„Erbrachte Leistungen hinzufügen“ in einem Hinweis. Lassen Sie die
-Rechnung als Entwurf liegen, ordnen Sie unter **Leistung › Fremdleistungen**
-zu (Filter Projekt und Zuordnung) und fügen Sie die Leistungen danach
-hinzu. In der Projektakte zählen sie weiter als nicht abgerechnet.
+„Erbrachte Leistungen hinzufügen“ in einem Hinweis; sein Link öffnet die
+offenen Fremdleistungen des Projekts. Lassen Sie die Rechnung als Entwurf
+liegen, ordnen Sie dort zu (Filter Zuordnung) und fügen Sie die
+Leistungen danach hinzu. In der Projektakte zählen sie weiter als nicht abgerechnet.
 
 Eine weiterberechnete Position lässt sich nicht mehr ändern; die Spalte
 „Abgerechnet“ nennt die Rechnung.
