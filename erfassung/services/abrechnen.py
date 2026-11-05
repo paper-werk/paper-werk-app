@@ -28,6 +28,7 @@ from faktura.models import (
     BelegStatus,
     Leistungsart,
     Rechnungsart,
+    Zeilenart,
 )
 
 from ..formate import dauer_zeigen, personenname
@@ -724,7 +725,7 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
     from faktura.services import (
         abschlaege_absetzen,
         beleg_anlegen,
-        position_hinzufuegen,
+        titel_ergaenzen,
     )
 
     if beleg is None and rechnungsart not in NEU_ANLEGBAR:
@@ -793,15 +794,15 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
         # Der Zeitraum der Position (BT-134/135): erster bis letzter Tag
         # ihrer Tätigkeiten. Die Tage selbst gehen nicht in die Rechnung.
         tage = [z.datum for z in position.zeilen]
-        angelegt = position_hinzufuegen(
-            beleg=beleg,
+        # Mit Auftragsposition immer zu deren Preis, also kumulierbar.
+        angelegt = _anfuegen_oder_kumulieren(
+            beleg, kumulierbar=True,
             bezeichnung=position.bezeichnung,
             menge=position.menge,
             einheit=position.einheit,
             einzelpreis=position.einzelpreis,
             steuersatz=position.steuersatz,
             auftragsposition=position.auftragsposition,
-            position=_nummer_aus_auftrag(beleg, position.auftragsposition),
             leistung_von=min(tage, default=None),
             leistung_bis=max(tage, default=None),
         )
@@ -813,8 +814,8 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
         # Wie bei den Stunden erstes bis letztes Leistungsdatum der Gruppe;
         # Fremdleistungen ohne Datum zählen nicht.
         tage = [z.leistungsdatum for z in position.zeilen if z.leistungsdatum]
-        angelegt = position_hinzufuegen(
-            beleg=beleg,
+        angelegt = _anfuegen_oder_kumulieren(
+            beleg, kumulierbar=position.zum_auftragspreis,
             bezeichnung=position.bezeichnung,
             menge=position.menge,
             einheit=position.einheit,
@@ -822,7 +823,6 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
             steuersatz=position.steuersatz,
             art=position.art,
             auftragsposition=position.auftragsposition,
-            position=_nummer_aus_auftrag(beleg, position.auftragsposition),
             leistung_von=min(tage, default=None),
             leistung_bis=max(tage, default=None),
         )
@@ -830,7 +830,50 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
             pk__in=[z.pk for z in position.zeilen]
         ).update(abgerechnet_in=angelegt)
 
+    titel_ergaenzen(beleg)
     if neu_angelegt and beleg.rechnungsart == Rechnungsart.SCHLUSS:
         abschlaege_absetzen(beleg_id=beleg.pk)
 
     return beleg, vorschau
+
+
+def _anfuegen_oder_kumulieren(beleg: Beleg, *, kumulierbar: bool,
+                              **felder) -> Belegposition:
+    """Fügt eine Position an oder erhöht die vorhandene derselben
+    Auftragsposition.
+
+    Kumuliert wird zum Preis der Auftragsposition (``kumulierbar``), wenn
+    der Beleg schon eine Leistungsposition zu ihr mit gleicher Einheit und
+    gleichem Preis hat: Menge addiert, Zeitraum erweitert. Sonst entstünde
+    bei zweimaligem Übernehmen eine zweite Position mit fortlaufender
+    Nummer, die nicht im Auftrag steht. Eine von Hand geänderte Position
+    (Preis, Einheit) bleibt unberührt; dann wird angefügt.
+
+    Gerundet wird je Übernahme: Zeit zweimal übernommen ergibt die Summe
+    zweier gerundeter Mengen.
+    """
+    from faktura.services import position_hinzufuegen, zuschlaege_nachrechnen
+
+    auftrag = felder['auftragsposition']
+    if kumulierbar and auftrag is not None:
+        vorhanden = (beleg.positionen
+                     .filter(auftragsposition=auftrag,
+                             zeilenart=Zeilenart.LEISTUNG,
+                             ist_abzug=False, ist_abschlagsrest=False,
+                             einheit=felder['einheit'],
+                             einzelpreis=felder['einzelpreis'])
+                     .order_by('sortierung', 'pk').first())
+        if vorhanden is not None:
+            vorhanden.menge += felder['menge']
+            tage_von = [t for t in (vorhanden.leistung_von,
+                                    felder['leistung_von']) if t]
+            tage_bis = [t for t in (vorhanden.leistung_bis,
+                                    felder['leistung_bis']) if t]
+            vorhanden.leistung_von = min(tage_von, default=None)
+            vorhanden.leistung_bis = max(tage_bis, default=None)
+            vorhanden.save(update_fields=['menge', 'leistung_von',
+                                          'leistung_bis'])
+            zuschlaege_nachrechnen(beleg)
+            return vorhanden
+    return position_hinzufuegen(
+        beleg=beleg, position=_nummer_aus_auftrag(beleg, auftrag), **felder)

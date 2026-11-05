@@ -323,7 +323,9 @@ class TestSchlussrechnung:
         schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
 
         leistung = list(schluss.positionen.filter(ist_abzug=False))
+        # Der Titel 01 kommt aus dem Auftrag (``titel_ergaenzen``).
         assert [(p.zeilenart, p.menge, p.einzelpreis) for p in leistung] == [
+            (Zeilenart.TITEL, Decimal('0.000'), Decimal('0.00')),
             (Zeilenart.LEISTUNG, Decimal('10.000'), Decimal('100.00')),
             (Zeilenart.ZUSCHLAG, Decimal('1.000'), Decimal('30.00')),
         ]
