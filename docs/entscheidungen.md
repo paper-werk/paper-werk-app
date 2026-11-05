@@ -193,6 +193,23 @@ Die Begründung für Anwender steht in der Hilfe, Kapitel 06
   nur an Angebot und Auftrag. Aus den Summen genommen werden sie an genau zwei
   Stellen, `_summen` und `POSITIONSNETTO` (R-178). Sie zählen nie als „mehr
   als beauftragt“ (`Belegposition.optional`, `services/summen.py`).
+- Eine Rechnung mit Positionen aus einem Auftrag bekommt dessen Titel, deren
+  Nummer Präfix einer ihrer Positionsnummern ist, soweit sie die Nummer noch
+  nicht hat (`services.titel_ergaenzen`; Übernahme erbrachter Leistung,
+  `abschlaege_absetzen`, damit auch `rechnung_aus_abnahme`). Die
+  Zwischensumme ergibt sich daraus über `titelsummen`. Texte werden nicht
+  übernommen, weil sie meist Vorbemerkungen des Auftrags sind und eine Regel,
+  welcher Text zu welcher Rechnung gehört, Sonderfälle bräuchte.
+- Die Übernahme erbrachter Leistung kumuliert je Auftragsposition: Hat der
+  Entwurf schon eine Leistungsposition zu ihr mit gleicher Einheit und
+  gleichem Preis, wird deren Menge erhöht und der Zeitraum erweitert
+  (`erfassung/services/abrechnen._anfuegen_oder_kumulieren`), wie die
+  Schlussrechnung je Auftragsposition zusammenfasst (R-179). Sonst stünde
+  eine zweite Position mit fortlaufender Nummer auf der Rechnung, die nicht im
+  Auftrag steht. Gerundet wird je Übernahme. Verworfen: das zweite Übernehmen
+  zu sperren, weil Leistung laufend dazukommt; die Menge aus allen Zeilen
+  neu zu berechnen, weil eine von Hand geänderte Menge dann überschrieben
+  würde.
 - Die Gestaltung der Belegmaske und des PDFs ist in
   [belegansicht.md](belegansicht.md) festgelegt.
 

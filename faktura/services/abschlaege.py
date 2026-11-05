@@ -51,7 +51,7 @@ from ..models import (
     Rechnungsart,
     Zeilenart,
 )
-from .anlegen import position_hinzufuegen
+from .anlegen import position_hinzufuegen, titel_ergaenzen
 from .fehler import FalscherStatus
 from .summen import _summen, belegsummen, positionssumme
 from .zuschlaege import zuschlaege_nachrechnen
@@ -153,6 +153,7 @@ def abschlaege_absetzen(*, beleg_id: int) -> list[Belegposition]:
             ist_abzug=True, abgesetzte_position=quelle,
         ))
     _reste_abgleichen(rechnung)
+    titel_ergaenzen(rechnung)
     zuschlaege_nachrechnen(rechnung)
     return angelegt
 
