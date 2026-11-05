@@ -41,6 +41,17 @@ class Firma(models.Model):
         help_text='Zwei Buchstaben nach ISO 3166, wird für die E-Rechnung gebraucht.',
     )
 
+    #: Rücksendeangabe über dem Anschriftfeld (DIN 5008), unverändert
+    #: gedruckt. Eigenes Feld, weil Name und Zusatz für die Zeile oft zu
+    #: lang sind; Briefkopf, Fußzeile und E-Rechnung brauchen die
+    #: vollständige Firmierung.
+    absenderzeile = models.CharField(
+        'Absenderzeile', max_length=120, default='',
+        help_text='Steht klein über der Empfängeranschrift, vollständig mit '
+                  'Name, Straße, PLZ und Ort, etwa „Muster GmbH · '
+                  'Musterweg 1 · 84028 Landshut“. Höchstens eine Zeile.',
+    )
+
     telefon = models.CharField('Telefon', max_length=50, blank=True, default='')
     email = models.EmailField('E-Mail', blank=True, default='')
     web = models.CharField('Web', max_length=100, blank=True, default='')
@@ -113,11 +124,6 @@ class Firma(models.Model):
         explizit.
         """
         return cls.objects.first()
-
-    @property
-    def anschrift_einzeilig(self) -> str:
-        """Für die Absenderzeile über dem Anschriftfeld (DIN 5008)."""
-        return f'{self.name} - {self.strasse} - {self.plz} {self.ort}'
 
     @property
     def steuerangabe(self) -> str:

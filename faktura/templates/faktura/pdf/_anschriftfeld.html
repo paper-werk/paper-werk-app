@@ -4,6 +4,6 @@
    Empfängerfeld, beim Leistungsnachweis das Anschriftfeld des Kunden. Jede
    Zeile des Texts ergibt eine Zeile im Feld. {% endcomment %}
 <section id="anschriftfeld">
-  <div class="ruecksendeangabe">{{ firma.anschrift_einzeilig|default:"" }}</div>
+  <div class="ruecksendeangabe">{{ firma.absenderzeile|default:"" }}</div>
   <div class="anschrift">{{ anschrift|linebreaksbr }}</div>
 </section>
