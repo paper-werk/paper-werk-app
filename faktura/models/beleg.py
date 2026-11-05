@@ -1148,6 +1148,17 @@ class Belegposition(ErhoehtElternversion):
             ),
         ]
 
+    #: ``auftragsposition_id`` beim Laden aus der Datenbank (``from_db``),
+    #: für ``clean``; ``None`` bei einer neuen Position.
+    _geladene_auftragsposition_id = None
+
+    @classmethod
+    def from_db(cls, db, field_names, values, **kwargs):
+        position = super().from_db(db, field_names, values, **kwargs)
+        position._geladene_auftragsposition_id = position.__dict__.get(
+            'auftragsposition_id')
+        return position
+
     def __str__(self) -> str:
         return f'{self.position}. {self.bezeichnung}'
 
@@ -1207,6 +1218,12 @@ class Belegposition(ErhoehtElternversion):
                 'optional': f'Optionale Positionen gibt es nur in Angebot '
                             f'und Auftrag, nicht in {self.beleg.get_typ_display()}.'})
         if not self.auftragsposition_id:
+            return
+        # Geprüft wird nur ein neuer oder geänderter Bezug. Ein gespeicherter
+        # bleibt gültig, wenn der Auftrag danach wieder geöffnet wird;
+        # sonst ließe sich die Rechnung nicht speichern, solange der
+        # Auftrag nachgetragen wird.
+        if self.auftragsposition_id == self._geladene_auftragsposition_id:
             return
 
         ziel = self.auftragsposition
