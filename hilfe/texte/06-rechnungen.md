@@ -76,7 +76,8 @@ abgerechnet. Positionen eines Auftrags bringen ihren Titel und die
 Zuschläge des Auftrags (Nebenkosten) mit, und eine
 Auftragsposition steht nur einmal auf der Rechnung: Wer zweimal dazu
 übernimmt, erhöht ihre Menge. Mehr dazu im Kapitel Leistung unter
-[In Rechnung übernehmen](#in-rechnung-uebernehmen).
+[In Rechnung übernehmen](#in-rechnung-uebernehmen) und
+[Zuschläge beim Übernehmen](#zuschlag-uebernehmen).
 
 An Abschlags-, Teilschluss- und Schlussrechnung stehen Fremdleistungen nur
 zur Auswahl, wenn sie einer Auftragsposition mit passender Einheit
@@ -164,7 +165,8 @@ Abschläge ab.
 der Abnahme). Dann übernimmt sie Leistungsdatum und Zeitraum aus der
 Abnahme, die Leistung aus den Abschlägen und setzt die Abschläge gleich
 ab. Die Titel des Auftrags kommen mit, damit die Zwischensummen stehen,
-ebenso seine Zuschläge (Nebenkosten), einmal auf die volle Leistung.
+ebenso seine Zuschläge (Nebenkosten), einmal auf die volle Leistung
+(siehe [Zuschläge beim Übernehmen](#zuschlag-uebernehmen)).
 Was in keinem Abschlag stand, holen Sie mit „Erbrachte Leistungen
 hinzufügen“ dazu. Von Hand angelegt (Liste, „+“) fehlen die Abzüge, bis
 Sie **Abschläge absetzen** klicken.
