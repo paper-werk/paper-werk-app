@@ -274,10 +274,29 @@ class BelegAdmin(
         return super().has_change_permission(request, beleg)
 
     def has_delete_permission(self, request, obj=None):
+        """Löschen nur ohne ``Beleg.loeschsperre``: ein Entwurf, der nie
+        eine Nummer hatte."""
         beleg = self._beleg_oder_none(obj)
-        if beleg is not None and not beleg.ist_entwurf:
+        if beleg is not None and beleg.loeschsperre:
             return False
         return super().has_delete_permission(request, beleg)
+
+    def get_deleted_objects(self, objs, request):
+        """Führt Belege mit ``loeschsperre`` als geschützt auf; Django
+        löscht dann nicht und nennt den Grund.
+
+        Nötig für die Sammelaktion, die ``queryset.delete()`` aufruft und
+        ``Beleg.delete`` umgeht; ohne diese Prüfung löschte sie einen
+        wiedereröffneten Beleg mit Nummer.
+        """
+        geloescht, anzahl, rechte, geschuetzt = super().get_deleted_objects(
+            objs, request)
+        gesperrt = [b.loeschsperre for b in objs if b.loeschsperre]
+        if gesperrt:
+            # Django fragt ``has_delete_permission`` je Beleg und meldete
+            # sonst fehlende Rechte statt des Grundes.
+            rechte = {r for r in rechte if r != self.opts.verbose_name}
+        return geloescht, anzahl, rechte, [*geschuetzt, *gesperrt]
 
     def _beleg_oder_none(self, obj):
         """Lädt den Beleg zum zweiten Argument der Rechteprüfung.

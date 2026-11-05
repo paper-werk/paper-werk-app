@@ -593,25 +593,29 @@ class Beleg(MitVersion):
                 )
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        """Löscht nur Belege, die nie eine Nummer hatten.
+    @property
+    def loeschsperre(self) -> str:
+        """Grund, aus dem der Beleg nicht gelöscht werden darf, sonst leer.
 
-        Geprüft wird die Nummer, weil die Lückenlosigkeit des Nummernkreises
+        Gelöscht werden nur Entwürfe, die nie eine Nummer hatten. Geprüft
+        wird die Nummer, weil die Lückenlosigkeit des Nummernkreises
         geschützt ist, unabhängig davon, wie ein Entwurf zu einer Nummer
-        kam.
+        kam (wieder geöffnet).
         """
         if not self.ist_entwurf:
-            raise BelegNichtAenderbar(
-                f'{self} ist festgeschrieben und darf nicht gelöscht werden. '
-                f'Für eine Korrektur wird storniert.'
-            )
+            return (f'{self} ist festgeschrieben und darf nicht gelöscht '
+                    f'werden. Für eine Korrektur wird storniert.')
         if self.nummer:
-            raise BelegNichtAenderbar(
-                f'{self} trägt die Nummer {self.nummer}; sie ist vergeben '
-                f'und außer Haus. Ein wiedereröffneter Beleg lässt sich '
-                f'nicht löschen; er wird wieder festgeschrieben oder '
-                f'storniert.'
-            )
+            return (f'{self} trägt die Nummer {self.nummer}; sie ist '
+                    f'vergeben und außer Haus. Ein wiedereröffneter Beleg '
+                    f'lässt sich nicht löschen; er wird wieder '
+                    f'festgeschrieben oder storniert.')
+        return ''
+
+    def delete(self, *args, **kwargs):
+        """Löscht nur Belege ohne ``loeschsperre``."""
+        if self.loeschsperre:
+            raise BelegNichtAenderbar(self.loeschsperre)
         return super().delete(*args, **kwargs)
 
     def clean(self):
