@@ -219,7 +219,8 @@ class TestMaskeAnDerRechnung:
         assert 'data-ausschluesse' in inhalt
         assert '2 &times; KI-Index Mineralfasern' in inhalt
         assert 'Stk, Pos. 20 hat pausch' in inhalt
-        assert 'Filtern Sie dazu nach dem Projekt' in inhalt
+        assert (f'?projekt__id__exact={projekt.pk}&amp;zustand=offen'
+                in inhalt)
 
     def test_gewoehnliche_rechnung_ohne_hinweis(self, admin_client, projekt,
                                                 bestand):

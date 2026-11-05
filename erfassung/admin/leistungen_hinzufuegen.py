@@ -14,6 +14,7 @@ Instanz von ``RechnungAdmin`` oder einer Belegart.
 
 from django.contrib import messages
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.html import format_html
 from unfold.decorators import action as unfold_action
 from unfold.enums import ActionVariant
@@ -43,8 +44,9 @@ def detail_leistungen(self, request, object_id):
     """Zeigt die offene Leistung des Vorhabens der Rechnung zur Auswahl.
 
     Eine Rechnung ``gegen_auftrag`` bietet nur Fremdleistungen zum Preis
-    einer Auftragsposition an; die übrigen stehen gruppiert im Hinweis.
-    Zugeordnet wird in der Liste der Fremdleistungen (Filter Zuordnung)."""
+    einer Auftragsposition an; die übrigen stehen gruppiert im Hinweis,
+    mit Link auf die offenen Fremdleistungen des Projekts. Zugeordnet wird
+    dort (Filter Zuordnung, Sammelaktionen)."""
     beleg = self._beleg_oder_none(object_id)
     if beleg is None:
         return self._zurueck_zum_beleg(request, object_id)
@@ -64,6 +66,9 @@ def detail_leistungen(self, request, object_id):
             beleg.projekt, nur_auftragspreis=nur_auftragspreis),
         'ausschluesse': (nicht_uebernehmbare_fremdleistungen(beleg.projekt)
                          if nur_auftragspreis else []),
+        'ausschluss_liste': (
+            f"{reverse('admin:erfassung_fremdleistung_changelist')}"
+            f'?projekt__id__exact={beleg.projekt_id}&zustand=offen'),
         'zurueck': adresse_im_admin(beleg),
         # Mit Cache-Buster.
         'skript': mit_stand('erfassung/js/leistungsauswahl.js'),
