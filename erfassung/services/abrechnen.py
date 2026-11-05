@@ -726,6 +726,7 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
         abschlaege_absetzen,
         beleg_anlegen,
         titel_ergaenzen,
+        zuschlaege_ergaenzen,
     )
 
     if beleg is None and rechnungsart not in NEU_ANLEGBAR:
@@ -831,6 +832,7 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
         ).update(abgerechnet_in=angelegt)
 
     titel_ergaenzen(beleg)
+    zuschlaege_ergaenzen(beleg)
     if neu_angelegt and beleg.rechnungsart == Rechnungsart.SCHLUSS:
         abschlaege_absetzen(beleg_id=beleg.pk)
 

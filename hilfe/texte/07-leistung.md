@@ -141,6 +141,19 @@ und es kommt kein zweiter dazu. Texte aus dem Auftrag, etwa
 Vorbemerkungen, werden nicht übernommen; fügen Sie sie bei Bedarf von Hand
 ein.
 
+**Nebenkosten und andere Zuschläge.** Steht im Auftrag ein Zuschlag,
+etwa „Nebenkosten 3 %“, kommt er mit auf die Rechnung, sobald eine
+Position übernommen wird, auf die er sich bezieht: ein Zuschlag ohne
+„Zuschlag auf“ bei jeder Position des Auftrags, einer auf 2.20 nur mit
+2.20 oder deren Unterpositionen. Sein Betrag rechnet sich aus den
+Positionen der Rechnung, nicht aus der Auftragssumme. Steht auf der
+Rechnung schon ein Zuschlag mit derselben Bezeichnung, kommt kein zweiter
+dazu; der vorhandene wird neu berechnet. Optionale Zuschläge, etwa
+„Samstag 50 %“, kommen nicht von selbst; die Rechnung zeigt sie als
+Hinweis. Stehen die Nebenkosten im Auftrag als gewöhnliche Position
+(„Nebenkosten pauschal“), entscheiden Sie selbst, ob und wann Sie sie
+übernehmen.
+
 **Mehrfach übernehmen.** Übernehmen Sie zu einer Auftragsposition, die auf
 der Rechnung schon steht, ein zweites Mal, wächst die vorhandene Position:
 Die Menge wird addiert, der Leistungszeitraum erweitert. Es entsteht keine
