@@ -49,7 +49,8 @@ class Firma(models.Model):
         'Absenderzeile', max_length=120, default='',
         help_text='Steht klein über der Empfängeranschrift, vollständig mit '
                   'Name, Straße, PLZ und Ort, etwa „Muster GmbH · '
-                  'Musterweg 1 · 84028 Landshut“. Höchstens eine Zeile.',
+                  'Musterweg 1 · 84028 Landshut“. Eine Zeile von 85 mm, '
+                  'etwa 75 Zeichen; der Rest wird abgeschnitten.',
     )
 
     telefon = models.CharField('Telefon', max_length=50, blank=True, default='')

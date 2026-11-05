@@ -130,20 +130,15 @@ table.positionen td.langtext {
 
 /* ---------------------------------------------------------------- Kopf */
 
-/* Logo links oben, wie auf dem Briefpapier:
- *
- *   - 5 mm in den linken Rand hineingerückt (20 mm ab Blattkante statt
- *     25 mm am Satzspiegel); deshalb margin-left: -5mm.
- *   - 15 mm unter der Blattkante beginnend, mit Luft zum Anschriftfeld
- *     bei 45 mm; deshalb padding-top: 15mm zusammen mit
- *     "vertical-align: top" am @top-left-Randbereich.
- *
- * Rechts oben steht der Infoblock mit Nummer und Datum. */
+/* Logo rechts oben, bündig mit dem rechten Rand des Satzspiegels und damit
+ * mit dem Infoblock darunter. Beginnt 15 mm unter der Blattkante, mit
+ * Abstand zum Anschriftfeld bei 45 mm; deshalb padding-top: 15mm zusammen
+ * mit "vertical-align: top" am @top-left-Randbereich. Die Breite von
+ * 165 mm ist der volle Satzspiegel, damit text-align: right greift. */
 #briefkopf {
     position: running(briefkopf);
     width: 165mm;
-    text-align: left;
-    /* margin-left: -5mm; */
+    text-align: right;
     padding-top: 15mm;
 }
 
@@ -196,10 +191,11 @@ table.positionen td.langtext {
     border-bottom: 0.2mm solid #999;
     padding-bottom: 0.5mm;
     margin-bottom: 2mm;
-    /* Rücksendeangabe in genau einer Zeile. */
+    /* Genau eine Zeile in der Breite des Anschriftfelds (85 mm), damit sie
+     * im Fenster eines DL-Umschlags (DIN 680, 90 mm) vollständig sichtbar
+     * ist. Längerer Text wird abgeschnitten. */
     white-space: nowrap;
     overflow: hidden;
-    width: 60mm;          /* nur die Linie wird kürzer */
 }
 
 #anschriftfeld .anschrift {
@@ -529,11 +525,11 @@ table.summen tr.gesamt td {
     }
 
     /* Ohne running() stünden beide vor dem Anschriftfeld; hier wie im Druck
-     * 15 mm von oben, 20 mm von links. */
+     * 15 mm von oben, rechtsbündig am Satzspiegel 20 mm von rechts. */
     #briefkopf {
         position: absolute;
         top: 15mm;
-        left: 20mm;
+        right: 20mm;
         width: auto;
         margin-left: 0;
         padding-top: 0;
