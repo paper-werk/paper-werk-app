@@ -163,6 +163,17 @@
         {% endfor %}
       </select>
 
+      {% if vorschau.zum_einkaufspreis %}
+        {% comment %} Rechnungsart.gegen_auftrag; das Ziel steht erst nach
+           dem Absenden fest, deshalb ein Hinweis statt einer zweiten
+           Vorschau. {% endcomment %}
+        <p class="mt-2 text-font-subtle-light text-xs dark:text-font-subtle-dark" data-zum-einkaufspreis>
+          {{ vorschau.zum_einkaufspreis }} Fremdleistung{{ vorschau.zum_einkaufspreis|pluralize:"en" }}
+          ohne Auftragsposition mit passender Einheit: Eine Abschlags- oder
+          Schlussrechnung nimmt sie nicht auf.
+        </p>
+      {% endif %}
+
       {% if not entwuerfe %}
         <p class="mt-2 text-font-subtle-light text-xs dark:text-font-subtle-dark">
           Für dieses Projekt und diesen Kunden gibt es zurzeit

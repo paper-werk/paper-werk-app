@@ -36,6 +36,8 @@
     </strong>
   </p>
 
+  {% include "admin/erfassung/_ausschluesse.html" %}
+
   {% if not gruppen and not fremdgruppen %}
     {% comment %} Bei leerer Liste ein Hinweis. {% endcomment %}
     {% component "unfold/components/card.html" with title="Nichts offen" %}

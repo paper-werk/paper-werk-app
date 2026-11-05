@@ -13,7 +13,9 @@ Importiert wird über ``erfassung.services``.
 
 from ..models import Erfassungszeile
 from .abrechnen import (
+    GRUND_EINHEIT_ABWEICHEND,
     GRUND_NICHT_ABRECHENBAR,
+    GRUND_OHNE_AUFTRAGSPOSITION,
     GRUND_OHNE_UMFANG,
     GRUND_OHNE_WERT,
     GRUND_SCHON_ABGERECHNET,
@@ -21,6 +23,7 @@ from .abrechnen import (
     VIERTELSTUNDE,
     Abrechnungsposition,
     Auftragsgruppe,
+    Ausschluss,
     Fremdleistungsgruppe,
     Fremdposition,
     Grundlagengruppe,
@@ -28,7 +31,10 @@ from .abrechnen import (
     Uebernahmevorschau,
     abrechnungsvorschau,
     aufgerundete_stunden,
+    grund_ohne_auftragspreis,
     in_rechnung_uebernehmen,
+    nicht_uebernehmbare_fremdleistungen,
+    nur_zum_auftragspreis,
     offene_fremdleistungen,
     offene_leistungen,
 )
@@ -96,9 +102,11 @@ from .zuordnung import (
 )
 
 __all__ = [
-    'GRUND_NICHT_ABRECHENBAR', 'GRUND_OHNE_UMFANG', 'GRUND_OHNE_WERT',
+    'GRUND_EINHEIT_ABWEICHEND', 'GRUND_NICHT_ABRECHENBAR',
+    'GRUND_OHNE_AUFTRAGSPOSITION', 'GRUND_OHNE_UMFANG', 'GRUND_OHNE_WERT',
     'GRUND_SCHON_ABGERECHNET', 'NOCH_NICHT_ABGERECHNET', 'VIERTELSTUNDE',
-    'Abrechnungsposition', 'Altersklasse', 'Auftragsgruppe', 'Aufwandszeile',
+    'Abrechnungsposition', 'Altersklasse', 'Auftragsgruppe', 'Ausschluss',
+    'Aufwandszeile',
     'Auslastung', 'ERechnungBefund', 'ErfassungError', 'Erfassungszeile', 'Fremdleistungsgruppe',
     'Fremdposition', 'Grundlagengruppe', 'LeistungNichtKontierbar',
     'LieferantFehlt', 'MehrereProjekte', 'Mengensumme', 'Monatsstunden',
@@ -111,7 +119,9 @@ __all__ = [
     'aufwand_je_person', 'auslastung_je_person', 'eingangsrechnung_aus_archiv',
     'eingangsrechnung_aus_archiv_erechnung', 'eingangsrechnung_aus_xml',
     'erechnung_befund', 'fremdkosten_je_projekt', 'projekt_aus_referenz',
-    'in_rechnung_uebernehmen', 'offene_fremdleistung_gesamt',
+    'grund_ohne_auftragspreis', 'in_rechnung_uebernehmen',
+    'nicht_uebernehmbare_fremdleistungen', 'nur_zum_auftragspreis',
+    'offene_fremdleistung_gesamt',
     'offene_fremdleistung_je_projekt', 'offene_fremdleistungen',
     'offene_leistung_gesamt', 'offene_leistung_je_projekt',
     'offene_leistung_nach_alter', 'offene_leistungen',

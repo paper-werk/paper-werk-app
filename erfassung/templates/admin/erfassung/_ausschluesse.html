@@ -1,0 +1,26 @@
+{% load unfold %}
+{% comment %} Offene Fremdleistungen, die eine Abschlags-, Teilschluss- oder
+   Schlussrechnung nicht aufnimmt (``nicht_uebernehmbare_fremdleistungen``),
+   nach Grund gruppiert. {% endcomment %}
+{% if ausschluesse %}
+  <div class="mb-6" data-ausschluesse>
+    {% component "unfold/components/card.html" with title="Fremdleistungen, die hier nicht übernommen werden" %}
+      <p class="mb-3 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+        {{ beleg.rechnungsbezeichnung|default:"Diese Rechnung" }} rechnet gegen den Auftrag ab und
+        nimmt Fremdleistungen nur zum Preis einer Auftragsposition mit passender Einheit auf.
+        Bitte in der
+        <a href="{{ ausschluss_liste }}" class="text-primary-600 dark:text-primary-500">Liste der Fremdleistungen</a>
+        zuordnen.
+      </p>
+      {% regroup ausschluesse by grund as nach_grund %}
+      {% for gruppe in nach_grund %}
+        <p class="font-medium mt-2 text-sm">{{ gruppe.grouper|capfirst }}:</p>
+        <ul class="ml-4 text-font-subtle-light text-sm dark:text-font-subtle-dark">
+          {% for a in gruppe.list %}
+            <li>{{ a.anzahl }} &times; {{ a.bezeichnung }}{% if a.detail %} ({{ a.detail }}){% endif %}</li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+    {% endcomponent %}
+  </div>
+{% endif %}

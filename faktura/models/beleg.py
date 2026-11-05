@@ -138,6 +138,13 @@ class Rechnungsart(models.TextChoices):
         berücksichtigt wird."""
         return (cls.NORMAL, cls.SCHLUSS, cls.TEILSCHLUSS)
 
+    @classmethod
+    def gegen_auftrag(cls) -> tuple[str, ...]:
+        """Arten, die gegen den Auftrag abrechnen: Fremdleistungen nur zum
+        Preis einer Auftragsposition, nie zum Einkaufspreis. Die
+        gewöhnliche Rechnung fehlt, weil sie auch ohne Auftrag abrechnet."""
+        return (cls.ABSCHLAG, cls.SCHLUSS, cls.TEILSCHLUSS)
+
 
 class BelegStatus(models.TextChoices):
     ENTWURF = 'entwurf', 'Entwurf'

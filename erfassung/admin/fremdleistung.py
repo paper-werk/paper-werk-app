@@ -469,6 +469,7 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
     # Datensatz führt.
     list_display_links = ['datum_anzeige', 'bezeichnung']
     list_filter = [FremdZustandFilter, 'weiterberechenbar',
+                   ('auftragsposition', admin.EmptyFieldListFilter),
                    'rechnung__lieferant', ('projekt', AutocompleteSelectFilter),
                    'rechnung__datum']
     search_fields = ['bezeichnung', 'fremdschluessel', 'projekt__nummer',
