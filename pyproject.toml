@@ -23,7 +23,7 @@ dependencies = [
     # auch. Sonst hängt der Import an einer Entscheidung, die drafthorse
     # jederzeit anders treffen darf, und das Einlesen fiele bei einem
     # Update von drafthorse aus.
-    "pypdf>=6.21.2",
+    "pypdf>=6.21.4",
     "pillow>=13.0.0",
     "drf-spectacular[sidecar]>=0.30.0",
     # Liefert die statischen Dateien im Betrieb aus und schreibt
