@@ -62,7 +62,9 @@ logging.getLogger('fontTools').setLevel(logging.ERROR)
 #       Rechenweg); Schlussrechnung je Abschlag eine Zeile
 #   v11 Abschlagsrechnung ab der zweiten kumuliert: Leistungsstand, darunter
 #       die bereits berechneten Abschläge
-VORLAGENVERSION = 'v11'
+#   v12 Logo rechtsbündig; Rücksendeangabe aus Firma.absenderzeile in
+#       voller Breite des Anschriftfelds (85 mm)
+VORLAGENVERSION = 'v12'
 
 #: Spalte "Pos.": bis vier Zeichen bestimmt die Überschrift die Breite
 #: (beleg.css). Darüber je Zeichen 1,6 mm plus 2,4 mm Padding, höchstens
