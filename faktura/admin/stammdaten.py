@@ -66,7 +66,8 @@ class FirmaAdmin(Kopfleiste, unfold_admin.ModelAdmin):
     list_display = ['name', 'ort', 'steuerangabe', 'kleinunternehmer']
     fieldsets = [
         (None, {'fields': ['name', 'zusatz', 'logo']}),
-        ('Anschrift', {'fields': ['strasse', ('plz', 'ort'), 'land']}),
+        ('Anschrift', {'fields': ['strasse', ('plz', 'ort'), 'land',
+                                  'absenderzeile']}),
         ('Kontakt', {'fields': ['telefon', 'email', 'web']}),
         ('Steuerlich', {
             'fields': ['steuernummer', 'ust_id', 'kleinunternehmer'],
