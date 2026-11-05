@@ -142,7 +142,10 @@ braucht es das Recht, Belege anzulegen.
 
 Derselbe Vorgang geht auch von der Rechnung aus: am Rechnungsentwurf
 „Weitere …“, **Erbrachte Leistungen hinzufügen**. Dort haken Sie an, was
-auf dem Projekt offen ist, eigene Leistung und Zukauf.
+auf dem Projekt offen ist, eigene Leistung und Zukauf. Zukauf ohne
+passende Auftragsposition nehmen Abschlags- und Schlussrechnung nicht
+auf, siehe
+[Fremdleistungen in Abschlag und Schlussrechnung](#fremdleistung-zuordnen).
 
 ## Nicht abgerechnet {#liegengeblieben}
 
@@ -211,12 +214,9 @@ auf das Dokument im Archiv da; das PDF liegt dort, nicht in Paper-Werk.
 Kunden. Mit Auftragsposition und passender Einheit gilt deren Preis;
 sonst steht genau der Einkaufsbetrag auf der Rechnung. Einen Aufschlag
 tragen Sie danach in der Rechnung ein. Abschlags-, Teilschluss- und
-Schlussrechnung rechnen gegen den Auftrag ab und nehmen Fremdleistungen
-nur mit Auftragsposition und passender Einheit auf. Die übrigen nennt
-„Erbrachte Leistungen hinzufügen“ in einem Hinweis; sein Link öffnet die
-offenen Fremdleistungen des Projekts. Lassen Sie die Rechnung als Entwurf
-liegen, ordnen Sie dort zu (Filter Zuordnung) und fügen Sie die
-Leistungen danach hinzu. In der Projektakte zählen sie weiter als nicht abgerechnet.
+Schlussrechnung nehmen nur Fremdleistungen mit Auftragsposition und
+passender Einheit auf, siehe
+[Fremdleistungen in Abschlag und Schlussrechnung](#fremdleistung-zuordnen).
 
 Eine weiterberechnete Position lässt sich nicht mehr ändern; die Spalte
 „Abgerechnet“ nennt die Rechnung.
@@ -251,3 +251,57 @@ Auftragsposition zu:
 Beide ändern nur Fremdleistungen, die noch auf keiner Rechnung stehen,
 auch auf keinem Entwurf. Die Auftragsposition bestimmt beim Übernehmen
 den Preis, wenn die Einheit passt.
+
+### Fremdleistungen in Abschlag und Schlussrechnung {#fremdleistung-zuordnen}
+
+Abschlags-, Teilschluss- und Schlussrechnung rechnen gegen den Auftrag ab.
+Eine Fremdleistung kommt dort nur zum Preis ihrer Auftragsposition auf die
+Rechnung, nie zum Einkaufspreis. Das gelingt nur, wenn beides stimmt:
+
+- Die Fremdleistung hat eine **Auftragsposition**.
+- Die **Einheit** der Fremdleistung passt zu der der Auftragsposition.
+  Groß- und Kleinschreibung zählen nicht: „Stk“ und „stk“ passen, „Stk“
+  und „Std“ oder „pausch“ nicht.
+
+Die gewöhnliche Rechnung nimmt weiter alles auf, Fremdleistungen ohne
+passende Position zum Einkaufspreis. Sie ist für Abrechnungen ohne
+Auftrag gedacht.
+
+**Woran Sie es merken.** An einer Abschlags- oder Schlussrechnung zeigt
+„Erbrachte Leistungen hinzufügen“ nur die passenden Fremdleistungen zum
+Anhaken. Darüber steht der Kasten **Fremdleistungen, die nicht
+übernommen werden können**, getrennt nach „Ohne Auftragsposition“ und
+„Einheit passt nicht zur Auftragsposition“, gleiche Leistungen
+zusammengefasst, etwa „3 × Aufbereitung Asbest (Stk, Pos. 50 hat Std)“.
+Über die Aktion „In Rechnung übernehmen“ in der Liste nennt die Vorschau
+die Zahl dieser Fremdleistungen; wählen Sie dort eine Abschlags- oder
+Schlussrechnung als Ziel, werden sie übergangen und in der Meldung
+genannt.
+
+**So ordnen Sie zu:**
+
+1. Lassen Sie die Rechnung als Entwurf liegen.
+2. Klicken Sie im Kasten auf **Fremdleistungen**. Die Liste öffnet sich mit
+   den offenen Fremdleistungen des Projekts. Ohne den Kasten erreichen Sie
+   sie über **Leistung › Fremdleistungen** und die Filter Projekt und
+   Zustand „offen“.
+3. Wählen Sie rechts den Filter **Zuordnung**:
+   - **Ohne Auftragsposition**: Probieren Sie zuerst **Über
+     Fremdschlüssel zuordnen** für alle Zeilen; das setzt die Position,
+     wo der Fremdschlüssel eindeutig ist. Für den Rest markieren Sie die
+     Zeilen und wählen **Auftragsposition setzen**. Dieselbe Leistung je
+     Geschoss verteilen Sie so in mehreren Durchgängen, je Geschoss die
+     passenden Zeilen.
+   - **Einheit passt nicht**: Die Position ist gewählt, aber ihre Einheit
+     weicht ab. Meist ist die Position falsch, dann wählen Sie mit
+     „Auftragsposition setzen“ eine mit passender Einheit. Ist die Einheit
+     falsch, ändern Sie sie an der Fremdleistung.
+4. Fehlt im Auftrag eine passende Position, öffnen Sie den Auftrag wieder,
+   ergänzen die Position (mit dem Fremdschlüssel des Lieferanten, dann
+   ordnet „Über Fremdschlüssel zuordnen“ künftig von selbst zu) und
+   schreiben ihn erneut fest.
+5. Öffnen Sie die Rechnung wieder und wählen Sie **Erbrachte Leistungen
+   hinzufügen**. Die zugeordneten Fremdleistungen stehen jetzt zur Auswahl.
+
+Was nicht übernommen wird, bleibt offen und zählt in der Projektakte und
+unter „Nicht abgerechnet“ weiter mit.

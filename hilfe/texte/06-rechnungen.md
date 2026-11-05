@@ -74,6 +74,12 @@ Leistungen aus Eingangsrechnungen. Haken Sie an, was auf diese Rechnung
 soll; die Positionen werden angefügt und die Zeilen gelten danach als
 abgerechnet. Mehr dazu im Kapitel Leistung.
 
+An Abschlags-, Teilschluss- und Schlussrechnung stehen Fremdleistungen nur
+zur Auswahl, wenn sie einer Auftragsposition mit passender Einheit
+zugeordnet sind. Die übrigen nennt ein Kasten über der Auswahl; wie Sie
+sie zuordnen, steht unter
+[Fremdleistungen in Abschlag und Schlussrechnung](#fremdleistung-zuordnen).
+
 ### E-Rechnung neu ausstellen
 
 Lehnt ein Rechnungsportal eine E-Rechnung ab, etwa wegen einer falschen
