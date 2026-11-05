@@ -141,18 +141,9 @@ und es kommt kein zweiter dazu. Texte aus dem Auftrag, etwa
 Vorbemerkungen, werden nicht übernommen; fügen Sie sie bei Bedarf von Hand
 ein.
 
-**Nebenkosten und andere Zuschläge.** Steht im Auftrag ein Zuschlag,
-etwa „Nebenkosten 3 %“, kommt er mit auf die Rechnung, sobald eine
-Position übernommen wird, auf die er sich bezieht: ein Zuschlag ohne
-„Zuschlag auf“ bei jeder Position des Auftrags, einer auf 2.20 nur mit
-2.20 oder deren Unterpositionen. Sein Betrag rechnet sich aus den
-Positionen der Rechnung, nicht aus der Auftragssumme. Steht auf der
-Rechnung schon ein Zuschlag mit derselben Bezeichnung, kommt kein zweiter
-dazu; der vorhandene wird neu berechnet. Optionale Zuschläge, etwa
-„Samstag 50 %“, kommen nicht von selbst; die Rechnung zeigt sie als
-Hinweis. Stehen die Nebenkosten im Auftrag als gewöhnliche Position
-(„Nebenkosten pauschal“), entscheiden Sie selbst, ob und wann Sie sie
-übernehmen.
+**Nebenkosten und andere Zuschläge.** Zuschläge des Auftrags, etwa
+„Nebenkosten 3 %“, kommen mit auf die Rechnung; die Einzelheiten stehen
+unter [Zuschläge beim Übernehmen](#zuschlag-uebernehmen).
 
 **Mehrfach übernehmen.** Übernehmen Sie zu einer Auftragsposition, die auf
 der Rechnung schon steht, ein zweites Mal, wächst die vorhandene Position:
@@ -179,6 +170,79 @@ auf dem Projekt offen ist, eigene Leistung und Zukauf. Zukauf ohne
 passende Auftragsposition nehmen Abschlags- und Schlussrechnung nicht
 auf, siehe
 [Fremdleistungen in Abschlag und Schlussrechnung](#fremdleistung-zuordnen).
+
+### Zuschläge beim Übernehmen {#zuschlag-uebernehmen}
+
+Steht im Auftrag ein Zuschlag, etwa „Nebenkosten 3 %“ oder „Erschwernis
+10 % auf 2.20“, legt Paper-Werk ihn beim Übernehmen auf der Rechnung an.
+Das gilt für jede Rechnungsart: gewöhnliche Rechnung, Abschlags-,
+Teilschluss- und Schlussrechnung.
+
+**Wann ein Zuschlag mitkommt.** Alle vier Bedingungen müssen erfüllt sein:
+
+1. Er steht in dem Auftrag (oder Nachtrag), zu dem eine übernommene
+   Position gehört. Leistung ohne Auftragsposition, etwa nur aus dem
+   Katalog, bringt keinen Zuschlag mit.
+2. Er ist nicht optional. Optionale Zuschläge, etwa „Samstag 50 %“,
+   brauchen Ihre Entscheidung; die Rechnung zeigt sie als Hinweis,
+   und Sie fügen sie bei Bedarf von Hand ein.
+3. Er bezieht sich auf eine übernommene Position. Ist „Zuschlag auf“
+   leer, gilt er für alle Positionen, kommt also mit jeder Position des
+   Auftrags. Steht dort eine Nummer, etwa 2.20 oder der Titel 2, kommt er
+   nur mit, wenn diese Position oder eine Position unter diesem Titel
+   übernommen wird.
+4. Die Rechnung hat noch keinen Zuschlag mit derselben Bezeichnung.
+   Groß- und Kleinschreibung zählen dabei nicht.
+
+**Betrag.** Der Betrag rechnet sich immer aus den Positionen der
+Rechnung, nicht aus der Auftragssumme. Im Auftrag stehen 2.10 Probenahme
+zu 95,00 €/Std, 2.20 Bodenprobe zu 145,00 €/Stk, „Erschwernis 10 % auf
+2.20“ und „Nebenkosten 3 %“. Übernommen werden 2 Std und 3 Stk:
+
+| Pos. | Bezeichnung | Betrag |
+|---|---|---|
+| 2.10 | Probenahme, 2 Std | 190,00 € |
+| 2.20 | Bodenprobe, 3 Stk | 435,00 € |
+| 2.90 | Erschwernis 10 % auf 435,00 | 43,50 € |
+| 90 | Nebenkosten 3 % auf 625,00 | 18,75 € |
+
+Ein Zuschlag rechnet nie auf einen anderen Zuschlag: Die Nebenkosten
+nehmen die Erschwernis nicht mit. Ändern Sie danach Mengen oder Preise im
+Entwurf, rechnet Paper-Werk die Zuschläge neu.
+
+**Zweimal übernehmen.** Übernehmen Sie später weitere Leistung in
+dieselbe Rechnung, kommt kein zweiter Zuschlag dazu. Der vorhandene wird
+auf alle Positionen der Rechnung neu berechnet. Das gilt auch für einen
+Zuschlag, den Sie selbst mit derselben Bezeichnung angelegt haben: Er
+bleibt mit Ihrem Satz und Ihrer Nummer. Heißt Ihr Zuschlag anders, etwa
+„Nebenkosten pauschal“ statt „Nebenkosten“, kommt der aus dem Auftrag
+zusätzlich; löschen Sie dann einen der beiden. Haben Sie einen
+übernommenen Zuschlag auf der Rechnung gelöscht, legt die nächste
+Übernahme in diese Rechnung ihn wieder an.
+
+**Positionsnummer.** Der Zuschlag behält die Nummer aus dem Auftrag, im
+Beispiel 2.90 und 90. Ist diese Nummer auf der Rechnung schon besetzt,
+etwa durch eine eigene Position 90 „Fahrtkosten“ oder eine Position
+eines Nachtrags mit derselben Nummer, bekommt er die nächste freie
+Nummer nach der höchsten auf der Rechnung. Ist 90 die höchste, wird es
+100. Ist die höchste eine Unterposition, etwa 2.10, wird es 2.20; dann
+steht der Zuschlag unter Titel 2 und zählt in dessen Zwischensumme, weil
+die Nummer Reihenfolge und Titel bestimmt. In beiden Fällen stimmt seine
+Nummer nicht mehr mit dem Auftrag überein. Prüfen Sie in diesem Fall die
+Nummer und ändern Sie sie von Hand, etwa auf 91. Der Betrag ändert sich
+dadurch nicht, denn worauf der Zuschlag rechnet, legt allein „Zuschlag
+auf“ fest.
+
+**Schlussrechnung.** Die Schlussrechnung nimmt jeden Zuschlag einmal,
+berechnet auf die volle Leistung, und nicht die Summe der Zuschläge aus
+den Abschlägen. Er kommt aus den Abschlägen und, falls er dort fehlt,
+etwa bei älteren Abschlägen, aus dem Auftrag. Seine Nummer folgt
+derselben Regel wie oben.
+
+**Nebenkosten als gewöhnliche Position.** Stehen die Nebenkosten im
+Auftrag nicht als Zuschlag, sondern als Position, etwa „Nebenkosten
+pauschal, 1 psch“, kommen sie nicht von selbst. Ob und wann Sie sie
+abrechnen, entscheiden Sie; fügen Sie die Position dann von Hand ein.
 
 ## Nicht abgerechnet {#liegengeblieben}
 
