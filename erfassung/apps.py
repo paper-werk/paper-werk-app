@@ -79,9 +79,17 @@ class ZeitenConfig(AppConfig):
                     'erfassung.view_eingangsrechnung'),
                 'rang': 30,
             },
-            # Kein Eintrag "Fremdleistungen", weil in der Eingangsrechnung
-            # zugeordnet wird. Die Liste bleibt registriert, weil die
-            # Projektakte gefiltert auf sie verlinkt.
+            # Zugeordnet wird in der Liste per Sammelaktion; Abschlags- und
+            # Schlussrechnung übernehmen nur zugeordnete Fremdleistungen.
+            {
+                'title': 'Fremdleistungen',
+                'icon': 'inventory_2',
+                'link': reverse_lazy(
+                    'admin:erfassung_fremdleistung_changelist'),
+                'permission': lambda r: r.user.has_perm(
+                    'erfassung.view_fremdleistung'),
+                'rang': 32,
+            },
         ])
 
         # Zwischen Textbausteine und Eigene Firma (faktura/apps.py).

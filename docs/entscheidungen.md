@@ -139,9 +139,12 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   vereinbarter Preis ist. Die gewöhnliche Rechnung übernimmt weiter zum
   Einkaufspreis, für Abrechnungen ohne Auftrag. Geprüft wird in
   `in_rechnung_uebernehmen`, damit Auswahl an der Rechnung und Listenaktion
-  dieselbe Regel haben. Verworfen: die Fremdleistung beim Übernehmen
-  automatisch einer Position zuzuordnen, weil die Wahl der Position den
-  Verkaufspreis bestimmt.
+  dieselbe Regel haben. Die Auswahl nennt die übrigen; zugeordnet wird in
+  der Liste der Fremdleistungen (Seitenleiste „Leistung“, Filter
+  „Zuordnung“) mit den vorhandenen Sammelaktionen. Verworfen: die
+  Fremdleistung beim Übernehmen automatisch einer Position zuzuordnen, weil
+  die Wahl der Position den Verkaufspreis bestimmt; eine Zuordnung direkt in
+  der Auswahl, weil sie die Sammelaktionen der Liste nachbauen würde.
 
 ## Rechnungskorrektur und Nachlass
 

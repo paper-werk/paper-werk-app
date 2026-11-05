@@ -9,7 +9,8 @@ Eingangsrechnungen; beide werden in dieselbe Projektrechnung übernommen.
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
-from django.db.models import Q
+from django.db.models import F, Q
+from django.db.models.functions import Lower, Trim
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -451,6 +452,38 @@ class FremdZustandFilter(admin.SimpleListFilter):
         return queryset
 
 
+class ZuordnungFilter(admin.SimpleListFilter):
+    """Zuordnung zur Auftragsposition, mit den Gründen, aus denen eine
+    Abschlags- oder Schlussrechnung eine Fremdleistung übergeht
+    (``services.grund_ohne_auftragspreis``). Einheiten werden wie in
+    ``_einheit_passt`` ohne Groß- und Kleinschreibung und Leerraum
+    verglichen."""
+
+    title = 'Zuordnung'
+    parameter_name = 'zuordnung'
+
+    OHNE, EINHEIT, ZUGEORDNET = 'ohne', 'einheit', 'zugeordnet'
+
+    def lookups(self, request, model_admin):
+        return [(self.OHNE, 'Ohne Auftragsposition'),
+                (self.EINHEIT, 'Einheit passt nicht'),
+                (self.ZUGEORDNET, 'Zugeordnet')]
+
+    def queryset(self, request, queryset):
+        wert = self.value()
+        if wert == self.OHNE:
+            return queryset.filter(auftragsposition__isnull=True)
+        if wert not in (self.EINHEIT, self.ZUGEORDNET):
+            return queryset
+        mit_position = queryset.filter(auftragsposition__isnull=False).annotate(
+            _einheit=Lower(Trim('einheit')),
+            _auftragseinheit=Lower(Trim('auftragsposition__einheit')))
+        gleich = Q(_einheit=F('_auftragseinheit'))
+        if wert == self.EINHEIT:
+            return mit_position.exclude(gleich)
+        return mit_position.filter(gleich)
+
+
 @admin.register(Fremdleistung)
 class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
                          GeschichteZumLesen,
@@ -462,14 +495,14 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
     #: Volle Breite, siehe ``EingangsrechnungAdmin``.
     list_fullwidth = True
 
-    list_display = ['datum_anzeige', 'projekt', 'auftragsposition',
-                    'bezeichnung', 'menge', 'einkauf_anzeige',
-                    'zustand_anzeige_spalte', 'rechnung_spalte']
+    list_display = ['datum_anzeige', 'projekt', 'eingangsrechnung_spalte',
+                    'fremdschluessel', 'auftragsposition', 'bezeichnung',
+                    'menge', 'einkauf_anzeige', 'zustand_anzeige_spalte',
+                    'rechnung_spalte']
     # Auch das Datum ist verlinkt, weil im Admin die erste Spalte auf den
     # Datensatz führt.
     list_display_links = ['datum_anzeige', 'bezeichnung']
-    list_filter = [FremdZustandFilter, 'weiterberechenbar',
-                   ('auftragsposition', admin.EmptyFieldListFilter),
+    list_filter = [FremdZustandFilter, ZuordnungFilter, 'weiterberechenbar',
                    'rechnung__lieferant', ('projekt', AutocompleteSelectFilter),
                    'rechnung__datum']
     search_fields = ['bezeichnung', 'fremdschluessel', 'projekt__nummer',
@@ -522,6 +555,16 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
     @admin.display(description='Datum', ordering='rechnung__datum')
     def datum_anzeige(self, obj):
         return obj.rechnung.datum
+
+    @admin.display(description='Eingangsrechnung', ordering='rechnung__nummer')
+    def eingangsrechnung_spalte(self, obj):
+        """Nummer der Eingangsrechnung als Link auf sie, weil dort die
+        Positionen bearbeitet werden."""
+        url = reverse('admin:erfassung_eingangsrechnung_change',
+                      args=[obj.rechnung_id])
+        return format_html(
+            '<a href="{}" class="text-primary-600 dark:text-primary-500">'
+            '{}</a>', url, obj.rechnung.nummer)
 
     # Ohne Verkaufspreis und Spanne, weil der Verkaufspreis erst an der
     # Rechnungsposition entsteht, die oft mehrere Zeilen bündelt.
