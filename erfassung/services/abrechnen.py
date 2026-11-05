@@ -14,6 +14,7 @@ Auf die Viertelstunde gerundet wird die Summe je Leistung, nie die einzelne
 Zeile.
 """
 
+import os
 from dataclasses import dataclass, field
 from decimal import Decimal
 
@@ -128,6 +129,9 @@ class Fremdposition:
     zeilen: list
     auftragsposition: Belegposition | None = None
     art: str = ''
+    #: Preis aus der Auftragsposition; sonst der Einkaufspreis, den eine
+    #: Rechnung ``gegen_auftrag`` nicht aufnimmt.
+    zum_auftragspreis: bool = False
 
     @property
     def summe(self) -> Decimal:
@@ -326,6 +330,13 @@ class Uebernahmevorschau:
     def zeilenzahl(self) -> int:
         return sum(len(p.zeilen) for p in self.alle_positionen)
 
+    @property
+    def zum_einkaufspreis(self) -> int:
+        """Fremdleistungen ohne Preis einer Auftragsposition; eine
+        Rechnung ``gegen_auftrag`` übergeht sie."""
+        return sum(len(p.zeilen) for p in self.fremdpositionen
+                   if not p.zum_auftragspreis)
+
 
 #: Gründe, aus denen eine Zeile nicht übernommen wird; sie werden je Zeile
 #: angezeigt.
@@ -333,6 +344,27 @@ GRUND_NICHT_ABRECHENBAR = 'nicht abrechenbar'
 GRUND_SCHON_ABGERECHNET = 'bereits abgerechnet'
 GRUND_OHNE_UMFANG = 'ohne Zeit und ohne Menge'
 GRUND_OHNE_WERT = 'ohne Menge oder ohne Betrag'
+#: Nur an Rechnungsarten ``Rechnungsart.gegen_auftrag``: Die Fremdleistung
+#: käme zum Einkaufspreis auf die Rechnung.
+GRUND_OHNE_AUFTRAGSPOSITION = 'ohne Auftragsposition'
+GRUND_EINHEIT_ABWEICHEND = 'Einheit passt nicht zur Auftragsposition'
+
+
+def grund_ohne_auftragspreis(fremdleistung) -> str | None:
+    """Warum die Fremdleistung nicht zum Preis ihrer Auftragsposition
+    abgerechnet würde, oder ``None``. Dieselbe Bedingung wie der erste Weg
+    in ``_fremdpositionen``."""
+    if fremdleistung.auftragsposition_id is None:
+        return GRUND_OHNE_AUFTRAGSPOSITION
+    if not _einheit_passt(fremdleistung.auftragsposition, fremdleistung):
+        return GRUND_EINHEIT_ABWEICHEND
+    return None
+
+
+def nur_zum_auftragspreis(beleg) -> bool:
+    """Nimmt die Rechnung Fremdleistungen nur zum Preis einer
+    Auftragsposition auf (``Rechnungsart.gegen_auftrag``)?"""
+    return beleg.rechnungsart in Rechnungsart.gegen_auftrag()
 
 
 @dataclass(frozen=True)
@@ -345,20 +377,41 @@ class Fremdleistungsgruppe:
     positionen: list
 
 
-def offene_fremdleistungen(projekt) -> list[Fremdleistungsgruppe]:
-    """Noch nicht weiterberechnete Fremdleistungen des Vorhabens.
+@dataclass(frozen=True)
+class Ausschluss:
+    """Gleichartige offene Fremdleistungen, die eine Rechnung
+    ``gegen_auftrag`` nicht aufnimmt; eine Zeile im Hinweis der Auswahl."""
 
-    Gegenstück zu ``offene_leistungen``, nach Eingangsrechnung gruppiert,
-    weil Lieferant und Nummer sie identifizieren. Nicht abrechenbare
-    Positionen entfallen.
-    """
-    positionen = (
+    grund: str
+    bezeichnung: str
+    anzahl: int
+    #: Bei abweichender Einheit: beide Einheiten und die Position.
+    detail: str = ''
+
+
+def _offene_fremdleistungen(projekt):
+    return (
         Fremdleistung.objects
         .filter(projekt=projekt, weiterberechenbar=True,
                 abgerechnet_in__isnull=True)
         .select_related('rechnung__lieferant', 'auftragsposition__beleg')
         .order_by('rechnung__datum', 'rechnung__nummer', 'pk')
     )
+
+
+def offene_fremdleistungen(projekt, *, nur_auftragspreis: bool = False
+                           ) -> list[Fremdleistungsgruppe]:
+    """Noch nicht weiterberechnete Fremdleistungen des Vorhabens.
+
+    Gegenstück zu ``offene_leistungen``, nach Eingangsrechnung gruppiert,
+    weil Lieferant und Nummer sie identifizieren. Nicht abrechenbare
+    Positionen entfallen, mit ``nur_auftragspreis`` auch die ohne Preis
+    einer Auftragsposition (``nicht_uebernehmbare_fremdleistungen``).
+    """
+    positionen = _offene_fremdleistungen(projekt)
+    if nur_auftragspreis:
+        positionen = [p for p in positionen
+                      if grund_ohne_auftragspreis(p) is None]
 
     nach_rechnung: dict = {}
     for position in positionen:
@@ -378,6 +431,47 @@ def offene_fremdleistungen(projekt) -> list[Fremdleistungsgruppe]:
     return ergebnis
 
 
+def nicht_uebernehmbare_fremdleistungen(projekt) -> list[Ausschluss]:
+    """Offene Fremdleistungen, die eine Rechnung ``gegen_auftrag`` nicht
+    aufnimmt, gruppiert nach Grund und Leistung.
+
+    Gruppiert wird nach Fremdschlüssel, ohne ihn nach Bezeichnung. Als
+    Bezeichnung dient der gemeinsame Anfang bis zum letzten Komma, weil
+    importierte Bezeichnungen je Zeile Probe oder Analyse anhängen
+    („Asbest, Probe 1, Analyse 316014“).
+    """
+    gruppen: dict = {}
+    for position in _offene_fremdleistungen(projekt):
+        grund = grund_ohne_auftragspreis(position)
+        if grund is None:
+            continue
+        detail = ''
+        if grund == GRUND_EINHEIT_ABWEICHEND:
+            auftrag = position.auftragsposition
+            detail = (f'{position.einheit}, Pos. {auftrag.position} hat '
+                      f'{auftrag.einheit}')
+        schluessel = (grund, position.fremdschluessel or position.bezeichnung,
+                      detail)
+        gruppen.setdefault(schluessel, []).append(position.bezeichnung)
+
+    ergebnis = [
+        Ausschluss(grund=grund, bezeichnung=_gemeinsamer_anfang(texte),
+                   anzahl=len(texte), detail=detail)
+        for (grund, _, detail), texte in gruppen.items()
+    ]
+    ergebnis.sort(key=lambda a: (a.grund, a.bezeichnung))
+    return ergebnis
+
+
+def _gemeinsamer_anfang(texte: list[str]) -> str:
+    if len(set(texte)) == 1:
+        return texte[0]
+    anfang = os.path.commonprefix(texte)
+    if ', ' in anfang:
+        anfang = anfang[:anfang.rindex(', ')]
+    return anfang.strip() or texte[0]
+
+
 def _liegt_auf_einem_entwurf(posten) -> bool:
     """``NOCH_NICHT_ABGERECHNET`` für ein geladenes Objekt in Python."""
     beleg = getattr(posten.abgerechnet_in, 'beleg', None)
@@ -385,7 +479,8 @@ def _liegt_auf_einem_entwurf(posten) -> bool:
 
 
 def abrechnungsvorschau(zeilen, fremdleistungen=None, *,
-                        entwuerfe_zaehlen: bool = False) -> Uebernahmevorschau:
+                        entwuerfe_zaehlen: bool = False,
+                        nur_auftragspreis: bool = False) -> Uebernahmevorschau:
     """Fasst eine Auswahl zu Rechnungspositionen zusammen, ohne zu speichern.
 
     Gerundet wird je Leistung auf die Summe, nicht je Zeile::
@@ -402,6 +497,10 @@ def abrechnungsvorschau(zeilen, fremdleistungen=None, *,
     für das Übernehmen, damit Zeilen auf Entwürfen nicht doppelt auf eine
     Rechnung kommen; ``True`` für Auswertungen. Vorgabe ist ``False``, weil
     ein Fehler dort beim Kunden ankäme.
+
+    ``nur_auftragspreis`` für Rechnungsarten ``gegen_auftrag``:
+    Fremdleistungen ohne Preis einer Auftragsposition
+    (``grund_ohne_auftragspreis``) gelten als übergangen.
     """
     if hasattr(zeilen, 'select_related'):
         zeilen = zeilen.select_related(
@@ -433,6 +532,8 @@ def abrechnungsvorschau(zeilen, fremdleistungen=None, *,
             # Stünde mit null auf der Rechnung, während die Kosten am
             # Projekt bleiben; deshalb als übergangen gemeldet.
             uebergangen.append((position, GRUND_OHNE_WERT))
+        elif nur_auftragspreis and grund_ohne_auftragspreis(position):
+            uebergangen.append((position, grund_ohne_auftragspreis(position)))
         else:
             fremd_brauchbar.append(position)
 
@@ -514,7 +615,8 @@ def _fremdpositionen(positionen) -> list:
        Einheit, Preis und Auftragsposition: vierzig Bodenproben desselben
        Pakets werden eine Zeile mit der Menge 40. Eine gewählte
        Auftragsposition bleibt als Bezug stehen, auch wenn ihr Preis wegen
-       der Einheit nicht gilt.
+       der Einheit nicht gilt. Rechnungsarten ``gegen_auftrag`` lassen
+       diesen Weg nicht zu (``abrechnungsvorschau``).
 
     Beim zweiten Weg steht der Einkaufsbetrag auf der Rechnung. Ergibt Menge
     mal Preis ihn nicht auf den Cent (Rabatt auf der Zeile, Preis je 100 m),
@@ -525,9 +627,8 @@ def _fremdpositionen(positionen) -> list:
 
     gruppen: dict = {}
     for position in positionen:
-        auftrag = position.auftragsposition
-        if auftrag is not None and _einheit_passt(auftrag, position):
-            schluessel = ('auftrag', auftrag.pk)
+        if grund_ohne_auftragspreis(position) is None:
+            schluessel = ('auftrag', position.auftragsposition_id)
         else:
             schluessel = ('geliefert', position.bezeichnung, position.einheit,
                           position.einkaufspreis, position.auftragsposition_id)
@@ -549,6 +650,7 @@ def _fremdpositionen(positionen) -> list:
                 zeilen=gruppe,
                 auftragsposition=auftrag,
                 art=auftrag.art,
+                zum_auftragspreis=True,
             ))
             continue
 
@@ -631,8 +733,18 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
             if rechnungsart in Rechnungsart.values
             else f'Unbekannte Rechnungsart "{rechnungsart}".')
 
-    vorschau = abrechnungsvorschau(zeilen, fremdleistungen)
+    art = beleg.rechnungsart if beleg is not None else rechnungsart
+    gegen_auftrag = art in Rechnungsart.gegen_auftrag()
+    vorschau = abrechnungsvorschau(zeilen, fremdleistungen,
+                                   nur_auftragspreis=gegen_auftrag)
     if not vorschau.alle_positionen:
+        if gegen_auftrag and any(
+                grund in (GRUND_OHNE_AUFTRAGSPOSITION, GRUND_EINHEIT_ABWEICHEND)
+                for _, grund in vorschau.uebergangen):
+            raise NichtsAbzurechnen(
+                f'Eine {Rechnungsart(art).label} nimmt Fremdleistungen nur '
+                f'zum Preis einer Auftragsposition mit passender Einheit '
+                f'auf. Bitte in der Liste der Fremdleistungen zuordnen.')
         raise NichtsAbzurechnen(
             'In der Auswahl steht nichts, was abgerechnet werden könnte.'
         )

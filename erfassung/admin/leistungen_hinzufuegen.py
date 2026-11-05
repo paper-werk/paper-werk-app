@@ -14,6 +14,7 @@ Instanz von ``RechnungAdmin`` oder einer Belegart.
 
 from django.contrib import messages
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.html import format_html
 from unfold.decorators import action as unfold_action
 from unfold.enums import ActionVariant
@@ -23,8 +24,11 @@ from faktura.admin.gemeinsam import adresse_im_admin
 
 from ..models import Erfassungszeile, Fremdleistung, Zustand
 from ..services import (
+    GRUND_OHNE_AUFTRAGSPOSITION,
     ErfassungError,
     in_rechnung_uebernehmen,
+    nicht_uebernehmbare_fremdleistungen,
+    nur_zum_auftragspreis,
     offene_fremdleistungen,
     offene_leistungen,
 )
@@ -38,7 +42,11 @@ from ..services import (
     variant=ActionVariant.PRIMARY,
 )  # type: ignore
 def detail_leistungen(self, request, object_id):
-    """Zeigt die offene Leistung des Vorhabens der Rechnung zur Auswahl."""
+    """Zeigt die offene Leistung des Vorhabens der Rechnung zur Auswahl.
+
+    Eine Rechnung ``gegen_auftrag`` bietet nur Fremdleistungen zum Preis
+    einer Auftragsposition an; die übrigen stehen gruppiert im Hinweis,
+    mit Link auf die Liste der Fremdleistungen des Projekts."""
     beleg = self._beleg_oder_none(object_id)
     if beleg is None:
         return self._zurueck_zum_beleg(request, object_id)
@@ -46,6 +54,9 @@ def detail_leistungen(self, request, object_id):
     if request.method == 'POST':
         return _leistungen_uebernehmen(self, request, beleg)
 
+    nur_auftragspreis = nur_zum_auftragspreis(beleg)
+    ausschluesse = (nicht_uebernehmbare_fremdleistungen(beleg.projekt)
+                    if nur_auftragspreis else [])
     return render(request, 'admin/erfassung/leistungen.html', {
         **self.admin_site.each_context(request),
         'title': 'Erbrachte Leistungen hinzufügen',
@@ -53,11 +64,25 @@ def detail_leistungen(self, request, object_id):
         'beleg': beleg,
         'gruppen': offene_leistungen(beleg.projekt),
         # Fremdleistungen, nach Eingangsrechnung sortiert.
-        'fremdgruppen': offene_fremdleistungen(beleg.projekt),
+        'fremdgruppen': offene_fremdleistungen(
+            beleg.projekt, nur_auftragspreis=nur_auftragspreis),
+        'ausschluesse': ausschluesse,
+        'ausschluss_liste': (_fremdleistungsliste(beleg.projekt, ausschluesse)
+                             if ausschluesse else ''),
         'zurueck': adresse_im_admin(beleg),
         # Mit Cache-Buster.
         'skript': mit_stand('erfassung/js/leistungsauswahl.js'),
     })
+
+
+def _fremdleistungsliste(projekt, ausschluesse) -> str:
+    """Liste der Fremdleistungen des Projekts; nur ohne Auftragsposition,
+    wenn alle Ausschlüsse diesen Grund haben."""
+    adresse = (f"{reverse('admin:erfassung_fremdleistung_changelist')}"
+               f'?projekt__id__exact={projekt.pk}')
+    if all(a.grund == GRUND_OHNE_AUFTRAGSPOSITION for a in ausschluesse):
+        adresse += '&auftragsposition__isempty=1'
+    return adresse
 
 
 def has_leistungen_permission(self, request, object_id=None):

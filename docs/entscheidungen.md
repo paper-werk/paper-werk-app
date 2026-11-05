@@ -132,6 +132,16 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   Teilabnahme bleibt der Abschlag einfach (`faktura/services/kumuliert.py`).
   Verworfen: der kumulierte Stand als gespeicherte Positionen mit Abzügen der
   Vorgänger, weil eine Abzugszeile den Vorgänger abrechnen würde.
+- Abschlags-, Teilschluss- und Schlussrechnung nehmen Fremdleistungen nur zum
+  Preis einer Auftragsposition mit passender Einheit auf
+  (`Rechnungsart.gegen_auftrag`, `services.grund_ohne_auftragspreis`), weil
+  sie gegen den Auftrag abrechnen und der Einkaufspreis dort kein
+  vereinbarter Preis ist. Die gewöhnliche Rechnung übernimmt weiter zum
+  Einkaufspreis, für Abrechnungen ohne Auftrag. Geprüft wird in
+  `in_rechnung_uebernehmen`, damit Auswahl an der Rechnung und Listenaktion
+  dieselbe Regel haben. Verworfen: die Fremdleistung beim Übernehmen
+  automatisch einer Position zuzuordnen, weil die Wahl der Position den
+  Verkaufspreis bestimmt.
 
 ## Rechnungskorrektur und Nachlass
 

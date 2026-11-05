@@ -210,7 +210,12 @@ auf das Dokument im Archiv da; das PDF liegt dort, nicht in Paper-Werk.
 übernehmen“ oder „Erbrachte Leistungen hinzufügen“ auf die Rechnung an den
 Kunden. Mit Auftragsposition und passender Einheit gilt deren Preis;
 sonst steht genau der Einkaufsbetrag auf der Rechnung. Einen Aufschlag
-tragen Sie danach in der Rechnung ein. Eine weiterberechnete Position
+tragen Sie danach in der Rechnung ein. Abschlags-, Teilschluss- und
+Schlussrechnung rechnen gegen den Auftrag ab und nehmen Fremdleistungen
+nur mit Auftragsposition und passender Einheit auf. Die übrigen nennt
+„Erbrachte Leistungen hinzufügen“ in einem Hinweis mit Link auf die
+Liste der Fremdleistungen; dort ordnen Sie sie zu. In der Projektakte
+zählen sie weiter als nicht abgerechnet. Eine weiterberechnete Position
 lässt sich nicht mehr ändern; die Spalte „Abgerechnet“ nennt die Rechnung.
 
 ### Fremdleistungen {#fremdleistung}
@@ -220,7 +225,8 @@ erreichen Sie aus der Projektakte („Zugekaufte Leistung“); in der
 Seitenleiste steht sie nicht. Sie zeigt Datum, Projekt,
 Auftragsposition, Bezeichnung, Menge, Einkauf, Zustand und die
 Eingangsrechnung. Filter nach Zustand (offen, abgerechnet, nicht
-abrechenbar), Lieferant, Projekt und Datum. Die Aktion **In Rechnung
+abrechenbar), Auftragsposition (leer oder gesetzt), Lieferant, Projekt
+und Datum. Die Aktion **In Rechnung
 übernehmen** funktioniert wie in der Erfassung, mit Vorschau und Wahl des
 Rechnungsentwurfs. Bearbeitet werden die Positionen in ihrer
 Eingangsrechnung oder hier; alle Änderungen stehen im Verlauf.
