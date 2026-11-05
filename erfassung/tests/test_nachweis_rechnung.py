@@ -198,9 +198,19 @@ def test_nach_position_dann_nach_datum(projekt, lv, kollege, labor):
 
 
 def _schluss_aus_abschlag(projekt, zeilen, fremd):
+    """Die Analyse ohne Auftragsposition kommt von Hand auf den Abschlag,
+    wie in Abschlägen, die vor ``Rechnungsart.gegen_auftrag`` gestellt
+    wurden; die Übernahme lässt sie dort nicht mehr zu."""
     abschlag, _ = services.in_rechnung_uebernehmen(
         zeilen=zeilen, fremdleistungen=fremd,
         rechnungsart=Rechnungsart.ABSCHLAG)
+    ohne_bezug = fremd.get(bezeichnung='Ohne Bezug')
+    position = faktura_services.position_hinzufuegen(
+        beleg=abschlag, bezeichnung=ohne_bezug.bezeichnung,
+        menge=ohne_bezug.menge, einheit=ohne_bezug.einheit,
+        einzelpreis=ohne_bezug.einkaufspreis, steuersatz='19.00')
+    Fremdleistung.objects.filter(pk=ohne_bezug.pk).update(
+        abgerechnet_in=position)
     abschlag.leistungsdatum = abschlag.leistungsdatum_bis = date(2026, 10, 7)
     abschlag.save()
     abschlag = faktura_services.beleg_festschreiben(beleg_id=abschlag.pk)

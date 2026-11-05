@@ -50,6 +50,8 @@ ERWARTET = [
         ('Nicht abgerechnet', 'savings', 'liegengeblieben'),
         ('Eingangsrechnungen', 'receipt_long',
          'admin:erfassung_eingangsrechnung_changelist'),
+        ('Fremdleistungen', 'inventory_2',
+         'admin:erfassung_fremdleistung_changelist'),
     ]),
     ('Stammdaten', True, True, [
         ('Kontakte', 'groups', 'admin:faktura_kontakt_changelist'),
