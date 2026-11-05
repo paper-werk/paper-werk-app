@@ -24,7 +24,7 @@ from ..models import (
 )
 from ..positionsnummer import naechste_nummern
 from .fehler import FalscherStatus, UngueltigerBetrag
-from .zuschlaege import zuschlaege_nachrechnen
+from .zuschlaege import gehoert_zu, zuschlaege_nachrechnen
 
 
 def anschriftgeber(beleg: Beleg) -> Kontakt | None:
@@ -268,6 +268,52 @@ def titel_ergaenzen(beleg: Beleg) -> list[Belegposition]:
             menge=Decimal('0'), einzelpreis=Decimal('0'),
             steuersatz=t.steuersatz))
         vergeben.add(t.position)
+    return angelegt
+
+
+def zuschlaege_ergaenzen(beleg: Beleg) -> list[Belegposition]:
+    """Legt die Zuschläge der Aufträge an („Nebenkosten 3 %“), die sich auf
+    eine Position des Belegs mit Auftragsbezug beziehen.
+
+    Bezug wie bei ``zuschlagsbasis``: „Zuschlag auf“ leer oder Präfix der
+    Positionsnummer. Übergangen werden optionale Zuschläge, die
+    ``optionale_zuschlaege`` als Hinweis anbietet, und solche, deren
+    Bezeichnung der Beleg schon als Zuschlag hat; dessen Betrag rechnet
+    ``zuschlaege_nachrechnen`` auf die Positionen des Belegs neu. Die
+    Positionsnummer des Auftrags bleibt, sofern frei.
+    """
+    positionen = list(beleg.positionen.select_related('auftragsposition'))
+    bezogen = [p for p in positionen
+               if p.auftragsposition_id and not p.ist_abzug]
+    auftraege = {p.auftragsposition.beleg_id for p in bezogen}
+    if not auftraege:
+        return []
+
+    vergeben = {p.position for p in positionen}
+    vorhanden = {p.bezeichnung.strip().casefold() for p in positionen
+                 if p.zeilenart == Zeilenart.ZUSCHLAG}
+    zuschlaege = (Belegposition.objects
+                  .filter(beleg_id__in=auftraege, zeilenart=Zeilenart.ZUSCHLAG,
+                          optional=False)
+                  .order_by('beleg_id', 'sortierung'))
+    angelegt = []
+    for z in zuschlaege:
+        name = z.bezeichnung.strip().casefold()
+        if name in vorhanden:
+            continue
+        if not any(gehoert_zu(p.position, z.zuschlag_auf) for p in bezogen):
+            continue
+        angelegt.append(position_hinzufuegen(
+            beleg=beleg,
+            position=None if z.position in vergeben or not z.position
+            else z.position,
+            bezeichnung=z.bezeichnung, langtext=z.langtext,
+            zeilenart=Zeilenart.ZUSCHLAG, menge=Decimal('1'),
+            einheit=z.einheit, einzelpreis=Decimal('0.00'),
+            steuersatz=z.steuersatz, zuschlag_prozent=z.zuschlag_prozent,
+            zuschlag_auf=z.zuschlag_auf))
+        vergeben.add(angelegt[-1].position)
+        vorhanden.add(name)
     return angelegt
 
 
