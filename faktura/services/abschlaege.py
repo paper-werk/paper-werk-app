@@ -51,7 +51,11 @@ from ..models import (
     Rechnungsart,
     Zeilenart,
 )
-from .anlegen import position_hinzufuegen, titel_ergaenzen
+from .anlegen import (
+    position_hinzufuegen,
+    titel_ergaenzen,
+    zuschlaege_ergaenzen,
+)
 from .fehler import FalscherStatus
 from .summen import _summen, belegsummen, positionssumme
 from .zuschlaege import zuschlaege_nachrechnen
@@ -154,6 +158,7 @@ def abschlaege_absetzen(*, beleg_id: int) -> list[Belegposition]:
         ))
     _reste_abgleichen(rechnung)
     titel_ergaenzen(rechnung)
+    zuschlaege_ergaenzen(rechnung)
     zuschlaege_nachrechnen(rechnung)
     return angelegt
 
@@ -252,8 +257,12 @@ def _leistung_aus_abschlaegen(rechnung: Beleg, quellen) -> list[Belegposition]:
             leistung_bis=max(bis, default=None),
         ))
     for quelle in zuschlaege.values():
+        # Mit der Nummer aus dem Abschlag, die meist die des Auftrags ist;
+        # eine fortlaufende träfe eine Nummer des Leistungsverzeichnisses.
+        belegt = set(rechnung.positionen.values_list('position', flat=True))
         angelegt.append(position_hinzufuegen(
             beleg=rechnung, bezeichnung=quelle.bezeichnung,
+            position=None if quelle.position in belegt else quelle.position,
             langtext=quelle.langtext, menge=Decimal('1'),
             einheit=quelle.einheit, einzelpreis=Decimal('0.00'),
             steuersatz=quelle.steuersatz, zeilenart=Zeilenart.ZUSCHLAG,
