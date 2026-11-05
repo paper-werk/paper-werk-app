@@ -116,7 +116,7 @@ Wählen Sie dafür vorher die passende Sortierung, etwa „Nachweis“. Der
 Nachweis bekommt keine Nummer und wird nicht gespeichert; wer ihn morgen
 neu zieht, bekommt den Stand von morgen. An den Zeilen ändert er nichts.
 
-### In Rechnung übernehmen
+### In Rechnung übernehmen {#in-rechnung-uebernehmen}
 
 Markieren Sie die Zeilen eines Projekts und wählen Sie **In Rechnung
 übernehmen**. Eine Vorschau zeigt, welche Positionen daraus werden: eine je
@@ -131,6 +131,26 @@ Unter der Vorschau wählen Sie das Ziel:
 - **Neue Schlussrechnung anlegen (Entwurf, Abschläge werden abgesetzt)**,
 - oder **An … anhängen**: ein vorhandener Rechnungsentwurf dieses
   Projekts oder eine Sammelrechnung des Kunden ohne Projekt.
+
+**Titel und Positionsnummern.** Eine Leistung auf eine Auftragsposition
+behält deren Nummer, etwa 2.20. Steht die Position im Auftrag unter einem
+Titel, kommt der Titel mit auf die Rechnung („2 Erkundung“, bei
+Unterteilung auch „01“ und „01.02“), samt Zwischensumme. Hat die Rechnung
+schon eine Zeile mit dieser Nummer, etwa einen eigenen Titel, bleibt sie
+und es kommt kein zweiter dazu. Texte aus dem Auftrag, etwa
+Vorbemerkungen, werden nicht übernommen; fügen Sie sie bei Bedarf von Hand
+ein.
+
+**Mehrfach übernehmen.** Übernehmen Sie zu einer Auftragsposition, die auf
+der Rechnung schon steht, ein zweites Mal, wächst die vorhandene Position:
+Die Menge wird addiert, der Leistungszeitraum erweitert. Es entsteht keine
+zweite Position mit neuer Nummer. Das gilt auch, wenn eigene Stunden und
+Zukauf auf dieselbe Auftragsposition in einem Durchgang kommen. Ausnahme:
+Haben Sie an der vorhandenen Position Preis oder Einheit von Hand
+geändert, entsteht eine neue Position, damit nichts zu einem fremden
+Preis addiert wird. Zeit wird je Übernahme auf die Viertelstunde
+aufgerundet; zweimal übernommen kann das eine Viertelstunde mehr ergeben
+als in einem Durchgang.
 
 Nach der Bestätigung meldet Paper-Werk, wie viele Zeilen als wie viele
 Positionen übernommen wurden, mit Verweis auf die Rechnung. Zeilen, die
