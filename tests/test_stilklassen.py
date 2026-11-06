@@ -34,6 +34,7 @@ VORLAGEN = [
     'templates/socialaccount/login_cancelled.html',
     'templates/admin/faktura/ansprechpartner_hinzufuegen.html',
     'templates/admin/_kennzahl.html',
+    'templates/unfold/helpers/boolean.html',
     'auswertung/templates/admin/_saeulen.html',
     'auswertung/templates/admin/faktura/rechnungsakte.html',
     'hilfe/templates/hilfe/seite.html',

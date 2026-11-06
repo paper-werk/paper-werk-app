@@ -113,3 +113,22 @@ html.dark .pw-kennzahl-text.pw-rot {
         grid-auto-flow: column;
     }
 }
+
+/* --- Schalter (UnfoldBooleanSwitchWidget) --- */
+
+/* Unfold färbt den eingeschalteten Schalter fest grün (checked:bg-green-500)
+ * und den Knopf je nach Reihenfolge der Regeln rot (after:bg-red-300). Hier
+ * die Primärfarbe und ein weißer Knopf, passend zu den Haken in den Listen
+ * (templates/unfold/helpers/boolean.html). Selektor über Unfolds Klasse,
+ * damit gewöhnliche Checkboxen unberührt bleiben. */
+input[type="checkbox"].checked\:bg-green-500:checked {
+    background-color: var(--color-primary-600) !important;
+}
+
+html.dark input[type="checkbox"].checked\:bg-green-500:checked {
+    background-color: var(--color-primary-500) !important;
+}
+
+input[type="checkbox"].after\:bg-red-300::after {
+    background-color: var(--color-white, #fff) !important;
+}

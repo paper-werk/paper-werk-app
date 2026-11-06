@@ -28,7 +28,7 @@ from unfold.forms import (
     UserChangeForm,
     UserCreationForm,
 )
-from unfold.widgets import UnfoldAdminCheckboxSelectMultipleWidget
+from unfold.widgets import UnfoldAdminCheckboxSelectMultipleWidget, UnfoldAdminSelectWidget
 
 from . import erweiterungen, webhooks
 from .adminhilfen import Kopfleiste, weitere
@@ -254,7 +254,7 @@ class EreignisregelForm(forms.ModelForm):
     (``core.erweiterungen.ereignisquelle``), weil ``core`` die Fachobjekte
     nicht kennt."""
 
-    quelle = forms.ChoiceField(label='Ereignis')
+    quelle = forms.ChoiceField(label='Ereignis', widget=UnfoldAdminSelectWidget)
     aktionen = forms.MultipleChoiceField(
         label='Aktionen', required=False,
         widget=UnfoldAdminCheckboxSelectMultipleWidget,
@@ -308,12 +308,17 @@ class EreignisregelAdmin(Kopfleiste, ModelAdmin):
     """
 
     form = EreignisregelForm
+    fieldsets = [
+        (None, {'fields': [('name', 'aktiv')]}),
+        ('Auslöser', {'fields': ['quelle', ('aktionen', 'typen')]}),
+        ('Ziel', {'fields': ['url', 'token']}),
+    ]
     list_display = ('name', 'aktiv', 'beschreibung', 'url')
     list_filter = ('aktiv',)
     search_fields = ('name', 'url')
     actions_detail = ['detail_test_senden', weitere()]
 
-    @admin.display(description='Wenn')
+    @admin.display(description='Auslöser')
     def beschreibung(self, regel) -> str:
         """Filter als Satz, etwa "Rechnung, Angebot: festgeschrieben"."""
         quelle = erweiterungen.ereignisquellen().get(regel.quelle)
