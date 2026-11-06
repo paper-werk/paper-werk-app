@@ -339,6 +339,8 @@ class EreignisregelAdmin(Kopfleiste, ModelAdmin):
         except requests.RequestException as fehler:
             self.message_user(request, f'{regel.url} nicht erreicht: {fehler}',
                               level=messages.ERROR)
+        except NotImplementedError as fehler:
+            self.message_user(request, str(fehler), level=messages.ERROR)
         else:
             self.message_user(
                 request, f'{regel.url} antwortet mit Status {antwort.status_code}.',

@@ -180,6 +180,20 @@ class TestNutzlast:
     def test_entwurf_ohne_nummer(self, entwurf):
         assert ereignisse.nutzlast(entwurf)['nummer'] is None
 
+    def test_testbeleg_hat_dieselben_felder(self, entwurf):
+        """Ein neues Feld in ``nutzlast`` muss auch in ``testnutzlast``
+        stehen, damit Workflows mit „Test senden“ dieselbe Form sehen."""
+        assert ereignisse.testnutzlast(None).keys() == ereignisse.nutzlast(entwurf).keys()
+
+    def test_testbeleg_nennt_keinen_echten_beleg(self, entwurf):
+        test = ereignisse.testnutzlast('angebot')
+
+        assert test['id'] == 0
+        assert not Beleg.objects.filter(pk=0).exists()
+        assert test['typ'] == 'angebot'
+        assert test['nummer'] == 'TEST-0001'
+        assert test['admin_url'] is None and test['api_url'] is None
+
 
 # ---------------------------------------------------------------------------
 # API

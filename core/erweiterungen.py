@@ -281,8 +281,10 @@ class Ereignisquelle:
     ``aktionen`` und ``typen`` sind Choices ``[(wert, titel)]`` für die
     Filter einer Ereignisregel. ``typ(objekt) -> str`` liefert den Typ eines
     Objekts, ``nutzlast(objekt) -> dict`` seine Eigenschaften für den
-    Empfänger (JSON-serialisierbar), ``beispiel() -> objekt | None`` ein
-    Objekt für den Testaufruf einer Regel.
+    Empfänger (JSON-serialisierbar). ``testnutzlast(typ) -> dict`` liefert
+    für „Test senden“ dieselben Felder wie ``nutzlast`` mit erfundenen,
+    erkennbar falschen Werten; ``typ`` ist der erste Typ der Regel oder
+    ``None``.
     """
 
     name: str
@@ -291,11 +293,29 @@ class Ereignisquelle:
     typen: list[tuple[str, str]]
     typ: Callable
     nutzlast: Callable
-    beispiel: Callable
+    testnutzlast: Callable = None  # type: ignore[assignment]
+
+    def __post_init__(self):
+        if self.testnutzlast is None:
+            object.__setattr__(self, 'testnutzlast', self._testnutzlast_fehlt)
+
+    def _testnutzlast_fehlt(self, typ):
+        raise NotImplementedError(
+            f'Ereignisquelle "{self.name}" hat keine testnutzlast; '
+            '„Test senden“ ist für sie nicht umgesetzt.')
 
 
 def ereignisquelle(quelle: Ereignisquelle) -> None:
-    """Registriert eine Quelle von Ereignissen (``docs/webhooks.md``)."""
+    """Registriert eine Quelle von Ereignissen (``docs/webhooks.md``).
+
+    NEUE QUELLE: Bisher gibt es nur ``beleg`` (``faktura/ereignisse.py``).
+    Jede weitere Quelle braucht eine eigene ``testnutzlast`` mit erfundenen
+    Daten: keine echten Objekte, IDs, die es nicht gibt (0), keine URLs.
+    Ohne sie bricht „Test senden“ mit ``NotImplementedError`` ab. Der
+    Testaufruf darf kein echtes Objekt nennen, weil ein Workflow, der die
+    Aktion ``test`` nicht abfängt, sonst echte Daten ändert oder echte
+    Kunden anschreibt.
+    """
     _EREIGNISQUELLEN[quelle.name] = quelle
 
 

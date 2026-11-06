@@ -242,7 +242,33 @@ class TestMaske:
         assert 'antwortet mit Status 204' in antwort.content.decode()
         rumpf = json.loads(aufrufe[0][1]['data'])
         assert rumpf['aktion'] == webhooks.TESTAKTION
-        assert rumpf['beleg']['id'] == rechnung.pk
+        assert rumpf['test'] is True
+        # Erfundener Beleg, nie der jüngste echte.
+        assert rumpf['beleg']['id'] == 0
+        assert rumpf['beleg']['nummer'] == 'TEST-0001'
+
+    def test_test_senden_nimmt_den_typ_der_regel(self, verwaltung, aufrufe):
+        regel = _regel(typen=['angebot', 'auftrag'])
+
+        verwaltung.get(
+            reverse('admin:core_ereignisregel_detail_test_senden', args=[regel.pk]))
+
+        assert json.loads(aufrufe[0][1]['data'])['beleg']['typ'] == 'angebot'
+
+    def test_test_senden_ohne_testnutzlast(self, verwaltung, aufrufe, monkeypatch):
+        quellen = dict(erweiterungen._EREIGNISQUELLEN)
+        quellen['lager'] = erweiterungen.Ereignisquelle(
+            name='lager', titel='Lager', aktionen=[], typen=[],
+            typ=lambda o: '', nutzlast=lambda o: {})
+        monkeypatch.setattr(erweiterungen, '_EREIGNISQUELLEN', quellen)
+        regel = _regel(quelle='lager')
+
+        antwort = verwaltung.get(
+            reverse('admin:core_ereignisregel_detail_test_senden', args=[regel.pk]),
+            follow=True)
+
+        assert 'nicht umgesetzt' in antwort.content.decode()
+        assert aufrufe == []
 
     def test_test_senden_zeigt_den_fehler(self, verwaltung, monkeypatch):
         def post(url, **kwargs):

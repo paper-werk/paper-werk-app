@@ -39,11 +39,24 @@ def nutzlast(quelle: str, aktion: str, objekt) -> dict:
     """Rumpf eines Aufrufs: Ereignis, Aktion, Zeit und die Eigenschaften
     des Objekts unter dem Namen der Quelle."""
     q = erweiterungen.ereignisquellen()[quelle]
+    return _rumpf(quelle, aktion, q.nutzlast(objekt) if objekt is not None else None)
+
+
+def testnutzlast(regel: Ereignisregel) -> dict:
+    """Rumpf von „Test senden“: Aktion ``test``, ``"test": true`` und die
+    erfundenen Daten der Quelle (``Ereignisquelle.testnutzlast``), nie ein
+    echtes Objekt. ``NotImplementedError``, wenn die Quelle keine hat."""
+    q = erweiterungen.ereignisquellen()[regel.quelle]
+    typ = regel.typen[0] if regel.typen else None
+    return _rumpf(regel.quelle, TESTAKTION, q.testnutzlast(typ)) | {'test': True}
+
+
+def _rumpf(quelle: str, aktion: str, daten: dict | None) -> dict:
     return {
         'ereignis': quelle,
         'aktion': aktion,
         'zeit': timezone.localtime().isoformat(timespec='seconds'),
-        quelle: q.nutzlast(objekt) if objekt is not None else None,
+        quelle: daten,
     }
 
 
@@ -96,7 +109,6 @@ def versenden(quelle: str, aktion: str, objekt) -> None:
 
 
 def probe_senden(regel: Ereignisregel) -> requests.Response:
-    """Testaufruf aus der Maske: Aktion ``test`` mit einem Beispielobjekt
-    der Quelle, im Request, damit die Maske die Antwort zeigen kann."""
-    beispiel = erweiterungen.ereignisquellen()[regel.quelle].beispiel()
-    return senden(regel, nutzlast(regel.quelle, TESTAKTION, beispiel))
+    """Testaufruf aus der Maske mit ``testnutzlast``, im Request, damit die
+    Maske die Antwort zeigen kann."""
+    return senden(regel, testnutzlast(regel))

@@ -62,7 +62,7 @@ erfahren andere Workflows davon nichts.
 
 - Fachobjekte registrieren sich als Ereignisquelle
   (`erweiterungen.ereignisquelle()`): Name, Aktionen und Typen für die
-  Filter, Funktionen für Typ, Nutzlast und Beispielobjekt. `faktura`
+  Filter, Funktionen für Typ, Nutzlast und Test-Nutzlast. `faktura`
   registriert die Quelle `beleg` (`faktura/ereignisse.py`); `core` kennt
   Belege nur über sie.
 - Meldestellen rufen `erweiterungen.ereignis(quelle, aktion, objekt)` auf,
@@ -192,9 +192,15 @@ Regeln stehen unter „Verwaltung > Ereignisse“ (Modell `Ereignisregel`).
 - Die Liste zeigt die Filter als Satz, etwa „Rechnung: Festgeschrieben“.
 - Der Rumpf ist die feste Nutzlast. Platzhalter wie in Paperless gibt es
   nicht, damit die Felder an einer Stelle definiert sind.
-- „Test senden“ schickt die Aktion `test` mit dem jüngsten Beleg und zeigt
-  den Status des Ziels als Meldung an. Nur dieser Aufruf läuft im Request,
-  weil der Anwender auf das Ergebnis wartet.
+- „Test senden“ schickt die Aktion `test`, zusätzlich `"test": true` im
+  Rumpf, und einen erfundenen Beleg (`faktura.ereignisse.testnutzlast`):
+  ID 0, Nummer `TEST-0001`, Testkunde, keine URLs, Typ der erste der
+  Regel. Ein echter Beleg ist ausgeschlossen, weil ein Workflow, der die
+  Aktion `test` nicht abfängt, sonst echte Daten ändern oder Kunden
+  anschreiben könnte; über die API findet er zu ID 0 nichts. Eine Quelle
+  ohne `testnutzlast` meldet einen Fehler, statt zu senden. Der Status des
+  Ziels erscheint als Meldung. Nur dieser Aufruf läuft im Request, weil der
+  Anwender auf das Ergebnis wartet.
 - Rechte sind die Modellrechte von `core.ereignisregel`; die Gruppen von
   `faktura_rechte` erhalten sie nicht, die Pflege bleibt Superusern
   vorbehalten, weil eine Regel Belegdaten an eine beliebige URL schickt.

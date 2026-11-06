@@ -4,7 +4,10 @@ Meldestellen rufen ``melden(aktion, beleg)`` auf. ``faktura/apps.py``
 registriert die Quelle; ``core`` kennt Belege nur über sie.
 """
 
+from datetime import timedelta
+
 from django.urls import NoReverseMatch, reverse
+from django.utils import timezone
 
 from core import erweiterungen
 from core.optimistic_locking import FELD, version_von
@@ -79,11 +82,28 @@ def nutzlast(beleg) -> dict:
     }
 
 
-def beispiel():
-    """Jüngster Beleg für den Testaufruf einer Regel."""
-    from .models import Beleg
+def testnutzlast(typ: str | None) -> dict:
+    """Erfundener Beleg für „Test senden“, mit denselben Feldern wie
+    ``nutzlast``. ID 0 gibt es nicht, und URLs fehlen, damit ein Workflow,
+    der die Aktion ``test`` nicht abfängt, über die API keinen echten Beleg
+    liest oder ändert. Nummer, Betreff und Kunde weisen den Beleg als Test
+    aus."""
+    from .models import BelegTyp
 
-    return Beleg.objects.order_by('-pk').first()
+    return {
+        'id': 0,
+        'typ': typ or BelegTyp.RECHNUNG.value,
+        'nummer': 'TEST-0001',
+        'betreff': 'Testaufruf aus Paper-Werk, kein echter Beleg',
+        'brutto': '119.00',
+        'faellig_am': (timezone.localdate() + timedelta(days=14)).isoformat(),
+        'kunde': {'name': 'Testkunde, kein echter Kunde'},
+        'projekt': None,
+        'vorgaenger': None,
+        FELD: 0,
+        'admin_url': None,
+        'api_url': None,
+    }
 
 
 def _absolut(pfad: str) -> str | None:
@@ -99,5 +119,5 @@ def registrieren() -> None:
     erweiterungen.ereignisquelle(erweiterungen.Ereignisquelle(
         name=QUELLE, titel='Beleg', aktionen=AKTIONEN,
         typen=list(BelegTyp.choices), typ=typ, nutzlast=nutzlast,
-        beispiel=beispiel,
+        testnutzlast=testnutzlast,
     ))
