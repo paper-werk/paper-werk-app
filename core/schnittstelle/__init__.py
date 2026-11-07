@@ -2,13 +2,14 @@
 
 ``core`` stellt Authentifizierung per API-Schlüssel (``api_schluessel``),
 Status, Selbstauskunft, Schema und Doku. Fachliche Endpunkte registrieren
-die Apps über ``core.erweiterungen.api_endpoint()``. Die Apps des Kerns
-liefern die Endpunkte, die Paperless und n8n brauchen:
+die Apps über ``core.erweiterungen.api_endpoint()``:
 
 * ``eingangsrechnungen/`` (``erfassung/api.py``): eine geprüfte Rechnung
   aus dem Archiv übernehmen
-* ``belege/?paperless_id=`` und ``belege/{id}/xml/`` (``faktura/api.py``):
-  das XML einer XRechnung zum Steuerberater
+* ``belege/`` (``faktura/api/``): Belegauskunft mit Filtern, PDF und XML,
+  Kopffelder eines Entwurfs ändern, festschreiben, Ablage im Archiv
+  vermerken
+* ``projekte/``, ``kunden/``, ``kontakte/`` (``faktura/api/``): nur lesend
 
 Ein Zusatz (``PAPERWERK_ZUSATZAPPS``) kann über dieselbe Funktion weitere
 Endpunkte registrieren oder einen vorhandenen unter derselben URL ersetzen

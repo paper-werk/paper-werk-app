@@ -229,10 +229,10 @@ def api_endpoint(prefix: str, viewset: type, basename: str, *,
     So registriert etwa ``erfassung`` "eingangsrechnungen", ohne dass
     ``core`` Modell oder ViewSet importiert.
 
-    **Ersetzen.** ``faktura`` liefert eine schmale Belegauskunft
-    (``faktura/api.py``). Ein Zusatz kann mit ``ersetzt=True`` eine
-    ausführlichere unter derselben URL registrieren; sie gilt unabhängig von
-    der Reihenfolge der Apps. Ohne ``ersetzt`` ist ein doppelter Präfix ein
+    **Ersetzen.** Ein Zusatz kann mit ``ersetzt=True`` einen vorhandenen
+    Endpunkt, etwa die Belegauskunft aus ``faktura/api/``, unter derselben
+    URL durch eine eigene Fassung ersetzen; sie gilt unabhängig von der
+    Reihenfolge der Apps. Ohne ``ersetzt`` ist ein doppelter Präfix ein
     Konfigurationsfehler, weil sonst eine App die andere ohne Meldung
     verdrängt.
 
@@ -245,7 +245,7 @@ def api_endpoint(prefix: str, viewset: type, basename: str, *,
     vorhanden = _API_ENDPUNKTE.get(prefix)
     if vorhanden is not None:
         if vorhanden[2] and not ersetzt:
-            # Der Ersatz ist schon registriert; die schmale Fassung entfällt.
+            # Der Ersatz ist schon registriert; die ursprüngliche Fassung entfällt.
             return
         if not vorhanden[2] and not ersetzt:
             raise ImproperlyConfigured(

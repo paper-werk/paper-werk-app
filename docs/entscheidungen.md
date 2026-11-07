@@ -280,10 +280,11 @@ Die Begründung für Anwender steht in der Hilfe, Kapitel 06
 - **Zusätze** sind Django-Apps außerhalb dieses Repos. Eine Installation
   mountet sie in den Container und trägt sie in `PAPERWERK_ZUSATZAPPS` ein;
   sie registrieren sich über `core/erweiterungen.py`.
-- **Die Schnittstelle `/api/v1/`** gehört dem Kern und umfasst die
-  Archiv-Anbindung (Eingangsrechnungen, Belegauskunft). Ein Zusatz kann
-  Endpunkte ergänzen oder einen vorhandenen mit `ersetzt=True` ersetzen
-  (`core/schnittstelle/`, `faktura/api.py`).
+- **Die Schnittstelle `/api/v1/`** gehört dem Kern: Eingangsrechnungen,
+  Belege (Auskunft, Kopffelder, Festschreiben, Archivvermerk), Projekte,
+  Kunden und Kontakte. Ein Zusatz kann Endpunkte ergänzen oder einen
+  vorhandenen mit `ersetzt=True` ersetzen (`core/schnittstelle/`,
+  `faktura/api/`).
 - Auswertungen liegen in der App `auswertung`, nicht im Projektpaket. Tests
   liegen in Paketen, keine Testdatei im Wurzelverzeichnis.
 - Die Version steht nur in `pyproject.toml`, Schema `0.x.y`

@@ -157,7 +157,7 @@ E-Rechnung. Behördenportale lehnen es ab, weil die Leitweg-ID fehlt.
 | Steuerfälle (Kategorie, Vermerk, Pflichtangaben) | `faktura/steuerfall.py` |
 | Versandmaske (Datei, Zustellweg, Herunterladen) | `faktura/templates/admin/faktura/versenden.html`, `faktura/admin/versand.py` |
 | Nachweis am Beleg (Prüfsummen, „E-Rechnung im PDF“) | `faktura/admin/dokumente.py` |
-| Schnittstelle: XML abrufen, Filter | `faktura/api.py` |
+| Schnittstelle: XML abrufen, Filter | `faktura/api/anbindung.py` |
 | E-Rechnungen einlesen (Gegenrichtung) | `erfassung/erechnung.py` |
 | Weg zum Steuerberater | `paper-werk/n8n/sub-duo-versand-paperwerk.json`, Kanal `duo_paperwerk` |
 | Beträge im XML | Rechenregister R-136 |

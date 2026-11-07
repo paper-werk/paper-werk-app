@@ -13,7 +13,9 @@ class FakturaConfig(AppConfig):
         ``core/schnittstelle/``)."""
         from core import erweiterungen
 
-        from . import api as faktura_api
+        from .api.belege import BelegViewSet
+        from .api.kunden import KontaktViewSet, KundeViewSet
+        from .api.projekte import ProjektViewSet
         from .models.steuersatz import grundausstattung_anlegen
 
         # Anfangsbestand der Steuersätze, siehe faktura/models/steuersatz.py.
@@ -22,10 +24,13 @@ class FakturaConfig(AppConfig):
         # Für die API-Selbstauskunft (core.schnittstelle.views.IchAnsicht).
         erweiterungen.fachliche_app('faktura')
 
-        # Die schmale Belegauskunft der Archiv-Anbindung (XML zum
-        # Steuerberater), siehe faktura/api.py.
+        # REST-Schnittstelle, siehe faktura/api/.
+        erweiterungen.api_endpoint('belege', BelegViewSet, 'beleg')
         erweiterungen.api_endpoint(
-            'belege', faktura_api.BelegAnbindungViewSet, 'beleg')
+            'projekte', ProjektViewSet, 'projekt',
+            weitere={'projekt_aufloesen': 'projekt-aufloesen'})
+        erweiterungen.api_endpoint('kunden', KundeViewSet, 'kunde')
+        erweiterungen.api_endpoint('kontakte', KontaktViewSet, 'kontakt')
 
         # Belege als Quelle von Ereignissen (docs/webhooks.md).
         from . import ereignisse

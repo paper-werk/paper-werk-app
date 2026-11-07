@@ -121,7 +121,7 @@ Bruch möglich, Entfernen nicht.
 
 ## API
 
-Die Belegauskunft (`faktura/api.py`, `/api/v1/belege/`):
+Die Belegauskunft (`faktura/api/`, `/api/v1/belege/`):
 
 - Lesen: zusätzlich zu den Feldern der Archiv-Anbindung `faellig_am`,
   `kunde_name`, `vorgaenger_id`, `projekt_id`, `brutto`, `version` und die
@@ -146,10 +146,11 @@ Die Belegauskunft (`faktura/api.py`, `/api/v1/belege/`):
 Änderbar sind `betreff`, `kopftext`, `fusstext`, `bestellnummer`,
 `leitweg_id` und `empfaenger_email`, weil sie weder Steuer, Summen und
 Fristen noch die Zuordnung zu Kunde und Projekt berühren. Nicht angeboten
-werden Anschrift, Daten, Zahlungsziel, Steuerfall, Positionen,
-Zustandswechsel (Festschreiben, Versenden) und das Anlegen von Belegen,
-weil dabei Summen, Abschläge und erfasste Leistungen konsistent bleiben
-müssen.
+werden Anschrift, Daten, Zahlungsziel, Steuerfall, Positionen, Versenden
+und das Anlegen von Belegen, weil dabei Summen, Abschläge und erfasste
+Leistungen konsistent bleiben müssen. Festschreiben ist eine eigene Aktion
+(`POST /api/v1/belege/{id}/festschreiben/`) über `beleg_festschreiben` mit
+dem Recht `change_beleg`.
 
 `PATCH` verlangt das Recht `faktura.kopf_aendern_beleg`. Die Gruppe
 „Faktura Dienst“ erhält es über `faktura_rechte`, ohne `change_beleg`, damit
@@ -283,7 +284,7 @@ liest den Stand der App. Felder: `projekt.id`, `api_url`.
 | Versand | `core/webhooks.py` |
 | Quelle `beleg`, Nutzlast | `faktura/ereignisse.py` |
 | Meldestellen | `faktura/models/beleg.py`, `faktura/services/festschreiben.py`, `faktura/services/versand.py`, `faktura/admin/beleg.py` |
-| API | `faktura/api.py` |
+| API | `faktura/api/` |
 | `PAPER_WERK_URL` | `paperwerk/settings/base.py` |
 
 ## Tests
