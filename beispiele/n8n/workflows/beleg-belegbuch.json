@@ -1,0 +1,219 @@
+{
+  "name": "beleg-belegbuch",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## beleg-belegbuch\n\nSchreibt jedes Ereignis an einem Beleg als Zeile in die Data Table `pw_belegbuch`. Die Tabelle lässt sich in n8n ansehen und als CSV exportieren.\n\n**Regel in Paper-Werk** (Verwaltung > Ereignisse):\nEreignis Beleg, Aktionen „Angelegt“, „Festgeschrieben“, „Versendet“, „Wiedereröffnet“; alle Typen.\nZiel-URL `http://n8n:5678/webhook/pw-beleg-belegbuch`, Token wie in der Credential\n„Header Auth Paper-Werk-Ereignis“.\n\n**pw_config:** keine\n\n**Credentials:** Header Auth Paper-Werk-Ereignis\n\n„Geändert“ wird nicht verbucht, weil jedes Speichern einer Maske eine Zeile erzeugte. Die Tabelle legt der Workflow beim ersten Lauf an. Ohne Mailversand, deshalb in `workflows.list` aktiv.",
+        "height": 760,
+        "width": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        -400
+      ],
+      "id": "c1617c2d-51d0-5a5e-ba87-e177ab00312a",
+      "name": "Doku"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pw-beleg-belegbuch",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        0
+      ],
+      "id": "443ccdac-2b99-521d-93ce-0b4a0b75a15a",
+      "name": "Webhook",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pwEreignisToken1",
+          "name": "Header Auth Paper-Werk-Ereignis"
+        }
+      },
+      "webhookId": "26e33593-91e6-5b9d-9a61-169ff5112565"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Das Ereignis von Paper-Werk (docs/webhooks.md in paper-werk-app).\nconst ereignis = $('Webhook').first().json.body ?? {};\nconst beleg = ereignis.beleg ?? {};\n\n// Fachlich: welche Aktionen verbucht werden.\nconst AKTIONEN = ['angelegt', 'festgeschrieben', 'versendet', 'wiedereroeffnet'];\n\nif (!AKTIONEN.includes(ereignis.aktion) || !beleg.id) return [];\n\nreturn [{ json: { zeile: {\n  zeit: ereignis.zeit,\n  aktion: ereignis.aktion,\n  typ: beleg.typ,\n  beleg_id: beleg.id,\n  nummer: beleg.nummer ?? '',\n  kunde: beleg.kunde?.name ?? '',\n  projekt: beleg.projekt ? `${beleg.projekt.nummer} ${beleg.projekt.bezeichnung}` : '',\n  betreff: beleg.betreff ?? '',\n  brutto: Number(beleg.brutto ?? 0),\n  faellig_am: beleg.faellig_am ?? '',\n  admin_url: beleg.admin_url ?? '',\n} } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        0
+      ],
+      "id": "fa0de084-a10f-5342-8d28-3fcc3ec390ac",
+      "name": "Konfiguration"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "pw_belegbuch",
+        "columns": {
+          "column": [
+            {
+              "name": "zeit",
+              "type": "string"
+            },
+            {
+              "name": "aktion",
+              "type": "string"
+            },
+            {
+              "name": "typ",
+              "type": "string"
+            },
+            {
+              "name": "beleg_id",
+              "type": "number"
+            },
+            {
+              "name": "nummer",
+              "type": "string"
+            },
+            {
+              "name": "kunde",
+              "type": "string"
+            },
+            {
+              "name": "projekt",
+              "type": "string"
+            },
+            {
+              "name": "betreff",
+              "type": "string"
+            },
+            {
+              "name": "brutto",
+              "type": "number"
+            },
+            {
+              "name": "faellig_am",
+              "type": "string"
+            },
+            {
+              "name": "admin_url",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "cfdb493d-a343-5512-aa4c-3938a9095260",
+      "name": "Tabelle anlegen"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Die Zeile aus \"Konfiguration\"; \"Tabelle anlegen\" gibt nur die Tabelle aus.\nreturn [{ json: $('Konfiguration').first().json.zeile }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "6226ed4e-922a-5285-b6e4-863107465f9b",
+      "name": "Zeile aufbauen"
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "pw_belegbuch"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "8da61e29-bfda-5abe-a0e9-146ebe5ed63c",
+      "name": "Zeile schreiben"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "Tabelle anlegen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tabelle anlegen": {
+      "main": [
+        [
+          {
+            "node": "Zeile aufbauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zeile aufbauen": {
+      "main": [
+        [
+          {
+            "node": "Zeile schreiben",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Europe/Berlin",
+    "errorWorkflow": "pwFehlerMelden01"
+  },
+  "tags": [],
+  "id": "pwBlgBelegbuch1"
+}

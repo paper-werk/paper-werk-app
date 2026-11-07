@@ -1,0 +1,166 @@
+{
+  "name": "beleg-team-nachricht",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## beleg-team-nachricht\n\nMeldet ausgewählte Ereignisse in einen Team-Chat: angenommene Angebote (neuer Auftrag), festgeschriebene Aufträge und versendete Rechnungen. Ziel ist ein eingehender Webhook des Chats.\n\n**Regel in Paper-Werk** (Verwaltung > Ereignisse):\nEreignis Beleg, Aktionen „Angelegt“, „Festgeschrieben“, „Versendet“, Typen „Auftrag“ und „Rechnung“. Welche Paare gemeldet werden, steht in `MELDEN` im Knoten „Konfiguration“.\nZiel-URL `http://n8n:5678/webhook/pw-beleg-team-nachricht`, Token wie in der Credential\n„Header Auth Paper-Werk-Ereignis“.\n\n**pw_config:** `chat_webhook_url`, `chat_format` (`text` für Slack, Mattermost, Rocket.Chat, Google Chat; `teams` für einen Teams-Workflow „Post to a channel when a webhook request is received“)\n\n**Credentials:** Header Auth Paper-Werk-Ereignis\n\nDie Chat-URL enthält ihr Geheimnis selbst; eine Credential braucht der Aufruf nicht.",
+        "height": 760,
+        "width": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        -400
+      ],
+      "id": "766a2661-3c49-516c-aa6a-768daafb1e47",
+      "name": "Doku"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pw-beleg-team-nachricht",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        0
+      ],
+      "id": "7954d929-7c29-55ac-a775-8551afc74b29",
+      "name": "Webhook",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pwEreignisToken1",
+          "name": "Header Auth Paper-Werk-Ereignis"
+        }
+      },
+      "webhookId": "4e8cbfea-d77b-5295-963d-e02e93ebfa05"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "pwSubEinstell01",
+          "mode": "list",
+          "cachedResultName": "sub-einstellungen"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        0
+      ],
+      "id": "72a49479-4c92-58b6-92de-bce71ee70cb9",
+      "name": "Einstellungen holen"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Instanzwerte aus sub-einstellungen (Data Table pw_config, gepflegt in der\n// n8n-Oberfläche unter \"Data Tables\").\nconst werte = $('Einstellungen holen').first().json;\nconst pw = (key) => {\n  const v = werte[key];\n  if (v === undefined || String(v).trim() === '') {\n    throw new Error('pw_config: \"' + key + '\" fehlt oder ist leer; in der n8n-Oberfläche unter \"Data Tables\" eintragen.');\n  }\n  return String(v).trim();\n};\n\n// Das Ereignis von Paper-Werk (docs/webhooks.md in paper-werk-app).\nconst ereignis = $('Webhook').first().json.body ?? {};\nconst beleg = ereignis.beleg ?? {};\n\n// Fachlich: welche Paare aus Typ und Aktion in den Chat gehen.\nconst MELDEN = [\n  ['auftrag', 'angelegt'],\n  ['auftrag', 'festgeschrieben'],\n  ['rechnung', 'versendet'],\n];\n\nif (!MELDEN.some(([typ, aktion]) => typ === beleg.typ && aktion === ereignis.aktion)) return [];\n\nconst format = String(werte.chat_format ?? '').trim() || 'text';\nif (!['text', 'teams'].includes(format)) {\n  throw new Error('pw_config: chat_format \"' + format + '\" ist unbekannt; erlaubt sind \"text\" und \"teams\".');\n}\nreturn [{ json: {\n  chat_webhook_url: pw('chat_webhook_url'),\n  chat_format: format,\n  aktion: ereignis.aktion,\n  beleg,\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "3a720044-07a7-553e-a998-6f734bc48099",
+      "name": "Konfiguration"
+    },
+    {
+      "parameters": {
+        "jsCode": "const euro = (v) => Number(v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });\nconst datum = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('.') : '');\nconst html = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst TYPEN_TEXT = { angebot: 'Angebot', auftrag: 'Auftrag', lieferschein: 'Lieferschein', rechnung: 'Rechnung', storno: 'Stornorechnung', gutschrift: 'Rechnungskorrektur', mahnung: 'Mahnung' };\nconst typText = (typ) => TYPEN_TEXT[typ] ?? typ;\n\nconst cfg = $input.first().json;\nconst b = cfg.beleg;\nconst kunde = b.kunde?.name ?? 'ohne Kunde';\nconst projekt = b.projekt ? ` (Projekt ${b.projekt.nummer} ${b.projekt.bezeichnung})` : '';\n\nlet zeile;\nif (b.typ === 'auftrag' && cfg.aktion === 'angelegt' && b.vorgaenger?.typ === 'angebot') {\n  zeile = `Angebot ${b.vorgaenger.nummer} angenommen: neuer Auftrag für ${kunde}${projekt} über ${euro(b.brutto)}.`;\n} else if (b.typ === 'auftrag' && cfg.aktion === 'angelegt') {\n  zeile = `Neuer Auftrag (Entwurf) für ${kunde}${projekt}.`;\n} else if (b.typ === 'auftrag' && cfg.aktion === 'festgeschrieben') {\n  zeile = `Auftrag ${b.nummer} für ${kunde}${projekt} bestätigt: ${euro(b.brutto)}.`;\n} else if (b.typ === 'rechnung' && cfg.aktion === 'versendet') {\n  zeile = `Rechnung ${b.nummer} an ${kunde}${projekt} versendet: ${euro(b.brutto)}, fällig am ${datum(b.faellig_am)}.`;\n} else {\n  zeile = `${typText(b.typ)} ${b.nummer ?? '(Entwurf)'} für ${kunde}: ${cfg.aktion}.`;\n}\n\nconst nachricht = cfg.chat_format === 'teams'\n  ? { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: {\n      $schema: 'http://adaptivecards.io/schemas/adaptive-card.json', type: 'AdaptiveCard', version: '1.4',\n      body: [{ type: 'TextBlock', text: zeile, wrap: true }],\n      actions: b.admin_url ? [{ type: 'Action.OpenUrl', title: 'In Paper-Werk öffnen', url: b.admin_url }] : [],\n    } }] }\n  : { text: b.admin_url ? `${zeile}\\n${b.admin_url}` : zeile };\n\nreturn [{ json: { url: cfg.chat_webhook_url, nachricht } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "42b8cc64-6b64-5594-bdb4-90111349cb7e",
+      "name": "Nachricht aufbauen"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.nachricht }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "ccc3b0ee-4a73-5a71-a861-e1d201941a8e",
+      "name": "An den Chat senden"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Einstellungen holen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Einstellungen holen": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "Nachricht aufbauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nachricht aufbauen": {
+      "main": [
+        [
+          {
+            "node": "An den Chat senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Europe/Berlin",
+    "errorWorkflow": "pwFehlerMelden01"
+  },
+  "tags": [],
+  "id": "pwBlgTeamChat01"
+}
