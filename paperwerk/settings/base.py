@@ -488,12 +488,22 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'paper-werk',
     'DESCRIPTION': (
         'Schnittstelle zu Belegen, Projekten und Kunden.\n\n'
+        '**Schreibende Aufrufe wirken sofort und ohne Rückfrage.** Die '
+        'Schnittstelle prüft dieselben Regeln wie die Oberfläche, aber es '
+        'gibt kein Undo, keinen Dry Run und keinen Bestätigungsdialog. '
+        'Festschreiben vergibt die Nummer endgültig; zurück geht es nur per '
+        'Storno. Wer hier schreibt, muss wissen, was der Aufruf fachlich '
+        'auslöst. Neue Workflows erst gegen eine Testinstallation fahren, '
+        'nie zuerst gegen echte Daten. Für Workflows einen Benutzer der '
+        'Gruppe „Faktura Dienst“ nehmen: lesen und Kopffelder ändern ja, '
+        'festschreiben nein.\n\n'
         'Anmeldung über einen Schlüssel im Kopf der Anfrage:\n\n'
         '    Authorization: Token <schluessel>\n\n'
         'Dasselbe Verfahren wie bei Paperless-ngx; in n8n lässt sich der '
         'HTTP-Request-Node für beide Systeme gleich einrichten.\n\n'
-        'Einen Schluessel erzeugt `python manage.py api_schluessel <benutzer>`. '
-        'Was ein Schluessel darf, beantwortet `/api/v1/ich/`.'
+        'Einen Schlüssel erzeugt `python manage.py api_schluessel <benutzer>` '
+        'oder die Maske „Verwaltung > API-Schlüssel“. Was ein Schlüssel darf, '
+        'beantwortet `/api/v1/ich/`.'
     ),
     'VERSION': '1.0.0',
     # Den Schema-Endpunkt nicht in der Doku auflisten.
