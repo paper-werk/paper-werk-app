@@ -29,6 +29,7 @@ from core.adminhilfen import (
 )
 from core.optimistic_locking import VersionAdminMixin
 
+from .. import ereignisse
 from ..forms import (
     BelegForm,
 )
@@ -231,6 +232,19 @@ class BelegAdmin(
             return immer + [f.name for f in Beleg._meta.fields
                             if f.name not in immer and f.editable]
         return immer
+
+    def save_related(self, request, form, formsets, change):
+        """Meldet ``geaendert``, einmal je Speichervorgang eines Entwurfs mit
+        Änderungen an Kopf oder Positionen (``docs/webhooks.md``).
+
+        Hier statt im Modell, damit Änderungen über die API kein Ereignis
+        auslösen und ein Workflow sich nicht selbst erneut auslöst.
+        """
+        super().save_related(request, form, formsets, change)
+        beleg = form.instance
+        if change and beleg.ist_aenderbar and (
+                form.has_changed() or any(f.has_changed() for f in formsets)):
+            ereignisse.melden(ereignisse.GEAENDERT, beleg)
 
     def changeform_view(self, request, object_id=None, form_url='',
                         extra_context=None):

@@ -82,7 +82,7 @@ OHNE_DIENST = ['firma']
 #
 # Dafür ein eigenes Recht, weil ``change_beleg`` das Ändern von Belegen
 # erlaubte. Weitere Einträge aus demselben Grund einzeln ergänzen.
-DIENST_ZUSAETZLICH = ['archivieren_beleg']
+DIENST_ZUSAETZLICH = ['archivieren_beleg', 'kopf_aendern_beleg']
 
 
 class Command(BaseCommand):

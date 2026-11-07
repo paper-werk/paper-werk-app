@@ -160,9 +160,6 @@ class TestInhaltsverzeichnis:
 class TestNurKern:
     """Funktionen, die der Kern bewusst nicht bietet."""
 
-    def test_kein_pdf(self, n8n, xrechnung):
-        assert n8n.get(f'/api/v1/belege/{xrechnung.pk}/pdf/').status_code == 404
-
     def test_kein_festschreiben_und_kein_archivvermerk(self, n8n, xrechnung):
         assert n8n.post(f'/api/v1/belege/{xrechnung.pk}/festschreiben/').status_code == 404
         assert n8n.post(f'/api/v1/belege/{xrechnung.pk}/archiviert/',

@@ -27,6 +27,10 @@ class FakturaConfig(AppConfig):
         erweiterungen.api_endpoint(
             'belege', faktura_api.BelegAnbindungViewSet, 'beleg')
 
+        # Belege als Quelle von Ereignissen (docs/webhooks.md).
+        from . import ereignisse
+        ereignisse.registrieren()
+
         # Abschnitt Vorhaben in der Reihenfolge des Ablaufs: Projekt,
         # Angebot, Auftrag, Lieferschein.
         erweiterungen.menue('Projekte', collapsible=False, rang=10, eintraege=[

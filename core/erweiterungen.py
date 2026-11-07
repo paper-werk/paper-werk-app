@@ -20,8 +20,11 @@ Modul, während die Settings geladen werden, wie ``core/marke.py``. Es darf
 deshalb nichts voraussetzen, was geladene Apps oder Modelle braucht.
 """
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 #: Abschnitte der Seitenleiste, nach Titel; siehe ``menue()``.
 _ABSCHNITTE: dict[str, dict] = {}
@@ -60,6 +63,12 @@ _FACHLICHE_APPS: list[str] = []
 #: DRF-Endpunkte unter ``/api/v1/``, nach Präfix; siehe ``api_endpoint()``.
 #: Je Eintrag ``(viewset, basename, ersetzt, weitere)``.
 _API_ENDPUNKTE: dict[str, tuple[type, str, bool, dict[str, str]]] = {}
+
+#: Quellen von Ereignissen, nach Name; siehe ``ereignisquelle()``.
+_EREIGNISQUELLEN: dict[str, 'Ereignisquelle'] = {}
+
+#: Empfänger aller Ereignisse; siehe ``ereignisempfaenger()``.
+_EREIGNISEMPFAENGER: list[Callable] = []
 
 
 def menue(titel: str, eintraege: list[dict], *, separator: bool = True,
@@ -263,6 +272,93 @@ def api_verweise() -> dict[str, str]:
     for _, _, _, weitere in _API_ENDPUNKTE.values():
         verweise.update(weitere)
     return verweise
+
+
+@dataclass(frozen=True)
+class Ereignisquelle:
+    """Fachobjekt, zu dem Ereignisse ausgelöst werden, etwa der Beleg.
+
+    ``aktionen`` und ``typen`` sind Choices ``[(wert, titel)]`` für die
+    Filter einer Ereignisregel. ``typ(objekt) -> str`` liefert den Typ eines
+    Objekts, ``nutzlast(objekt) -> dict`` seine Eigenschaften für den
+    Empfänger (JSON-serialisierbar). ``testnutzlast(typ) -> dict`` liefert
+    für „Test senden“ dieselben Felder wie ``nutzlast`` mit erfundenen,
+    erkennbar falschen Werten; ``typ`` ist der erste Typ der Regel oder
+    ``None``.
+    """
+
+    name: str
+    titel: str
+    aktionen: list[tuple[str, str]]
+    typen: list[tuple[str, str]]
+    typ: Callable
+    nutzlast: Callable
+    testnutzlast: Callable = None  # type: ignore[assignment]
+
+    def __post_init__(self):
+        if self.testnutzlast is None:
+            object.__setattr__(self, 'testnutzlast', self._testnutzlast_fehlt)
+
+    def _testnutzlast_fehlt(self, typ):
+        raise NotImplementedError(
+            f'Ereignisquelle "{self.name}" hat keine testnutzlast; '
+            '„Test senden“ ist für sie nicht umgesetzt.')
+
+
+def ereignisquelle(quelle: Ereignisquelle) -> None:
+    """Registriert eine Quelle von Ereignissen (``docs/webhooks.md``).
+
+    NEUE QUELLE: Bisher gibt es nur ``beleg`` (``faktura/ereignisse.py``).
+    Jede weitere Quelle braucht eine eigene ``testnutzlast`` mit erfundenen
+    Daten: keine echten Objekte, IDs, die es nicht gibt (0), keine URLs.
+    Ohne sie bricht „Test senden“ mit ``NotImplementedError`` ab. Der
+    Testaufruf darf kein echtes Objekt nennen, weil ein Workflow, der die
+    Aktion ``test`` nicht abfängt, sonst echte Daten ändert oder echte
+    Kunden anschreibt.
+    """
+    _EREIGNISQUELLEN[quelle.name] = quelle
+
+
+def ereignisquellen() -> dict[str, Ereignisquelle]:
+    """Registrierte Ereignisquellen, nach Name."""
+    return dict(_EREIGNISQUELLEN)
+
+
+def ereignisempfaenger(funktion: Callable) -> None:
+    """Registriert einen Empfänger ``funktion(quelle, aktion, objekt)``.
+
+    Empfänger werden nach dem Commit der auslösenden Transaktion aufgerufen,
+    in Reihenfolge der Registrierung.
+    """
+    _EREIGNISEMPFAENGER.append(funktion)
+
+
+def ereignis(quelle: str, aktion: str, objekt) -> None:
+    """Löst ein Ereignis aus, etwa ``ereignis('beleg', 'festgeschrieben',
+    beleg)``.
+
+    Die Empfänger laufen per ``transaction.on_commit``, damit ein Rollback
+    kein Ereignis erzeugt; außerhalb einer Transaktion sofort. Die
+    Meldestelle kennt die Empfänger nicht. Eine Ausnahme in einem Empfänger
+    wird geloggt und erreicht sie nicht, damit kein Empfänger einen
+    fachlichen Vorgang abbricht.
+    """
+    if not _EREIGNISEMPFAENGER:
+        return
+
+    from django.db import transaction
+
+    transaction.on_commit(lambda: _ereignis_verteilen(quelle, aktion, objekt))
+
+
+def _ereignis_verteilen(quelle: str, aktion: str, objekt) -> None:
+    for empfaenger in list(_EREIGNISEMPFAENGER):
+        try:
+            empfaenger(quelle, aktion, objekt)
+        except Exception:
+            logger.exception(
+                'Empfänger %s des Ereignisses %s.%s fehlgeschlagen.',
+                getattr(empfaenger, '__qualname__', empfaenger), quelle, aktion)
 
 
 def menue_abschnitte(request=None) -> list[dict]:

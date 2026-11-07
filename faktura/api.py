@@ -1,6 +1,6 @@
-"""Schmale Belegauskunft der Archiv-Anbindung.
+"""Belegauskunft: Archiv-Anbindung und Rückweg für Ereignisse.
 
-Dient dem Versand des XML an den Steuerberater: Paperless nimmt kein XML an
+Archiv-Anbindung. Dient dem Versand des XML an den Steuerberater: Paperless nimmt kein XML an
 und archiviert das PDF. Geht eine Rechnung nur als XML hinaus (XRechnung an
 ein Portal), ist das XML das Original und muss gesondert zum Steuerberater.
 Der Workflow (n8n, ``sub-duo-versand-paperwerk``) beginnt beim Dokument im
@@ -10,6 +10,13 @@ Archiv::
          -> erechnungsprofil, xml_sha256
     GET  /api/v1/belege/{id}/xml/            (die abgelegte Datei)
 
+Rückweg für Workflows, die auf Ereignisse reagieren (``docs/webhooks.md``)::
+
+    GET   /api/v1/belege/{id}/               (Eigenschaften wie im Ereignis)
+    GET   /api/v1/belege/{id}/pdf/
+    GET   /api/v1/belege/?vorgaenger=<id>    (Nachfolger, etwa Auftrag zum Angebot)
+    PATCH /api/v1/belege/{id}/               (Kopffelder eines Entwurfs)
+
 Der Umfang ist bewusst begrenzt. Ein Zusatz kann den ViewSet erweitern und
 unter derselben URL ersetzen (``core.erweiterungen.api_endpoint(ersetzt=True)``);
 er muss die hier zugesagten Felder weiter liefern
@@ -18,20 +25,50 @@ er muss die hier zugesagten Felder weiter liefern
 ``faktura/apps.py`` registriert den ViewSet.
 """
 
+from django.db import transaction
 from django.http import FileResponse
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_field,
+)
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from core.optimistic_locking import FELD, VersionKonflikt, version_pruefen
 from core.permissions import Modellrechte
 
 from . import facturx
 from .models import Beleg
+from .services import belegsummen, projektstaende
+
+#: Felder, die ``PATCH`` an einem Entwurf ändert. Ohne Wirkung auf Steuer,
+#: Summen, Fristen und die Zuordnung zu Kunde und Projekt; Positionen,
+#: Zustandswechsel und Anlegen werden nicht angeboten, weil dabei Summen,
+#: Abschläge und erfasste Leistungen konsistent bleiben müssen.
+AENDERBARE_KOPFFELDER = [
+    'betreff', 'kopftext', 'fusstext', 'bestellnummer', 'leitweg_id',
+    'empfaenger_email',
+]
+
+
+class ProjektstandSerializer(serializers.Serializer):
+    """Netto-Summen eines Projekts, wie auf der Projektseite: beauftragt
+    samt Nachträgen, fakturiert mit Abschlägen, abgerechnete Leistung ohne
+    Abschläge, Fortschritt in Prozent (fakturiert zu beauftragt)."""
+
+    angeboten = serializers.DecimalField(max_digits=14, decimal_places=2)
+    beauftragt = serializers.DecimalField(max_digits=14, decimal_places=2)
+    fakturiert = serializers.DecimalField(max_digits=14, decimal_places=2)
+    abgerechnete_leistung = serializers.DecimalField(max_digits=14,
+                                                     decimal_places=2)
+    fortschritt = serializers.IntegerField()
 
 
 class BelegAnbindungSerializer(serializers.ModelSerializer):
@@ -41,6 +78,10 @@ class BelegAnbindungSerializer(serializers.ModelSerializer):
     typ_kennung = serializers.CharField(source='typ', read_only=True)
     status_kennung = serializers.CharField(source='status', read_only=True)
     archiviert = serializers.SerializerMethodField()
+    kunde_name = serializers.CharField(source='kunde.name', default=None,
+                                       read_only=True)
+    brutto = serializers.SerializerMethodField()
+    projektstand = serializers.SerializerMethodField()
 
     class Meta:
         model = Beleg
@@ -48,6 +89,12 @@ class BelegAnbindungSerializer(serializers.ModelSerializer):
             'id', 'nummer', 'typ_kennung', 'status_kennung', 'belegdatum',
             'festgeschrieben_am', 'archiviert', 'paperless_id',
             'erechnungsprofil', 'xml_sha256',
+            # Eigenschaften wie im Ereignis (faktura/ereignisse.py).
+            'faellig_am', 'kunde_name', 'vorgaenger_id', 'projekt_id', 'brutto',
+            FELD,
+            # Was PATCH ändert, damit ein Workflow vorher lesen kann.
+            *AENDERBARE_KOPFFELDER,
+            'projektstand',
         ]
 
     def get_archiviert(self, beleg: Beleg) -> bool:
@@ -55,11 +102,67 @@ class BelegAnbindungSerializer(serializers.ModelSerializer):
         "Zahl oder null"."""
         return beleg.paperless_id is not None
 
+    def get_brutto(self, beleg: Beleg) -> str:
+        """Zahlbetrag aus ``belegsummen``, mit zwei Nachkommastellen."""
+        return f'{belegsummen(beleg).brutto:.2f}'
+
+    @extend_schema_field(ProjektstandSerializer(allow_null=True))
+    def get_projektstand(self, beleg: Beleg) -> dict | None:
+        """Stand des Projekts (``services.projektstaende``), nur in der
+        Einzelauskunft, weil er je Beleg zwei Abfragen kostet; in der Liste
+        und ohne Projekt ``None``."""
+        view = self.context.get('view')
+        if beleg.projekt_id is None or getattr(view, 'action', None) != 'retrieve':
+            return None
+        staende = projektstaende(nur_laufende=False, projekte=[beleg.projekt_id])
+        return ProjektstandSerializer(staende[0]).data if staende else None
+
+
+class KopfaenderungSerializer(serializers.ModelSerializer):
+    """Eingabe für ``PATCH``: Kopffelder aus ``AENDERBARE_KOPFFELDER`` und
+    die Version beim Lesen (Optimistic Locking, Pflicht).
+
+    Andere Felder werden abgewiesen statt ignoriert, damit ein Workflow
+    nicht annimmt, er habe etwa das Zahlungsziel geändert.
+    """
+
+    class Meta:
+        model = Beleg
+        fields = AENDERBARE_KOPFFELDER
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[FELD] = serializers.IntegerField(
+            help_text='Version aus der letzten Auskunft oder dem Ereignis.')
+
+    def to_internal_value(self, data):
+        fremd = sorted(set(data) - set(self.fields))
+        if fremd:
+            raise serializers.ValidationError(
+                dict.fromkeys(fremd, 'Über die Schnittstelle nicht änderbar.'))
+        if FELD not in data:
+            raise serializers.ValidationError({FELD: 'Pflichtangabe.'})
+        return super().to_internal_value(data)
+
+
+class DarfKopfAendern(BasePermission):
+    """Prüft ``faktura.kopf_aendern_beleg``, ein eigenes Recht, damit ein
+    Dienstzugang Kopffelder ändern kann, ohne ``change_beleg`` zu haben."""
+
+    message = 'Dafür fehlt das Recht "Kann Kopffelder über die API ändern".'
+
+    def has_permission(self, request, view):
+        return request.user.has_perm('faktura.kopf_aendern_beleg')
+
 
 class BelegAnbindungFilter(filters.FilterSet):
     """Filter vom Archivdokument zum Beleg."""
 
     nummer = filters.CharFilter(lookup_expr='iexact', label='Belegnummer')
+
+    # Nachfolger eines Belegs, etwa der Auftrag zu einem Angebot.
+    vorgaenger = filters.NumberFilter(field_name='vorgaenger_id',
+                                      label='ID des Vorgängers')
 
     # Für den Versand des XML: von der Dokument-ID zum Beleg; am Profil ist
     # erkennbar, ob das XML mitgeht.
@@ -89,7 +192,12 @@ class BelegAnbindungFilter(filters.FilterSet):
 
 
 class BelegAnbindungViewSet(ReadOnlyModelViewSet):
-    """Belege finden und ihr gespeichertes XML abrufen, nur lesend."""
+    """Belege finden, PDF und XML abrufen, Kopffelder eines Entwurfs ändern.
+
+    ``partial_update`` ist der einzige Schreibzugriff; ``PUT`` wird nicht
+    geroutet, weil der ViewSet kein ``update`` hat. Änderungen über die API
+    lösen kein Ereignis aus (``docs/webhooks.md``).
+    """
 
     # Vorgabe aus den Settings, explizit gesetzt.
     permission_classes = [IsAuthenticated, Modellrechte]
@@ -97,7 +205,83 @@ class BelegAnbindungViewSet(ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = BelegAnbindungFilter
     serializer_class = BelegAnbindungSerializer
-    queryset = Beleg.objects.order_by('-erstellt_am')
+    # ``positionen`` für ``brutto``.
+    queryset = (Beleg.objects.select_related('kunde', 'projekt')
+                .prefetch_related('positionen').order_by('-erstellt_am'))
+
+    def get_permissions(self):
+        if self.action == 'partial_update':
+            return [IsAuthenticated(), DarfKopfAendern()]
+        return super().get_permissions()
+
+    @extend_schema(
+        summary='Kopffelder eines Entwurfs ändern',
+        description=(
+            'Ändert `betreff`, `kopftext`, `fusstext`, `bestellnummer`, '
+            '`leitweg_id` und `empfaenger_email`. Die Version aus der '
+            'letzten Auskunft ist Pflicht; weicht sie ab, kommt 409. Ein '
+            'festgeschriebener Beleg antwortet mit 409. Andere Felder '
+            'werden mit 400 abgewiesen.'
+        ),
+        request=KopfaenderungSerializer,
+        responses={200: BelegAnbindungSerializer,
+                   409: OpenApiResponse(description='Kein Entwurf oder '
+                                                    'zwischenzeitlich geändert')},
+    )
+    def partial_update(self, request, pk=None):
+        with transaction.atomic():
+            beleg = self.get_object()
+            if not beleg.ist_aenderbar:
+                return Response(
+                    {'detail': f'{beleg} ist festgeschrieben und nicht '
+                               f'mehr änderbar.'}, status=409)
+            eingabe = KopfaenderungSerializer(beleg, data=request.data,
+                                              partial=True)
+            eingabe.is_valid(raise_exception=True)
+            daten = dict(eingabe.validated_data)
+            try:
+                version_pruefen(beleg, daten.pop(FELD))
+            except VersionKonflikt as fehler:
+                return Response({'detail': fehler.messages[0]}, status=409)
+            for feld, wert in daten.items():
+                setattr(beleg, feld, wert)
+            beleg.save()
+        beleg = self.get_queryset().get(pk=beleg.pk)
+        return Response(self.get_serializer(beleg).data)
+
+    @extend_schema(
+        summary='Das PDF holen',
+        description='Liefert die beim Festschreiben erzeugte Datei. Entwürfe '
+                    'haben keine und antworten mit 404.',
+        responses={(200, 'application/pdf'): bytes,
+                   404: OpenApiResponse(description='Kein Dokument vorhanden')},
+    )
+    @action(detail=True, methods=['get'])
+    def pdf(self, request, pk=None):
+        """Die gespeicherte Datei, nicht neu gerendert: Das versendete PDF
+        ist der Beleg. Ein Entwurf bekommt 404, keine Vorschau."""
+        beleg = self.get_object()
+
+        if not beleg.pdf:
+            raise NotFound(
+                f'{beleg} hat kein gespeichertes Dokument. Entwürfe bekommen '
+                f'ihres erst beim Festschreiben.'
+            )
+
+        from . import pdf as pdf_modul
+
+        try:
+            beleg.pdf.open('rb')
+        except FileNotFoundError as fehler:
+            raise NotFound(
+                f'{beleg}: Das Dokument ist vermerkt, die Datei fehlt aber '
+                f'im Ablageverzeichnis.'
+            ) from fehler
+        return FileResponse(
+            beleg.pdf,
+            content_type='application/pdf',
+            filename=pdf_modul.dateiname(beleg),
+        )
 
     @extend_schema(
         summary='Das Factur-X-XML holen',

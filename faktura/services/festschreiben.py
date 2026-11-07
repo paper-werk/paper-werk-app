@@ -18,7 +18,7 @@ from sequences import get_next_value
 
 from core.optimistic_locking import version_erhoehen
 
-from .. import formate
+from .. import ereignisse, formate
 from ..models import (
     STEUERFREI,
     Beleg,
@@ -418,6 +418,7 @@ def beleg_festschreiben(
     if beleg.typ in BelegTyp.mit_dokument():
         _dokument_ablegen(beleg)
 
+    ereignisse.melden(ereignisse.FESTGESCHRIEBEN, beleg)
     return beleg
 
 
@@ -487,6 +488,7 @@ def beleg_wiedereroeffnen(*, beleg_id: int, benutzer=None) -> Beleg:
 
     logger.info('Beleg %s wieder geöffnet durch %s (Archivdokument gelöst).',
                 beleg.nummer, benutzer or 'unbekannt')
+    ereignisse.melden(ereignisse.WIEDEREROEFFNET, beleg)
     return beleg
 
 

@@ -1,0 +1,15 @@
+{% comment %}
+Wahrheitswerte in Listen und Nur-Lese-Feldern, ersetzt Unfolds Fassung
+(grüner Haken, rotes Kreuz im Kreis). Wahr ist ein Haken in der
+Primärfarbe, falsch und unbekannt sind ein grauer Strich, damit Spalten mit
+vielen Zeilen ruhig bleiben und nur das Zutreffende auffällt. Der Unterschied
+zwischen falsch und unbekannt steht im title.
+{% endcomment %}
+{% load i18n %}
+{% if value == '' or value == None %}
+<span class="text-base-400 dark:text-base-500" title="{% trans "Unknown" %}">–</span>
+{% elif value %}
+<span class="material-symbols-outlined align-middle text-primary-600 dark:text-primary-500" title="{% trans "True" %}">check</span>
+{% else %}
+<span class="text-base-400 dark:text-base-500" title="{% trans "False" %}">–</span>
+{% endif %}
