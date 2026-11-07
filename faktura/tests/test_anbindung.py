@@ -2,8 +2,8 @@
 
 Der n8n-Workflow ``sub-duo-versand-paperwerk`` sucht zu einem Dokument im
 Archiv den Beleg (``?paperless_id=``), liest ``erechnungsprofil`` und ruft
-bei einer XRechnung das gespeicherte XML ab. Das gilt im Kern und bleibt
-erhalten, wenn ein Zusatz den Endpunkt unter derselben URL ersetzt
+bei einer XRechnung das gespeicherte XML ab. Das bleibt erhalten, wenn eine
+Erweiterung den Endpunkt unter derselben URL ersetzt
 (``core.erweiterungen.api_endpoint(ersetzt=True)``). Geprüft wird daher die
 URL, nicht eine bestimmte Klasse.
 """
@@ -14,7 +14,6 @@ from decimal import Decimal
 from io import StringIO
 
 import pytest
-from django.apps import apps
 from django.contrib.auth.models import Group
 from django.core.files.base import ContentFile
 from django.core.management import call_command
@@ -153,20 +152,3 @@ class TestInhaltsverzeichnis:
 
         assert daten['belege'].endswith('/api/v1/belege/')
         assert daten['eingangsrechnungen'].endswith('/api/v1/eingangsrechnungen/')
-
-
-@pytest.mark.skipif(apps.is_installed('api'),
-                    reason='Der Zusatz api ersetzt die Belegauskunft.')
-class TestNurKern:
-    """Funktionen, die der Kern bewusst nicht bietet."""
-
-    def test_kein_festschreiben_und_kein_archivvermerk(self, n8n, xrechnung):
-        assert n8n.post(f'/api/v1/belege/{xrechnung.pk}/festschreiben/').status_code == 404
-        assert n8n.post(f'/api/v1/belege/{xrechnung.pk}/archiviert/',
-                        {'paperless_document_id': 1}, format='json').status_code == 404
-
-    def test_keine_projekte_kunden_kontakte(self, n8n):
-        daten = n8n.get('/api/v1/').json()
-
-        assert not {'projekte', 'kunden', 'kontakte', 'projekt_aufloesen'} & set(daten)
-        assert n8n.get('/api/v1/projekte/').status_code == 404

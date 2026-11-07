@@ -17,12 +17,11 @@ Rückweg für Workflows, die auf Ereignisse reagieren (``docs/webhooks.md``)::
     GET   /api/v1/belege/?vorgaenger=<id>    (Nachfolger, etwa Auftrag zum Angebot)
     PATCH /api/v1/belege/{id}/               (Kopffelder eines Entwurfs)
 
-Der Umfang ist bewusst begrenzt. Ein Zusatz kann den ViewSet erweitern und
-unter derselben URL ersetzen (``core.erweiterungen.api_endpoint(ersetzt=True)``);
-er muss die hier zugesagten Felder weiter liefern
-(``faktura/tests/test_anbindung.py``).
-
-``faktura/apps.py`` registriert den ViewSet.
+Grundlage der vollen Belegauskunft in ``belege.py``; registriert wird nur
+diese (``faktura/apps.py``). Die hier zugesagten Felder prüft
+``faktura/tests/test_anbindung.py``. Wer die Belegauskunft unter derselben
+URL ersetzt (``core.erweiterungen.api_endpoint(ersetzt=True)``), muss sie
+weiter liefern.
 """
 
 from django.db import transaction
@@ -44,9 +43,9 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from core.optimistic_locking import FELD, VersionKonflikt, version_pruefen
 from core.permissions import Modellrechte
 
-from . import facturx
-from .models import Beleg
-from .services import belegsummen, projektstaende
+from .. import facturx
+from ..models import Beleg
+from ..services import belegsummen, projektstaende
 
 #: Felder, die ``PATCH`` an einem Entwurf ändert. Ohne Wirkung auf Steuer,
 #: Summen, Fristen und die Zuordnung zu Kunde und Projekt; Positionen,
@@ -268,7 +267,7 @@ class BelegAnbindungViewSet(ReadOnlyModelViewSet):
                 f'ihres erst beim Festschreiben.'
             )
 
-        from . import pdf as pdf_modul
+        from .. import pdf as pdf_modul
 
         try:
             beleg.pdf.open('rb')
@@ -312,7 +311,7 @@ class BelegAnbindungViewSet(ReadOnlyModelViewSet):
                 f'Festschreiben zusammen mit dem PDF.'
             )
 
-        from . import pdf as pdf_modul
+        from .. import pdf as pdf_modul
 
         try:
             beleg.xml.open('rb')
