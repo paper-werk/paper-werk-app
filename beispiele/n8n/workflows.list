@@ -1,0 +1,20 @@
+# Welche Workflows eingespielt werden, im Format von
+# paper-werk/config-template/einstellungen/n8n/workflows.list.example:
+#   <pfad-relativ-zu-diesem-ordner>;<aktivieren: true|false>
+# Kommentare stehen auf eigener Zeile.
+#
+# Alle Workflows hier setzen aus paper-werk (Installation) voraus:
+# sub-einstellungen (pwSubEinstell01) und fehler-melden (pwFehlerMelden01),
+# beide veröffentlicht, und die Data Table pw_config.
+
+# Ohne Mailversand und ohne fremde Systeme: aktiv.
+# Ein inaktiver Webhook-Workflow beantwortet den Aufruf aus Paper-Werk mit
+# 404; das zeigt "Test senden" an der Regel, steht sonst aber nur im Log.
+workflows/beleg-belegbuch.json;true
+
+# Mit Mailversand: erst nach Prüfung von pw_config und SMTP aktivieren.
+workflows/beleg-angebot-nachfassen.json;false
+
+# Mit Team-Chat: erst nach Eintrag von chat_webhook_url und chat_format in
+# pw_config aktivieren.
+workflows/beleg-team-nachricht.json;false

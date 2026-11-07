@@ -1,0 +1,15 @@
+[
+  {
+    "_kommentar": "Zusätzliche Schlüssel für die Data Table pw_config, die die Workflows in diesem Ordner lesen. Die Grundwerte (paperwerk_url, paperless_url, mail_betrieb, mail_absender, instanz) stehen in config-template/einstellungen/n8n/config.json.example von paper-werk. Format wie dort; eingespielt über den Seeder pw-config-schreiben oder von Hand in der n8n-Oberfläche unter Data Tables."
+  },
+  {
+    "key": "chat_webhook_url",
+    "value": "",
+    "hint": "Eingehender Webhook des Team-Chats für beleg-team-nachricht. Slack, Mattermost, Rocket.Chat und Google Chat nehmen {\"text\": …}; für Microsoft Teams einen Workflow \"Post to a channel when a webhook request is received\" anlegen und chat_format auf teams setzen. Die URL ist ein Geheimnis."
+  },
+  {
+    "key": "chat_format",
+    "value": "text",
+    "hint": "text oder teams. text: {\"text\": …}; teams: Adaptive Card für einen Teams-Workflow."
+  }
+]

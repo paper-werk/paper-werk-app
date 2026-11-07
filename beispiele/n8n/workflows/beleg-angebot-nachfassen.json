@@ -1,0 +1,233 @@
+{
+  "name": "beleg-angebot-nachfassen",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## beleg-angebot-nachfassen\n\nEin versendetes Angebot wird nach `NACHFASS_TAGE` Tagen geprüft. Gibt es dann keinen Nachfolger (Auftrag oder Rechnung aus dem Angebot), geht eine Mail an `mail_betrieb` mit Kunde, Betreff, Betrag und Link in die Maske.\n\n**Regel in Paper-Werk** (Verwaltung > Ereignisse):\nEreignis Beleg, Aktion „Versendet“, Typ „Angebot“.\nZiel-URL `http://n8n:5678/webhook/pw-beleg-angebot-nachfassen`, Token wie in der Credential\n„Header Auth Paper-Werk-Ereignis“.\n\n**pw_config:** `paperwerk_url`, `mail_betrieb`, `mail_absender`\n\n**Credentials:** Header Auth Paper-Werk-Ereignis, Header Auth paper-werk Belege, SMTP account\n\nDie Wartezeit hält n8n in der Datenbank; ein Neustart unterbricht sie nicht. Wird dasselbe Angebot zweimal versendet, laufen zwei Prüfungen. Nachfolger findet die API über `?vorgaenger=<id>`.",
+        "height": 760,
+        "width": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1880,
+        -400
+      ],
+      "id": "55a3a3ca-462a-5bbe-8796-813b36811178",
+      "name": "Doku"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pw-beleg-angebot-nachfassen",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        0
+      ],
+      "id": "e7c27671-6d7b-596a-8e05-2471be78e75a",
+      "name": "Webhook",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pwEreignisToken1",
+          "name": "Header Auth Paper-Werk-Ereignis"
+        }
+      },
+      "webhookId": "4e4aca9d-c53a-5472-a88a-392fd27599ea"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "pwSubEinstell01",
+          "mode": "list",
+          "cachedResultName": "sub-einstellungen"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        0
+      ],
+      "id": "024f80b2-fed4-5b2e-90ee-065007d0aa15",
+      "name": "Einstellungen holen"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Instanzwerte aus sub-einstellungen (Data Table pw_config, gepflegt in der\n// n8n-Oberfläche unter \"Data Tables\").\nconst werte = $('Einstellungen holen').first().json;\nconst pw = (key) => {\n  const v = werte[key];\n  if (v === undefined || String(v).trim() === '') {\n    throw new Error('pw_config: \"' + key + '\" fehlt oder ist leer; in der n8n-Oberfläche unter \"Data Tables\" eintragen.');\n  }\n  return String(v).trim();\n};\n\n// Das Ereignis von Paper-Werk (docs/webhooks.md in paper-werk-app).\nconst ereignis = $('Webhook').first().json.body ?? {};\nconst beleg = ereignis.beleg ?? {};\n\n// Fachlich: nach wie vielen Tagen nachgefasst wird.\nconst NACHFASS_TAGE = 14;\n\n// Fängt eine zu weit gefasste Regel und den Testaufruf (\"test\") ab.\nif (ereignis.aktion !== 'versendet' || beleg.typ !== 'angebot') return [];\n\nreturn [{ json: {\n  paperwerk_url: String(pw('paperwerk_url')).replace(/\\/+$/, ''),\n  mail_betrieb: pw('mail_betrieb'),\n  mail_absender: pw('mail_absender'),\n  nachfass_tage: NACHFASS_TAGE,\n  beleg,\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "3379ebc2-fbd0-5a1f-9c5c-2539caf1f14a",
+      "name": "Konfiguration"
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.nachfass_tage }}",
+        "unit": "days"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "6cb59590-77df-5e8a-b62c-b852fb373f5a",
+      "name": "Warten",
+      "webhookId": "d400a49c-e8be-5e92-aad3-f29bd2a4d80e"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Konfiguration').first().json.paperwerk_url }}/api/v1/belege/?vorgaenger={{ $('Konfiguration').first().json.beleg.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "ce817b62-b0a0-5632-8266-551a4c3f2f69",
+      "name": "Nachfolger laden",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pwApiBelege00001",
+          "name": "Header Auth paper-werk Belege"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const euro = (v) => Number(v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });\nconst datum = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('.') : '');\nconst html = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst TYPEN_TEXT = { angebot: 'Angebot', auftrag: 'Auftrag', lieferschein: 'Lieferschein', rechnung: 'Rechnung', storno: 'Stornorechnung', gutschrift: 'Rechnungskorrektur', mahnung: 'Mahnung' };\nconst typText = (typ) => TYPEN_TEXT[typ] ?? typ;\n\nconst cfg = $('Konfiguration').first().json;\nconst b = cfg.beleg;\n// Ein Nachfolger heißt: Das Angebot ist angenommen oder abgerechnet.\nif (($input.first().json.count ?? 0) > 0) return [];\n\nconst kunde = b.kunde?.name ?? 'ohne Kunde';\nreturn [{ json: {\n  fromEmail: cfg.mail_absender,\n  toEmail: cfg.mail_betrieb,\n  subject: `Angebot ${b.nummer} nachfassen: ${kunde}`,\n  html: `<p>Das Angebot <b>${html(b.nummer)}</b> an ${html(kunde)} ist seit ${cfg.nachfass_tage} Tagen versendet, und es gibt noch keinen Auftrag dazu.</p>\n<p>Betreff: ${html(b.betreff)}<br>Betrag: ${euro(b.brutto)}</p>\n<p><a href=\"${html(b.admin_url)}\">Angebot in Paper-Werk öffnen</a></p>`,\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fc4485a3-9446-5586-bcbd-4076f50ea585",
+      "name": "E-Mail aufbauen"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.fromEmail }}",
+        "toEmail": "={{ $json.toEmail }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        0
+      ],
+      "id": "c67cc480-8f43-53d1-940f-93a8bc623491",
+      "name": "E-Mail senden",
+      "credentials": {
+        "smtp": {
+          "id": "Xg7X6xVdrbSzUQ4o",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Einstellungen holen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Einstellungen holen": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "Warten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warten": {
+      "main": [
+        [
+          {
+            "node": "Nachfolger laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nachfolger laden": {
+      "main": [
+        [
+          {
+            "node": "E-Mail aufbauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-Mail aufbauen": {
+      "main": [
+        [
+          {
+            "node": "E-Mail senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Europe/Berlin",
+    "errorWorkflow": "pwFehlerMelden01"
+  },
+  "tags": [],
+  "id": "pwBlgNachfassen1"
+}
