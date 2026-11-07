@@ -39,6 +39,14 @@ def test_das_anlegeformular_fragt_keinen_schluessel_ab(verwaltung, db):
     assert 'user' in formular.fields
 
 
+def test_das_anlegeformular_nennt_die_rechte_des_benutzers(verwaltung, db):
+    """Der Hinweis steht im ausgelieferten HTML, nicht nur am Formularfeld."""
+    inhalt = verwaltung.get(reverse(ANLEGEN)).content.decode()
+
+    assert 'handelt mit allen Rechten dieses Benutzers' in inhalt
+    assert 'Faktura Dienst' in inhalt
+
+
 def test_die_liste_verweist_auf_eine_seite_die_es_gibt(verwaltung, dienst):
     token = Token.objects.create(user=dienst)
 

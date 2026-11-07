@@ -210,6 +210,14 @@ class TokenProxyAdmin(Kopfleiste, DRFTokenAdmin, ModelAdmin):
             return ['user']
         return ['user', 'key', 'created']
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['help_text'] = (
+                'Der Schlüssel handelt mit allen Rechten dieses Benutzers, '
+                'auch beim Festschreiben. Für Workflows einen Benutzer der '
+                'Gruppe „Faktura Dienst“ wählen.')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 # Modelle von allauth (Anmeldung über Microsoft, core/anmeldung.py).
 #

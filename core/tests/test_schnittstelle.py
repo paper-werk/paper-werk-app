@@ -208,6 +208,12 @@ class TestSchema:
     def test_die_doku_wird_ausgeliefert(self, angemeldet):
         assert angemeldet.get('/api/v1/doku/').status_code == 200
 
+    def test_das_schema_warnt_vor_schreibenden_aufrufen(self, angemeldet):
+        """Die Beschreibung steht oben auf der Swagger-Seite."""
+        inhalt = angemeldet.get('/api/v1/schema/').content.decode()
+
+        assert 'Schreibende Aufrufe wirken sofort und ohne Rückfrage' in inhalt
+
     def test_das_inhaltsverzeichnis_verweist_auf_die_selbstauskunft(self, angemeldet):
         """Die URLs entstehen über reverse(); eine umbenannte Route lässt den
         Test fehlschlagen."""

@@ -23,9 +23,10 @@ lassen sich Funktionen ergänzen, ohne Paper-Werk zu ändern.
   Empfänger von einer zurückgerollten Änderung erfährt.
 - Die Nutzlast enthält elementare Eigenschaften des Belegs. Alles Weitere
   holt der Empfänger über die API.
-- Nur Aktionen in der Oberfläche lösen aus. Änderungen über die API melden
-  nichts, damit ein Workflow, der einen Beleg ändert, sich nicht selbst
-  erneut auslöst.
+- Es melden die Oberfläche und die Dienstfunktionen mit Meldestelle
+  (`beleg_festschreiben`, `beleg_versenden`, `beleg_wiedereroeffnen`), gleich
+  wer sie aufruft. Ein `PATCH` auf Kopffelder meldet nichts, damit ein
+  Workflow, der einen Beleg ändert, sich nicht selbst erneut auslöst.
 
 ## Ereignismodell
 
@@ -50,13 +51,12 @@ Mahnung …).
   `PATCH` über die API nicht meldet.
 - `versendet` folgt bei einem Entwurf auf `festgeschrieben`, weil
   `beleg_versenden` vorher festschreibt.
-- Die Services melden unabhängig vom Aufrufer. Die API ruft keinen von
-  ihnen auf. Ruft eine Erweiterung etwa `beleg_festschreiben` auf, ist die
-  Meldung gewollt; eine Schleife entsteht nicht, weil der Beleg danach
-  gesperrt ist.
+- Die Services melden unabhängig vom Aufrufer. Schreibt ein Workflow über
+  die API fest, meldet das `festgeschrieben`; eine Schleife entsteht nicht,
+  weil der Beleg danach gesperrt ist.
 
-Folge der Auslösung nur aus der Oberfläche: Ändert ein Workflow einen Beleg,
-erfahren andere Workflows davon nichts.
+Ändert ein Workflow Kopffelder, erfahren andere Workflows davon nichts;
+schreibt er fest, schon.
 
 ## Auslösung und Empfänger
 
@@ -256,7 +256,7 @@ liest den Stand der App. Felder: `projekt.id`, `api_url`.
   erkennbar, ob festgeschrieben, versendet oder nur ein Feld geändert wurde,
   und er feuert auch bei Änderungen über die API.
 - **Filter „nicht durch API-Schlüssel X“** gegen Schleifen. Überflüssig,
-  weil die API nicht meldet.
+  weil der einzige wiederholbare Schreibweg (`PATCH`) nicht meldet.
 - **Warten auf eine Antwort** (Hook, der einen Vorgang aufhält). Ein
   ausgefallenes n8n blockierte das Festschreiben.
 - **Zustellung mit Outbox, Wiederholung und Protokoll.** Garantierte
