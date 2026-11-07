@@ -15,7 +15,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from faktura import services
-from faktura.models import Beleg, BelegStatus, BelegTyp
+from faktura.models import Beleg, BelegStatus, BelegTyp, Rechnungsart
 
 pytestmark = pytest.mark.django_db
 
@@ -539,6 +539,24 @@ class TestFestschreiben:
         eintrag = LogEntry.objects.filter(object_id=str(entwurf.pk)).first()
 
         assert eintrag.content_type.model == 'angebot'
+
+    def test_das_protokoll_trifft_den_proxy_der_rechnungsart(
+            self, client, darf_aendern, kunde, firma):
+        """Rechnungsarten teilen sich ``typ``; ohne ``rechnungsart`` ergibt
+        ``proxy_fuer`` den Proxy ``Rechnung``, dessen Manager einen Abschlag
+        nicht findet, und ``log_actions`` schreibt nichts."""
+        abschlag = services.beleg_anlegen(
+            typ=BelegTyp.RECHNUNG, rechnungsart=Rechnungsart.ABSCHLAG,
+            kunde=kunde, betreff='Abschlag',
+            leistungsdatum=date(2026, 1, 1), leistungsdatum_bis=date(2026, 1, 31))
+        services.position_hinzufuegen(
+            beleg=abschlag, bezeichnung='Leistungsstand', menge=Decimal('1'),
+            einheit='pausch', einzelpreis=Decimal('1000.00'), steuersatz='19.00')
+
+        assert self._festschreiben(client, abschlag).status_code == 200
+        eintrag = LogEntry.objects.get(object_id=str(abschlag.pk))
+
+        assert eintrag.content_type.model == 'abschlagsrechnung'
 
     def test_zweimal_festschreiben_geht_nicht(self, client, darf_aendern, rechnung):
         antwort = self._festschreiben(client, rechnung)

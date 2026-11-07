@@ -162,7 +162,7 @@ class BelegViewSet(BelegAnbindungViewSet):
         Eintrag im "Verlauf" der Rechnung nie. ``log_actions()`` nimmt den
         ContentType mit ``for_concrete_model=False``.
         """
-        proxy = proxy_fuer(beleg.typ)
+        proxy = proxy_fuer(beleg.typ, beleg.rechnungsart)
 
         LogEntry.objects.log_actions(
             request.user.pk,
