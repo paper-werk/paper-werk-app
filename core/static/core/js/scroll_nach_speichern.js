@@ -7,6 +7,12 @@
  * sein muss. Ziel ist dieselbe Änderungsmaske oder, nach dem ersten
  * Speichern, die Änderungsmaske des neuen Datensatzes.
  *
+ * Unfold rendert Meldungen am Seitenanfang. Außer bei reinen Erfolgsmeldungen
+ * bleibt die Seite deshalb oben, damit Warnungen sichtbar sind. Unfold
+ * unterscheidet die Art einer Meldung nur über die Farbklasse;
+ * ``AUFFAELLIGE_MELDUNG`` hängt an diesem Markup, abgesichert durch
+ * tests/test_browser_scroll.py.
+ *
  * Verworfen: die Position je URL dauerhaft ablegen, weil ein später über die
  * Liste geöffneter Datensatz sonst nicht oben begänne.
  */
@@ -14,6 +20,7 @@
 
 (function () {
     const SCHLUESSEL = 'pw-scroll-nach-speichern';
+    const AUFFAELLIGE_MELDUNG = 'li[class*="mb-0!"] > div:not(.bg-green-100)';
 
     function selbeMaske(von, nach) {
         if (!nach.endsWith('/change/')) {
@@ -57,6 +64,7 @@
         const navigation = performance.getEntriesByType('navigation')[0];
         if (stand && navigation && navigation.redirectCount > 0
                 && !window.location.hash
+                && !document.querySelector(AUFFAELLIGE_MELDUNG)
                 && selbeMaske(stand.pfad, window.location.pathname)) {
             window.scrollTo(0, stand.y);
         }

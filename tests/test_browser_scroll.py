@@ -4,8 +4,10 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.contrib import messages
 
 from faktura import services
+from faktura.admin.gemeinsam import AktionNachDemSichern
 from faktura.models import BelegTyp
 from tests.browserhilfen import _anmelden
 
@@ -69,6 +71,20 @@ class TestScrollNachDemSpeichern:
 
         _speichern(page)
 
+        assert _position(page) == 0
+
+    def test_warnung_steht_oben(self, page, maske, monkeypatch):
+        original = AktionNachDemSichern.response_change
+
+        def mit_warnung(admin, request, obj):
+            messages.warning(request, 'Bitte die Anschrift prüfen.')
+            return original(admin, request, obj)
+
+        monkeypatch.setattr(AktionNachDemSichern, 'response_change', mit_warnung)
+
+        _speichern(page)
+
+        assert 'Bitte die Anschrift prüfen.' in page.content()
         assert _position(page) == 0
 
     def test_neu_geoeffnet_steht_oben(self, page, maske):
