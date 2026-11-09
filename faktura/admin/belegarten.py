@@ -71,7 +71,8 @@ class AngebotAdmin(BelegAdmin):
         'leistungsdatum_bis': ('Ausführung bis', ''),
     }
 
-    @admin.action(description='Auftrag daraus erzeugen')
+    @admin.action(description='Auftrag daraus erzeugen',
+                  permissions=['nachgelagert'])
     def action_in_auftrag(self, request, queryset):
         self._umwandeln(request, queryset, BelegTyp.AUFTRAG, 'Auftrag')
 
@@ -252,7 +253,8 @@ class AuftragAdmin(BelegAdmin):
         return (beleg.status == BelegStatus.FESTGESCHRIEBEN
                 and not beleg.ist_nachtrag)
 
-    @admin.action(description='Lieferschein erzeugen')
+    @admin.action(description='Lieferschein erzeugen',
+                  permissions=['nachgelagert'])
     def action_in_lieferschein(self, request, queryset):
         self._umwandeln(request, queryset, BelegTyp.LIEFERSCHEIN, 'Lieferschein')
 
