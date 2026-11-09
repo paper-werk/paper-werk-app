@@ -92,6 +92,7 @@ UNFOLD = {
     # (Controlling), siehe Kopf der Datei.
     'SCRIPTS': [
         lambda request: static('core/js/diagramme.js'),
+        lambda request: static('core/js/scroll_nach_speichern.js'),
     ],
 
     "BORDER_RADIUS": "2px",
