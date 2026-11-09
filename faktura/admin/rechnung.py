@@ -741,6 +741,9 @@ class AbschlagsrechnungAdmin(RechnungAdmin):
         kumuliert = (services.kumulierter_abschlag(beleg)
                      if beleg is not None else None)
         if kumuliert is not None:
+            nach = services.titelsummen(kumuliert.positionen)
+            for i, position in enumerate(kumuliert.positionen):
+                position.titelabschluesse = nach.get(i, [])
             extra_context = {
                 **(extra_context or {}),
                 'kumuliert': kumuliert,

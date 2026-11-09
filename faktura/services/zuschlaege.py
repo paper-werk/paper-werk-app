@@ -161,6 +161,9 @@ def titelsummen(positionen) -> dict[int, list[Titelsumme]]:
     return nach
 
 
+RECHENWEG_TOLERANZ = Decimal('0.05')
+
+
 def zuschlagsbeschreibung(zuschlag: Belegposition, positionen) -> str:
     """Rechenweg unter der Bezeichnung im PDF ("3 % auf 9.500,00"), damit
     der Betrag nachvollziehbar ist. Optional ohne Basis: "50 % auf
@@ -178,6 +181,12 @@ def zuschlagsbeschreibung(zuschlag: Belegposition, positionen) -> str:
     if zuschlag.optional:
         return f'{satz} auf {worauf or "alle Leistungen"}'
     basis = zuschlagsbasis(positionen, zuschlag.zuschlag_auf)
+    # Kumuliert ist der Betrag die Summe der einzelnen Abschläge. Passt er
+    # nicht zur Basis, wäre "5 % auf …" eine falsche Rechnung; Rundung je
+    # Abschlag bleibt innerhalb der Toleranz.
+    erwartet = zuschlagsbetrag(basis, zuschlag.zuschlag_prozent or Decimal('0'))
+    if abs(erwartet - zuschlag.einzelpreis) > RECHENWEG_TOLERANZ:
+        return f'{satz} auf {worauf or "alle Leistungen"}'
     return f'{satz} auf {geld(basis)}' + (f' ({worauf})' if worauf else '')
 
 
