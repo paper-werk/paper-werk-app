@@ -23,6 +23,7 @@ from core.adminhilfen import (
     mit_stand,
     skript_mit_stand,
 )
+from faktura.admin.menge import MengeOhneNullen
 from faktura.models import Projekt
 
 from ..models import (
@@ -43,6 +44,7 @@ from .spalten import SpaltenMixin
 
 @admin.register(Erfassungszeile)
 class ErfassungszeileAdmin(
+    MengeOhneNullen,
     Kopfleiste, SpaltenMixin, AbrechnenMixin, SichtMixin, FormularMixin,
     GeschichteZumLesen, ImportExportModelAdmin, unfold_admin.ModelAdmin,
 ):

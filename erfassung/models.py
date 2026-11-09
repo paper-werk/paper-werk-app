@@ -22,6 +22,7 @@ from django.db import models
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
+from core.felder import MengenFeld
 from core.optimistic_locking import ErhoehtElternversion, MitVersion
 from faktura.formate import geld
 from faktura.models import Leistungsart
@@ -165,8 +166,8 @@ class Erfassungszeile(models.Model):
     # Dieselbe Genauigkeit wie Belegposition.menge. NULL bedeutet keine
     # Menge, nicht null Stück; bei einer Mengenleistung verlangt
     # ``_pruefe_umfang`` sie.
-    menge = models.DecimalField(
-        'Menge', max_digits=10, decimal_places=3, null=True, blank=True,
+    menge = MengenFeld(
+        'Menge', null=True, blank=True,
         db_comment='EINGEGEBEN, freiwillig. NULL heißt "keine Menge"; bei '
                    'Zeitleistungen gibt es keine, bei Mengenleistungen ohne '
                    'Angabe fehlt sie noch. Zusammen mit dauer_minuten die '
@@ -657,9 +658,9 @@ class Fremdleistung(ErhoehtElternversion):
                    'automatischen Zuordnung (erfassung.services.zuordnung).',
     )
     einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')
-    menge = models.DecimalField(
-        'Menge', max_digits=10, decimal_places=3, default=Decimal('1'),
-        db_comment='Dieselben drei Nachkommastellen wie Belegposition.menge; '
+    menge = MengenFeld(
+        'Menge', default=Decimal('1'),
+        db_comment='Dieselben Nachkommastellen wie Belegposition.menge; '
                    'die Position wird eines Tages zu einer.',
     )
     leistungsdatum = models.DateField(

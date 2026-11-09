@@ -34,6 +34,7 @@ from core.adminhilfen import (
 )
 from core.exceptions import FachlicherFehler
 from core.optimistic_locking import VersionAdminMixin
+from faktura.admin.menge import MengeOhneNullen
 from faktura.formate import geld
 from faktura.models import Belegposition, BelegStatus, BelegTyp, Projekt
 
@@ -112,7 +113,8 @@ class AuftragspositionFeld:
         return feld
 
 
-class FremdleistungInline(AuftragspositionFeld, unfold_admin.TabularInline):
+class FremdleistungInline(MengeOhneNullen, AuftragspositionFeld,
+                          unfold_admin.TabularInline):
     """Positionen einer Eingangsrechnung, je Zeile ein Vorhaben.
 
     Im selben Formular wie der Rechnungsbetrag, damit der Beleg in einem
@@ -485,7 +487,7 @@ class ZuordnungFilter(admin.SimpleListFilter):
 
 
 @admin.register(Fremdleistung)
-class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
+class FremdleistungAdmin(MengeOhneNullen, Kopfleiste, AuftragspositionFeld,
                          GeschichteZumLesen,
                          unfold_admin.ModelAdmin):
     """Alle Fremdleistungen über alle Eingangsrechnungen, mit Angabe, was
@@ -497,7 +499,7 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
 
     list_display = ['datum_anzeige', 'projekt', 'eingangsrechnung_spalte',
                     'fremdschluessel', 'auftragsposition', 'bezeichnung',
-                    'menge', 'einkauf_anzeige', 'zustand_anzeige_spalte',
+                    'menge_anzeige', 'einkauf_anzeige', 'zustand_anzeige_spalte',
                     'rechnung_spalte']
     # Auch das Datum ist verlinkt, weil im Admin die erste Spalte auf den
     # Datensatz führt.

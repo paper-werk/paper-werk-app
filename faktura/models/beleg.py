@@ -24,6 +24,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 from core.exceptions import FachlicherFehler
+from core.felder import MengenFeld
 from core.optimistic_locking import ErhoehtElternversion, MitVersion
 
 from .. import steuerfall as steuerfall_modul
@@ -1019,8 +1020,8 @@ class Belegposition(ErhoehtElternversion):
                   'aus dem Katalog und ist hier frei änderbar.',
     )
     #: Mindestens 0,001, an einer optionalen Position auch 0 (``clean``).
-    menge = models.DecimalField(
-        'Menge', max_digits=10, decimal_places=3, default=Decimal('1.000'),
+    menge = MengenFeld(
+        'Menge', default=Decimal('1.000'),
         validators=[MinValueValidator(Decimal('0'))],
     )
     einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')
