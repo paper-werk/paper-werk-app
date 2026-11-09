@@ -196,6 +196,14 @@ class AuftragspositionsAuswahl(forms.ModelChoiceField):
             else f"{kennung} · {position}"
 
 
+class FremdleistungsPositionsAuswahl(AuftragspositionsAuswahl):
+    """Ohne Projekt, weil es in derselben Zeile gewählt ist und lange
+    Positionstexte den Platz brauchen."""
+
+    def label_from_instance(self, position):
+        return f"{position.beleg.nummer or 'Entwurf'} · {position}"
+
+
 class LeistungsAuswahl(UnfoldAdminSelectWidget):
     """Setzt die Erfassungsart als ``data-art`` an jede Option, für Katalog-
     und Auftragspositionen; ``erfassungsart()`` blendet danach die passenden

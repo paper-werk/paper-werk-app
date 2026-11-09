@@ -45,6 +45,10 @@
         const gewaehlt = position.selectedOptions[0];
         if (zuruecksetzen && gewaehlt && gewaehlt.value && gewaehlt.disabled) {
             position.value = '';
+            // Select2 zeigte sonst weiter die entfernte Position.
+            if (window.django && window.django.jQuery) {
+                window.django.jQuery(position).trigger('change.select2');
+            }
         }
     }
 
