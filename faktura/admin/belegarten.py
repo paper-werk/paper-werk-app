@@ -46,7 +46,7 @@ class AngebotAdmin(BelegAdmin):
     actions = ['action_festschreiben', 'action_in_auftrag', 'action_in_rechnung']
 
     #: Mit Projekt, weil Angebote meist nach Vorhaben gesucht werden.
-    list_display = ['bezeichnung', 'projekt_zeile', 'empfaenger_zeile',
+    list_display = ['nummer_und_betreff', 'projekt_zeile', 'empfaenger_zeile',
                     'belegdatum', 'summe_brutto', 'dokument', 'schloss']
     #: Vermeidet eine Abfrage je Zeile für den Projektnamen.
     list_select_related = ['projekt']
@@ -70,6 +70,15 @@ class AngebotAdmin(BelegAdmin):
         ),
         'leistungsdatum_bis': ('Ausführung bis', ''),
     }
+
+    @admin.display(description='Beleg', ordering='nummer')
+    def nummer_und_betreff(self, beleg):
+        """Betreff als zweite Zeile, damit die Liste keine Spalte verliert."""
+        if not beleg.betreff:
+            return str(beleg)
+        return format_html(
+            '{}<span class="block font-normal text-font-subtle-light text-xs '
+            'dark:text-font-subtle-dark">{}</span>', str(beleg), beleg.betreff)
 
     @admin.action(description='Auftrag daraus erzeugen',
                   permissions=['nachgelagert'])

@@ -1,5 +1,7 @@
 """Spalten der Belegliste: Dokument, Archivverweis, Sortierung."""
 
+import re
+
 import pytest
 from django.core.files.base import ContentFile
 from django.urls import reverse
@@ -8,6 +10,7 @@ from faktura import services
 from faktura.admin import KontaktAdmin, ProjektAdmin
 from faktura.models import (
     Beleg,
+    BelegTyp,
     Projekt,
 )
 
@@ -234,3 +237,18 @@ class TestSpaltensortierungBelegzahl:
 
         zeilen = antwort.context['cl'].result_list
         assert [p.belege__count for p in zeilen] == [1]
+
+
+@pytest.mark.django_db
+def test_angebotsliste_zeigt_den_betreff_unter_der_nummer(buero, kunde):
+    """Die Spalte Projekt bleibt erhalten."""
+    services.beleg_anlegen(kunde=kunde, typ=BelegTyp.ANGEBOT,
+                           betreff='Umbau Dachgeschoss')
+
+    antwort = buero.get(reverse('admin:faktura_angebot_changelist'))
+    inhalt = antwort.content.decode()
+
+    assert antwort.status_code == 200
+    assert re.search(r'field-nummer_und_betreff.*?Umbau Dachgeschoss', inhalt,
+                     re.S)
+    assert 'field-projekt_zeile' in inhalt
