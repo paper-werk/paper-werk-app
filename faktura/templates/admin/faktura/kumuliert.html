@@ -24,6 +24,12 @@
       </thead>
       <tbody>
         {% for position in kumuliert.positionen %}
+          {% if position.zeilenart == "titel" %}
+          <tr class="border-t border-base-200 font-semibold dark:border-base-800">
+            <td class="px-4 py-2">{{ position.position }}</td>
+            <td class="px-4 py-2" colspan="6">{{ position.bezeichnung }}</td>
+          </tr>
+          {% else %}
           <tr class="border-t border-base-200 dark:border-base-800">
             <td class="px-4 py-2">{{ position.position }}</td>
             <td class="px-4 py-2">{{ position.bezeichnung }}</td>
@@ -33,6 +39,14 @@
             <td class="px-4 py-2 text-right">{{ position.steuersatz_dezimal|prozent }}</td>
             <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ position|zeilensumme|geld }} €</td>
           </tr>
+          {% endif %}
+          {% for abschluss in position.titelabschluesse %}
+          <tr class="border-t border-base-200 font-semibold dark:border-base-800">
+            <td class="px-4 py-2"></td>
+            <td class="px-4 py-2" colspan="5">{{ abschluss.text }}</td>
+            <td class="px-4 py-2 text-right" style="font-variant-numeric: tabular-nums">{{ abschluss.netto|geld }} €</td>
+          </tr>
+          {% endfor %}
         {% endfor %}
         {% for abzug in kumuliert.abzuege %}
           <tr class="border-t border-base-200 dark:border-base-800">

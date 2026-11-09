@@ -24,6 +24,10 @@ steht die Zeile als Menge 1, pausch.
 E-Rechnung keine abweichende Leistungsbeschreibung enthalten darf
 (Abschn. 14.4 Abs. 4a UStAE).
 
+**Titel sind nur Anzeige.** Sie stehen in ``positionen``, damit Überschrift
+und Titelsumme wie im ersten Abschlag erscheinen, und zählen in keinen Betrag.
+Ins XML gehen sie nicht, weil eine Position dort Menge und Preis braucht.
+
 **Nicht bei Teilabnahmen.** In einem Projekt mit Teilabnahme bleibt der
 Abschlag in der einfachen Form, weil die Zuordnung der Abschläge zu
 Teilschlussrechnungen (R-165) sonst auch die kumulierte Sicht beträfe.
@@ -47,8 +51,10 @@ from ..models import (
     Rechnungsart,
     Zeilenart,
 )
+from ..positionsnummer import sortierschluessel
 from .abschlaege import Abzugszeile
 from .summen import positionssumme
+from .zuschlaege import gehoert_zu
 
 #: Einheit einer Zeile, deren Betrag nicht Menge mal Preis ist, und der
 #: Vorgängerzeilen im XML.
@@ -72,7 +78,8 @@ class KumulierterAbschlag:
         """Die Zeilen der E-Rechnung: die kumulierten Positionen, dann je
         Vorgänger und Satz eine Zeile mit negativem Betrag (Menge 1,
         negativer Preis; das Minus kommt im XML in die Menge, BR-27)."""
-        return self.positionen + [
+        return [p for p in self.positionen
+                if p.zeilenart not in Zeilenart.ohne_betrag()] + [
             Belegposition(position='', bezeichnung=abzug.bezeichnung,
                           menge=Decimal('1'), einheit=PAUSCHAL,
                           einzelpreis=abzug.betrag,
@@ -128,8 +135,10 @@ def kumulierter_abschlag(beleg: Beleg) -> KumulierterAbschlag | None:
         for satz, netto in _netto_je_satz(_berechnete(v)).items():
             abzuege.append(Abzugszeile(text, Decimal(satz), -netto))
 
-    quellen = [p for b in [*vorgaenger, beleg] for p in _berechnete(b)]
-    return KumulierterAbschlag(positionen=_kumulieren(beleg, quellen),
+    belege = [*vorgaenger, beleg]
+    quellen = [p for b in belege for p in _berechnete(b)]
+    return KumulierterAbschlag(positionen=_kumulieren(beleg, quellen,
+                                                      _titel(belege)),
                                abzuege=abzuege, vorgaenger=vorgaenger)
 
 
@@ -140,6 +149,14 @@ def _berechnete(beleg: Beleg) -> list[Belegposition]:
             .select_related('auftragsposition__beleg').all()
             if p.zeilenart not in Zeilenart.ohne_betrag()
             and not p.optional and not p.ist_abzug]
+
+
+def _titel(belege) -> dict[str, Belegposition]:
+    """Titel der Belege nach Nummer; bei gleicher Nummer gilt der jüngste
+    Beleg."""
+    return {p.position: p for b in belege for p in b.positionen.all()
+            if p.zeilenart == Zeilenart.TITEL and p.position
+            and not p.ist_abzug}
 
 
 def _netto_je_satz(positionen) -> dict[str, Decimal]:
@@ -166,10 +183,12 @@ def _schluessel(p: Belegposition) -> tuple:
     return ('frei', p.bezeichnung, p.einheit, p.steuersatz, p.art)
 
 
-def _kumulieren(beleg: Beleg, quellen) -> list[Belegposition]:
-    """Je Gruppe eine ungespeicherte Position. Reihenfolge: Positionen mit
-    Auftragsposition nach deren Ordnung, dann die übrigen in der Reihenfolge
-    ihres ersten Auftretens, Zuschläge zuletzt."""
+def _kumulieren(beleg: Beleg, quellen, titel) -> list[Belegposition]:
+    """Je Gruppe eine ungespeicherte Position, dazu die Titel, unter denen
+    Zeilen stehen. Reihenfolge nach Positionsnummer, weil die Titelsumme nach
+    der letzten Zeile ihres Titels steht; Zeilen ohne Nummer zuletzt, zuerst
+    die mit Auftragsposition, dann die übrigen nach erstem Auftreten,
+    Zuschläge am Ende."""
     gruppen: dict[tuple, list[Belegposition]] = {}
     for p in quellen:
         gruppen.setdefault(_schluessel(p), []).append(p)
@@ -184,13 +203,40 @@ def _kumulieren(beleg: Beleg, quellen) -> list[Belegposition]:
 
     zeilen = []
     for schluessel, gruppe in sorted(gruppen.items(), key=ordnung):
-        zeile = _zeile(beleg, schluessel[0], gruppe)
+        zeile = _zeile(beleg, schluessel[0], gruppe, titel)
         if zeile is not None:
             zeilen.append(zeile)
-    return zeilen
+
+    zeilen += [_titelzeile(beleg, vorlage) for nummer, vorlage in titel.items()
+               if any(z.position.startswith(nummer + '.') for z in zeilen)]
+    # ``sorted`` ist stabil und erhält die Ordnung innerhalb gleicher Schlüssel.
+    return sorted(zeilen, key=lambda z: (not z.position,
+                                         sortierschluessel(z.position)))
 
 
-def _zeile(beleg: Beleg, art: str, gruppe) -> Belegposition | None:
+def _titelzeile(beleg: Beleg, vorlage: Belegposition) -> Belegposition:
+    return Belegposition(
+        beleg=beleg, position=vorlage.position,
+        bezeichnung=vorlage.bezeichnung, langtext=vorlage.langtext,
+        zeilenart=Zeilenart.TITEL, menge=Decimal('0'), einheit='',
+        einzelpreis=Decimal('0'), steuersatz=vorlage.steuersatz)
+
+
+def _nummer(art: str, vertrag, vorlage, titel) -> str:
+    """Nummer der Zeile: die der Auftragsposition, beim Zuschlag die eigene.
+    Eine freie Position behält ihre Nummer nur unter einem Titel, weil die
+    Titelsumme über die Nummer zuordnet; sonst ist die automatisch vergebene
+    Nummer über mehrere Abschläge nicht eindeutig."""
+    if vertrag is not None:
+        return vertrag.position
+    if art == 'zuschlag' or any(
+            vorlage.position != t and gehoert_zu(vorlage.position, t)
+            for t in titel):
+        return vorlage.position
+    return ''
+
+
+def _zeile(beleg: Beleg, art: str, gruppe, titel) -> Belegposition | None:
     """Kumulierte Position einer Gruppe; None, wenn sie nichts enthält."""
     netto = sum((positionssumme(menge=p.menge, einzelpreis=p.einzelpreis)
                  for p in gruppe), Decimal('0.00'))
@@ -215,7 +261,10 @@ def _zeile(beleg: Beleg, art: str, gruppe) -> Belegposition | None:
     bis = [p.leistung_bis for p in gruppe if p.leistung_bis]
     return Belegposition(
         beleg=beleg,
-        position=vertrag.position if vertrag else '',
+        position=_nummer(art, vertrag, vorlage, titel),
+        zeilenart=vorlage.zeilenart,
+        zuschlag_prozent=vorlage.zuschlag_prozent,
+        zuschlag_auf=vorlage.zuschlag_auf,
         bezeichnung=quelle.bezeichnung,
         langtext=quelle.langtext,
         menge=menge, einheit=einheit, einzelpreis=preis,
