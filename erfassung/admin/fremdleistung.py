@@ -598,7 +598,13 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
             '<a href="{}" class="text-primary-600 dark:text-primary-500">'
             '{}</a>', url, text)
 
-    @admin.action(description='In Rechnung übernehmen')
+    def has_abrechnen_permission(self, request):
+        """``faktura.add_beleg``, weil das Übernehmen Belege in faktura
+        ändert; dieselbe Bedingung wie in der Erfassungsliste."""
+        return request.user.has_perm('faktura.add_beleg')
+
+    @admin.action(description='In Rechnung übernehmen',
+                  permissions=['abrechnen'])
     def in_rechnung(self, request, queryset):
         """Dieselbe Vorschau wie bei den Stunden.
 
