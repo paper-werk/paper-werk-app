@@ -505,6 +505,8 @@ class FremdleistungAdmin(Kopfleiste, AuftragspositionFeld,
     list_filter = [FremdZustandFilter, ZuordnungFilter, 'weiterberechenbar',
                    'rechnung__lieferant', ('projekt', AutocompleteSelectFilter),
                    'rechnung__datum']
+    # Autocomplete-Filter senden nicht selbst ab.
+    list_filter_submit = True
     search_fields = ['bezeichnung', 'fremdschluessel', 'projekt__nummer',
                      'projekt__bezeichnung', 'rechnung__nummer']
     autocomplete_fields = ['projekt', 'rechnung']

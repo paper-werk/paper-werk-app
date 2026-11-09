@@ -89,6 +89,8 @@ class ZahlungAdmin(Kopfleiste, VersionAdminMixin,
     # Kundenakte verwendet.
     list_filter = [VerteiltFilter, 'zahlungsart', 'datum',
                    ('kunde', AutocompleteSelectFilter)]
+    # Autocomplete-Filter senden nicht selbst ab.
+    list_filter_submit = True
     search_fields = ['zahlername', 'verwendungszweck', 'referenz',
                      'kunde__name', 'kunde__nummer']
     date_hierarchy = 'datum'

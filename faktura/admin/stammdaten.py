@@ -316,6 +316,8 @@ class AnsprechpartnerAdmin(Kopfleiste, VersionAdminMixin,
 
     list_display = ['name', 'kontakt', 'funktion', 'ist_standard', 'aktiv']
     list_filter = ['aktiv', ('kontakt', AutocompleteSelectFilter)]
+    # Autocomplete-Filter senden nicht selbst ab.
+    list_filter_submit = True
     search_fields = ['nachname', 'vorname', 'funktion', 'kontakt__name',
                      'kontakt__nummer']
     autocomplete_fields = ['kontakt']
@@ -395,6 +397,8 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
     list_display_links = ['nummer', 'bezeichnung']
     # Kunde als Autocomplete, weil eine Liste alle Kunden enthielte.
     list_filter = [ProjektAbgeschlossenFilter, ('kunde', AutocompleteSelectFilter)]
+    # Autocomplete-Filter senden nicht selbst ab.
+    list_filter_submit = True
     search_fields = ['nummer', 'bezeichnung', 'beschreibung', 'kunde__name']
     autocomplete_fields = ['kunde']
     ordering = ['-nummer']

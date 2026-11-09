@@ -265,6 +265,23 @@ class TestDieFilter:
 
         assert site.get_model_admin(Rechnung).list_filter_submit
 
+    def test_autocomplete_filter_brauchen_den_anwenden_button(self):
+        """Ohne ``list_filter_submit`` rendert Unfold weder Formular noch
+        Button; die Auswahl im Autocomplete-Feld bleibt dann wirkungslos."""
+        from django.contrib.admin.sites import site
+        from unfold.contrib.filters.admin import AutocompleteSelectFilter
+
+        ohne_button = [
+            type(model_admin).__name__
+            for model_admin in site._registry.values()
+            if any(isinstance(f, tuple)
+                   and issubclass(f[1], AutocompleteSelectFilter)
+                   for f in model_admin.list_filter)
+            and not model_admin.list_filter_submit
+        ]
+
+        assert ohne_button == []
+
     def test_die_liste_laeuft_mit_den_neuen_filtern(self, als_buchhalterin,
                                                    projekt):
         """Die Liste rendert mit den Filtern, weil Filter erst beim Rendern

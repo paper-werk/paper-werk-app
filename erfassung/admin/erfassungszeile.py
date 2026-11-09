@@ -72,6 +72,8 @@ class ErfassungszeileAdmin(
                    ('projekt__kunde', AutocompleteSelectFilter),
                    ('projekt', AutocompleteSelectFilter), LeistungsartFilter,
                    'leistung', 'benutzer']
+    # Autocomplete-Filter senden nicht selbst ab.
+    list_filter_submit = True
     date_hierarchy = 'datum'
     # Suche nach Projekt, Person und Beschreibung, siehe
     # ``get_search_results``. Die Leistung hat einen eigenen Filter.
