@@ -223,7 +223,11 @@ class BelegketteMixin:
 
     # --- Aktionen für fachliche Vorgänge ---
 
-    @admin.action(description='Ausgewählte Belege festschreiben')
+    # Listenaktionen prüfen dieselben Rechte wie die Detailaktionen. Ohne
+    # ``permissions`` führt Django eine Aktion schon mit View-Recht aus.
+
+    @admin.action(description='Ausgewählte Belege festschreiben',
+                  permissions=['festschreiben'])
     def action_festschreiben(self, request, queryset):
         """Festschreiben mit Benutzer am Beleg und LogEntry.
 
@@ -281,7 +285,8 @@ class BelegketteMixin:
         return self._umwandeln_als_detailaktion(
             request, object_id, BelegTyp.RECHNUNG, 'Rechnung')
 
-    @admin.action(description='Rechnung daraus erzeugen')
+    @admin.action(description='Rechnung daraus erzeugen',
+                  permissions=['nachgelagert'])
     def action_in_rechnung(self, request, queryset):
         """Für Angebot, Auftrag und Lieferschein; sichtbar, wo sie in
         ``actions`` steht."""

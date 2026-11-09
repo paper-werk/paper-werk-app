@@ -363,7 +363,8 @@ class RechnungAdmin(BelegAdmin):
         return (beleg.status == BelegStatus.FESTGESCHRIEBEN
                 and bool(beleg.pdf))
 
-    @admin.action(description='Nachlass gewähren (Rechnung bleibt bestehen)')
+    @admin.action(description='Nachlass gewähren (Rechnung bleibt bestehen)',
+                  permissions=['nachlass'])
     def action_nachlass(self, request, queryset):
         """Aktion mit Zwischenseite: erst das Formular, beim Absenden
         ("anwenden") der Vorgang; ``None`` führt zurück in die Liste.
@@ -540,7 +541,8 @@ class RechnungAdmin(BelegAdmin):
                          formate.geld_mit_waehrung(offen))),
         )
 
-    @admin.action(description='Zahlungseingang vermerken')
+    @admin.action(description='Zahlungseingang vermerken',
+                  permissions=['zahlung'])
     def action_zahlung(self, request, queryset):
         """Zwischenseite für einen Zahlungseingang auf eine Rechnung,
         vorbelegt mit offenem Betrag und heute. Sammelüberweisungen verteilt
@@ -656,7 +658,8 @@ class RechnungAdmin(BelegAdmin):
         return (beleg.status == BelegStatus.FESTGESCHRIEBEN
                 and services.offener_betrag(beleg) > 0)
 
-    @admin.action(description='Rechnung stornieren und neu schreiben')
+    @admin.action(description='Rechnung stornieren und neu schreiben',
+                  permissions=['nachgelagert'])
     def action_korrigieren(self, request, queryset):
         for beleg in queryset:
             try:
@@ -683,7 +686,8 @@ class RechnungAdmin(BelegAdmin):
                     messages.SUCCESS,
                 )
 
-    @admin.action(description='Mahnung erzeugen (nächste Stufe)')
+    @admin.action(description='Mahnung erzeugen (nächste Stufe)',
+                  permissions=['mahnen'])
     def action_mahnen(self, request, queryset):
         for rechnung in queryset:
             # Die Stufe ergibt sich aus den bisherigen Mahnungen.
