@@ -1,0 +1,18 @@
+{% load unfold %}
+{% comment %} Hinweis vor dem Festschreiben und Versenden, siehe
+   services.andere_anschrift. Sperrt nichts. {% endcomment %}
+{% if andere_anschrift %}
+  <div class="mb-6">
+    {% component "unfold/components/card.html" with title="Passt der Empfänger?" %}
+      <p class="mb-2 text-red-600 text-sm dark:text-red-500">
+        Der Empfänger stammt aus {{ andere_anschrift.herkunft }} und weicht von der {{ andere_anschrift.bezeichnung }} laut Kontakt ab.
+      </p>
+      <p class="text-font-default-light text-sm dark:text-font-default-dark">
+        Auf dem Beleg: {{ andere_anschrift.aktuell|linebreaksbr }}
+      </p>
+      <p class="mt-2 text-font-default-light text-sm dark:text-font-default-dark">
+        Laut Kontakt: {{ andere_anschrift.vorschlag|linebreaksbr }}
+      </p>
+    {% endcomponent %}
+  </div>
+{% endif %}

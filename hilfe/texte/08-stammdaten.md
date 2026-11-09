@@ -66,8 +66,10 @@ E-Mail.
 
 Der Standard-Ansprechpartner kommt beim Anlegen eines Belegs als
 „z. Hd.“-Zeile ins Anschriftfeld, und seine E-Mail-Adresse hat Vorrang
-als Versandadresse. Als Anschrift nimmt der Beleg die Rechnungsanschrift
-des Kunden. „Sichern“
+als Versandadresse. Welche Anschrift ein neuer Beleg bekommt, richtet sich
+nach der Belegart: Angebot und Auftrag die Postanschrift, der Lieferschein
+die Lieferanschrift, Rechnungen und Mahnungen die Rechnungsanschrift. Fehlt
+die passende, gilt die Standardanschrift. „Sichern“
 und **Zum Kontakt** führen zurück zum Kontakt.
 
 ## Kundenakte {#kundenakte}

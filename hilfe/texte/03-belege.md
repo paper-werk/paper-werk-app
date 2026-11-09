@@ -70,7 +70,11 @@ Oben in der Maske stehen die Angaben zum ganzen Beleg.
 **Empfänger**
 
 - **Empfänger**: das Anschriftfeld, genau so, wie es auf dem Blatt steht,
-  Zeile für Zeile.
+  Zeile für Zeile. Ein Folgebeleg übernimmt den Empfänger seines Vorgängers.
+  Weicht er von der Anschrift ab, die der Kontakt für diese Belegart
+  vorsieht, erscheint ein Hinweis mit beiden Anschriften, auch beim
+  Versenden und Festschreiben. Ersetzt wird er nur über „Weitere …“,
+  „Anschrift laut Kontakt übernehmen“; der Wechsel steht im Verlauf.
 - **E-Mail des Empfängers**: die Adresse, an die „Versenden“ schickt.
 - **USt-IdNr.** und **Steuerfall**: Der Steuerfall steht im Normalfall auf
   „Inland (Regelbesteuerung)“. Die anderen Fälle (§ 13b UStG, Leistungen

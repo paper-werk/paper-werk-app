@@ -217,6 +217,7 @@ class VersandMixin:
             'admin/faktura/versenden.html',
             {**self.admin_site.each_context(request),
              'beleg': beleg,
+             'andere_anschrift': services.andere_anschrift(beleg),
              'summe': services.belegsummen(beleg).brutto,
              'ist_entwurf': beleg.status == BelegStatus.ENTWURF,
              'kopie_an': services.absenderadresse(),

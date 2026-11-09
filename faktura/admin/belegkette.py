@@ -63,6 +63,7 @@ class BelegketteMixin:
             'admin/faktura/festschreiben.html',
             {**self.admin_site.each_context(request),
              'beleg': beleg,
+             'andere_anschrift': services.andere_anschrift(beleg),
              'summe': services.belegsummen(beleg).brutto,
              'mit_dokument': beleg.typ in BelegTyp.mit_dokument(),
              'entsperrbar': beleg.typ in BelegTyp.entsperrbar(),
@@ -79,6 +80,70 @@ class BelegketteMixin:
         if beleg is None:
             return True
         return beleg.status == BelegStatus.ENTWURF
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Weist beim Öffnen auf eine abweichende Anschrift hin, weil der
+        Hinweis nur dort sichtbar sein muss, wo er sich beheben lässt."""
+        if request.method == 'GET':
+            beleg = self._beleg_oder_none(object_id)
+            abweichung = beleg and services.andere_anschrift(beleg)
+            if abweichung:
+                self.message_user(
+                    request, self._text_andere_anschrift(abweichung),
+                    messages.WARNING)
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    @staticmethod
+    def _einzeilig(anschrift: str) -> str:
+        return ', '.join(z.strip() for z in anschrift.splitlines() if z.strip())
+
+    def _text_andere_anschrift(self, abweichung) -> str:
+        return (f'Der Empfänger stammt aus {abweichung.herkunft}: '
+                f'{self._einzeilig(abweichung.aktuell)}. '
+                f'{abweichung.bezeichnung} laut Kontakt: '
+                f'{self._einzeilig(abweichung.vorschlag)}. Zum Ersetzen unter '
+                f'„Weitere …“ „Anschrift laut Kontakt übernehmen“ wählen.')
+
+    def has_anschrift_permission(self, request, object_id=None):
+        """Änderungsrecht und eine Abweichung, die sich übernehmen lässt."""
+        if not super().has_change_permission(request):
+            return False
+        beleg = self._beleg_oder_none(object_id)
+        if beleg is None:
+            return True
+        return services.andere_anschrift(beleg) is not None
+
+    @unfold_action(
+        description='Anschrift laut Kontakt übernehmen',
+        icon='home_pin',
+        permissions=['anschrift'],
+        url_path='anschrift-uebernehmen',
+        dialog={
+            'title': 'Anschrift laut Kontakt übernehmen?',
+            'description': 'Der Empfänger dieses Entwurfs wird durch die '
+                           'Anschrift ersetzt, die der Kontakt für diese '
+                           'Belegart vorsieht. Der Vorgang steht im Verlauf.',
+            'form_submit_text': 'Übernehmen',
+        }, # type: ignore
+    )
+    def detail_anschrift(self, request, form, object_id):
+        """Einziger Weg, auf dem sich der Empfänger eines Folgebelegs durch
+        Paper-Werk ändert; mit LogEntry, damit der Wechsel auffindbar ist."""
+        beleg = self._beleg_oder_none(object_id)
+        if beleg is None:
+            return self._zurueck_zum_beleg(request, object_id)
+        try:
+            abweichung = services.anschrift_uebernehmen(beleg_id=beleg.pk)
+        except services.FakturaError as fehler:
+            self.message_user(request, str(fehler), messages.ERROR)
+            return self._zurueck_zum_beleg(request, object_id)
+        self._vermerken(
+            request, beleg,
+            f'Empfänger ersetzt: {self._einzeilig(abweichung.aktuell)} durch '
+            f'{self._einzeilig(abweichung.vorschlag)}.')
+        self.message_user(
+            request, f'{abweichung.bezeichnung} übernommen.', messages.SUCCESS)
+        return self._zurueck_zum_beleg(request, object_id)
 
     def has_wiedereroeffnen_permission(self, request, object_id=None):
         """Eigenes Recht ``beleg_wiedereroeffnen``, nur an festgeschriebenem
@@ -237,6 +302,7 @@ class BelegketteMixin:
         """
         erfolg, fehler = 0, 0
         for beleg in queryset:
+            abweichung = services.andere_anschrift(beleg)
             try:
                 festgeschrieben = services.beleg_festschreiben(
                     beleg_id=beleg.pk, benutzer=request.user
@@ -263,6 +329,13 @@ class BelegketteMixin:
                     'Der Beleg ist festgeschrieben; zu ändern ist das nur '
                     'noch über eine Stornierung.',
                 )
+                if abweichung:
+                    self.message_user(
+                        request,
+                        f'{festgeschrieben}: Festgeschrieben mit dem Empfänger '
+                        f'aus {abweichung.herkunft}, abweichend von der '
+                        f'{abweichung.bezeichnung} laut Kontakt.',
+                        messages.WARNING)
                 erfolg += 1
         if erfolg and fehler:
             self.message_user(request, f'{erfolg} erfolgreich, {fehler} abgelehnt.',

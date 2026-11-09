@@ -41,7 +41,10 @@ from .anlagen import (
 from .anlegen import (
     ANSCHRIFTSFELDER,
     DUPLIZIERBAR,
+    AndereAnschrift,
     Duplikat,
+    andere_anschrift,
+    anschrift_uebernehmen,
     anschriftgeber,
     beleg_anlegen,
     beleg_duplizieren,
@@ -202,6 +205,7 @@ __all__ = [
     'auftragseingang_je_monat', 'beleg_anlegen', 'beleg_archivieren',
     'beleg_festschreiben', 'beleg_umwandeln', 'beleg_versenden',
     'beleg_wiedereroeffnen', 'belegarchiv_pruefen', 'belegsummen', 'bruttosummen',
+    'AndereAnschrift', 'andere_anschrift', 'anschrift_uebernehmen',
     'berechneter_wert', 'empfaenger_abweichungen', 'erechnung_neu_ausstellen',
     'fakturaverlauf', 'fakturiert_im_jahr', 'gemahnte_rechnungen',
     'mahngebuehr', 'mahnstufe_angleichen', 'mahnung_erstellen',

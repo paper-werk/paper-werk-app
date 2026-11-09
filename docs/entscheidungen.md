@@ -19,6 +19,13 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   Preis, Steuersatz, Texte. Fremdschlüssel dienen nur der Navigation, damit
   ein festgeschriebener Beleg sich nicht mit den Stammdaten ändert
   (`faktura/models/beleg.py`).
+- **Die Anschrift eines neuen Belegs folgt der Belegart**: Angebot und Auftrag
+  die Postanschrift, Lieferschein die Lieferanschrift, sonst die
+  Rechnungsanschrift (`services.VERWENDUNG_JE_BELEGART`). Umwandeln kopiert
+  den Empfänger unverändert; bei Abweichung vom Kontakt erscheint ein Hinweis,
+  ersetzt wird nur auf Klick (`services.anschrift_uebernehmen`), weil ein
+  automatischer Austausch am Beleg nicht erkennbar wäre. Verworfen: Auswahl
+  der Anschrift in der Belegmaske, um die Maske nicht zu erweitern.
 - **Die Belegnummer entsteht beim Festschreiben**, ein Entwurf hat keine. Sie
   kommt aus einem lückenlosen Nummernkreis (`django-sequences`, in der
   Transaktion des Festschreibens) (`services.naechste_belegnummer`).
