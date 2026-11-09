@@ -1,6 +1,6 @@
 [project]
 name = "paper-werk-app"
-version = "0.2.3"
+version = "0.2.4"
 description = "paper-werk: Angebote, Auftraege, Rechnungen - Django 6.1 / uv / PostgreSQL"
 license = "AGPL-3.0-or-later"
 authors = [
