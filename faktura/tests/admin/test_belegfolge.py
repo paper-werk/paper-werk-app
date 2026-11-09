@@ -208,7 +208,7 @@ class TestDasAngebotImMenue:
         assert vorn == ['detail_akte', 'detail_festschreiben', 'detail_pdf']
         assert menue == ['detail_nachtrag', 'detail_in_lieferschein',
                          'detail_in_rechnung', 'detail_wiedereroeffnen',
-                         'detail_verlauf']
+                         'detail_anschrift', 'detail_verlauf']
 
         vorn, menue = aufbau(Rechnung)
         assert vorn == ['detail_akte', 'detail_versenden', 'detail_pdf']

@@ -11,8 +11,10 @@ from decimal import Decimal
 from django.db import transaction
 
 from core import erweiterungen
+from core.optimistic_locking import version_erhoehen
 
 from ..models import (
+    Adressverwendung,
     Beleg,
     Belegposition,
     BelegStatus,
@@ -71,25 +73,44 @@ def beleg_anlegen(
     return beleg
 
 
-def stammdatenwerte(kunde: Kontakt) -> dict:
+#: Anschrift je Belegart; alle übrigen Belegarten erhalten die
+#: Rechnungsanschrift.
+VERWENDUNG_JE_BELEGART = {
+    BelegTyp.ANGEBOT: Adressverwendung.POST,
+    BelegTyp.AUFTRAG: Adressverwendung.POST,
+    BelegTyp.LIEFERSCHEIN: Adressverwendung.LIEFERUNG,
+}
+
+#: Belegarten, die durch Umwandeln entstehen.
+ZIELE_DER_UMWANDLUNG = (BelegTyp.AUFTRAG, BelegTyp.LIEFERSCHEIN,
+                        BelegTyp.RECHNUNG)
+
+
+def verwendung_fuer(typ: str) -> str:
+    return VERWENDUNG_JE_BELEGART.get(typ, Adressverwendung.RECHNUNG)
+
+
+def stammdatenwerte(kunde: Kontakt, typ: str = BelegTyp.RECHNUNG) -> dict:
     """Werte des Kunden für einen neuen Beleg, nach Feldname am Beleg.
 
     Einzige Liste dafür: Service, Übernahme im Admin und der JSON-Endpunkt
     für JavaScript lesen sie. Eine explizite Zuordnung, weil Feldnamen
     abweichen (``kaeuferreferenz`` wird ``leitweg_id``).
 
-    Die Anschrift ist die Rechnungsanschrift, als Freitext und strukturiert,
-    weil zwei verschiedene Anschriften auf einem Beleg der Widerspruch wären,
-    vor dem ``empfaenger_abweichungen`` warnt. Der Hauptansprechpartner wird
+    Die Anschrift folgt der Belegart (``VERWENDUNG_JE_BELEGART``), als
+    Freitext und strukturiert, weil zwei verschiedene Anschriften auf einem
+    Beleg der Widerspruch wären, vor dem ``empfaenger_abweichungen`` warnt.
+    Fehlt die passende Anschrift, gilt die Standardanschrift. Der
+    Hauptansprechpartner wird
     als Verweis und "z. Hd."-Zeile übernommen, seine E-Mail hat Vorrang.
     """
     person = kunde.standardansprechpartner
-    anschrift = kunde.rechnungsanschrift
+    verwendung = verwendung_fuer(typ)
+    anschrift = kunde.beleganschrift(verwendung)
     return {
-        'empfaenger': kunde.anschriftfeld_fuer(person),
+        'empfaenger': kunde.anschriftfeld_fuer(person, verwendung),
         'ansprechpartner': person,
-        'empfaenger_name': (kunde.rechnungsempfaenger.name
-                            if kunde.rechnungsempfaenger_id else kunde.name),
+        'empfaenger_name': kunde.empfaengername(verwendung),
         'empfaenger_strasse': anschrift.strasse if anschrift else '',
         'empfaenger_plz': anschrift.plz if anschrift else '',
         'empfaenger_ort': anschrift.ort if anschrift else '',
@@ -118,7 +139,7 @@ def stammdaten_uebernehmen(
     Ändert nur die Instanz; der Aufrufer speichert.
     """
     angefasst = set(ausser)
-    for name, wert in stammdatenwerte(kunde).items():
+    for name, wert in stammdatenwerte(kunde, beleg.typ).items():
         if name in angefasst:
             continue
         setattr(beleg, name, wert)
@@ -354,6 +375,70 @@ def nachtrag_anlegen(*, beleg_id: int) -> Beleg:
     nachtrag.nachtrag_zu = haupt
     nachtrag.save(update_fields=['nachtrag_zu'])
     return nachtrag
+
+
+@dataclass(frozen=True)
+class AndereAnschrift:
+    """Abweichung des Empfängers eines Folgebelegs vom Kontakt."""
+
+    herkunft: Beleg
+    aktuell: str
+    vorschlag: str
+    #: Bezeichnung der Verwendung, etwa "Rechnungsanschrift".
+    bezeichnung: str
+
+
+def andere_anschrift(beleg: Beleg) -> AndereAnschrift | None:
+    """Abweichung eines umgewandelten Entwurfs von der Anschrift, die der
+    Kontakt für diese Belegart vorsieht, sonst None.
+
+    Das Umwandeln kopiert den Empfänger unverändert. Ein automatischer
+    Austausch ließe sich am Beleg nicht erkennen; deshalb nur Befund, die
+    Übernahme löst der Benutzer aus (``anschrift_uebernehmen``).
+    """
+    if (beleg.status != BelegStatus.ENTWURF or not beleg.vorgaenger_id
+            or beleg.typ not in ZIELE_DER_UMWANDLUNG
+            or beleg.vorgaenger.typ == beleg.typ):
+        return None
+    kunde = anschriftgeber(beleg)
+    if kunde is None:
+        return None
+    verwendung = verwendung_fuer(beleg.typ)
+    if kunde.beleganschrift(verwendung) is None:
+        return None
+    vorschlag = kunde.anschriftfeld_fuer(beleg.ansprechpartner, verwendung)
+    if _vergleichsform(beleg.empfaenger) == _vergleichsform(vorschlag):
+        return None
+    return AndereAnschrift(
+        herkunft=beleg.vorgaenger, aktuell=beleg.empfaenger,
+        vorschlag=vorschlag, bezeichnung=Adressverwendung(verwendung).label)
+
+
+@transaction.atomic
+def anschrift_uebernehmen(*, beleg_id: int) -> AndereAnschrift:
+    """Ersetzt den Empfänger des Entwurfs durch die Anschrift laut Kontakt,
+    Freitext und strukturierte Felder gemeinsam, damit PDF und XML
+    übereinstimmen."""
+    beleg = Beleg.objects.select_for_update().get(pk=beleg_id)
+    abweichung = andere_anschrift(beleg)
+    if abweichung is None:
+        raise FalscherStatus(
+            f'{beleg}: Die Anschrift weicht nicht vom Kontakt ab oder der '
+            f'Beleg ist kein Entwurf mehr.')
+
+    kunde = anschriftgeber(beleg)
+    verwendung = verwendung_fuer(beleg.typ)
+    anschrift = kunde.beleganschrift(verwendung)
+    Beleg.objects.filter(pk=beleg.pk).update(
+        empfaenger=abweichung.vorschlag,
+        empfaenger_name=kunde.empfaengername(verwendung),
+        empfaenger_strasse=anschrift.strasse,
+        empfaenger_plz=anschrift.plz,
+        empfaenger_ort=anschrift.ort,
+        empfaenger_land=anschrift.land,
+    )
+    version_erhoehen(Beleg, beleg.pk)
+    return abweichung
 
 
 def beleg_umwandeln(*, beleg_id: int, neuer_typ: str) -> Beleg:

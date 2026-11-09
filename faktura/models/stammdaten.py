@@ -511,6 +511,19 @@ class Kontakt(MitVersion):
                 Adressverwendung.RECHNUNG)
         return self.adresse_fuer(Adressverwendung.RECHNUNG)
 
+    def beleganschrift(self, verwendung: str) -> 'Adresse | None':
+        """Anschrift für einen Beleg mit dieser Verwendung. Der abweichende
+        Rechnungsempfänger gilt nur für die Rechnungsanschrift."""
+        if verwendung == Adressverwendung.RECHNUNG:
+            return self.rechnungsanschrift
+        return self.adresse_fuer(verwendung)
+
+    def empfaengername(self, verwendung: str) -> str:
+        """Name im Anschriftfeld, siehe ``beleganschrift``."""
+        if verwendung == Adressverwendung.RECHNUNG and self.rechnungsempfaenger_id:
+            return self.rechnungsempfaenger.name
+        return self.name
+
     # Read-only-Properties auf die Standardadresse.
     @property
     def strasse(self) -> str:
@@ -538,17 +551,16 @@ class Kontakt(MitVersion):
         adresse = self.standardadresse
         return adresse.anschrift if adresse else ''
 
-    def anschriftfeld_fuer(self, person: 'Ansprechpartner | None' = None) -> str:
+    def anschriftfeld_fuer(self, person: 'Ansprechpartner | None' = None,
+                           verwendung: str = Adressverwendung.RECHNUNG) -> str:
         """Anschriftfeld zeilenweise, wie es in ``Beleg.empfaenger`` kopiert
         wird: Name, "z. Hd.", Zusatz, Straße, PLZ Ort.
 
-        Verwendet die Rechnungsanschrift. Die Person steht nach DIN 5008
-        unter dem Namen der Organisation. Leere Teile entfallen.
+        Die Person steht nach DIN 5008 unter dem Namen der Organisation.
+        Leere Teile entfallen.
         """
-        adresse = self.rechnungsanschrift
-        name = (self.rechnungsempfaenger.name if self.rechnungsempfaenger_id
-                else self.name)
-        zeilen = [name]
+        adresse = self.beleganschrift(verwendung)
+        zeilen = [self.empfaengername(verwendung)]
         if person is not None:
             zeilen.append(person.anschriftzusatz)
         if adresse:

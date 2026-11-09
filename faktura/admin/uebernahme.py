@@ -101,6 +101,6 @@ class UebernahmeMixin:
 
         # ForeignKeys (Ansprechpartner) als ID, weil JsonResponse keine
         # Modellobjekte serialisiert.
-        werte = services.stammdatenwerte(kunde)
+        werte = services.stammdatenwerte(kunde, self.typ)
         return JsonResponse({name: getattr(wert, 'pk', wert)
                              for name, wert in werte.items()})

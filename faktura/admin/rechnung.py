@@ -169,7 +169,8 @@ class RechnungAdmin(BelegAdmin):
                     *erweiterungen.belegaktionen(self.typ),
                     'detail_erneut_versenden', 'detail_mahnen',
                     'detail_nachlass', 'detail_erechnung_neu',
-                    'detail_korrigieren', 'detail_duplizieren'),
+                    'detail_korrigieren', 'detail_duplizieren',
+                    'detail_anschrift'),
         ]
 
     def _belegaktionen_anhaengen(self):

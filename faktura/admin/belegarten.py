@@ -187,7 +187,8 @@ class AuftragAdmin(BelegAdmin):
     actions_detail = [
         'detail_akte', 'detail_festschreiben', 'detail_pdf',
         weitere('detail_nachtrag', 'detail_in_lieferschein',
-                'detail_in_rechnung', 'detail_wiedereroeffnen'),
+                'detail_in_rechnung', 'detail_wiedereroeffnen',
+                'detail_anschrift'),
     ]
 
     #: Zugesagter Termin ohne steuerliche Bedeutung.
@@ -284,7 +285,8 @@ class LieferscheinAdmin(BelegAdmin):
 
     actions_detail = [
         'detail_versenden', 'detail_pdf',
-        weitere('detail_erneut_versenden', 'detail_in_rechnung'),
+        weitere('detail_erneut_versenden', 'detail_in_rechnung',
+                'detail_anschrift'),
     ]
 
     #: Das Lieferdatum belegt das Leistungsdatum der Rechnung. Ohne
