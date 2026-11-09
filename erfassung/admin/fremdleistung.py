@@ -58,6 +58,7 @@ from .gemeinsam import (
     NEUE_ZIELE,
     AuftragspositionsAuswahl,
     AuftragspositionsWidget,
+    FremdleistungsPositionsAuswahl,
     _rechnungsadresse,
     entwuerfe_fuer,
     entwurfsname_von,
@@ -79,8 +80,11 @@ class AuftragspositionFeld:
     #: wählbar bleiben muss.
     eigene_zeilen = 'fremdkontierungen__pk'
 
+    # Select2 lädt das Autocomplete-Feld des Projekts mit.
     class Media:
-        js = ['erfassung/js/fremdleistungsauswahl.js']
+        css = {'all': ['erfassung/css/suchauswahl.css']}
+        js = ['erfassung/js/fremdleistungsauswahl.js',
+              'erfassung/js/suchauswahl.js']
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'auftragsposition':
@@ -97,7 +101,7 @@ class AuftragspositionFeld:
                 .select_related('beleg__projekt')
                 .order_by('beleg__projekt__nummer', 'beleg__nummer',
                           'sortierung'))
-            kwargs['form_class'] = AuftragspositionsAuswahl
+            kwargs['form_class'] = FremdleistungsPositionsAuswahl
             kwargs['widget'] = AuftragspositionsWidget()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -109,6 +113,10 @@ class AuftragspositionFeld:
             for schalter in ('can_add_related', 'can_change_related',
                              'can_delete_related', 'can_view_related'):
                 setattr(feld.widget, schalter, False)
+            # Suchauswahl, weil die Liste des Browsers so breit wird wie der
+            # längste Positionstext und aus dem Fenster läuft.
+            auswahl = getattr(feld.widget, 'widget', feld.widget)
+            auswahl.attrs['data-suche'] = ''
         return feld
 
 

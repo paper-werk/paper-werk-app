@@ -129,6 +129,55 @@ class TestAuftragspositionDerFremdleistung:
         expect(self._option(page, 'positionen-0-auftragsposition',
                             bestand['labor_sued'])).to_be_disabled()
 
+    LANGER_TEXT = ('Erarbeiten eines Konzepts zur Reduktion der notwendigen '
+                   'Unterfangungsmaßnahmen an den angrenzenden Bauwerken '
+                   'einschließlich Untersuchung aller Lösungsmöglichkeiten')
+
+    def test_lange_positionen_bleiben_im_fenster(self, live_server, page,
+                                                 chefin, bestand):
+        """Die Trefferliste läuft nicht aus dem Fenster, der Text bricht um,
+        nur das Projekt der Zeile steht zur Wahl."""
+        page.set_viewport_size({'width': 1280, 'height': 900})
+        _auftrag_mit_position(bestand['nord'], 'AU-2026-0073', self.LANGER_TEXT)
+        _anmelden(page, live_server.url)
+        page.goto(f'{live_server.url}/admin/erfassung/eingangsrechnung/'
+                  f'{bestand["rechnung"].pk}/change/')
+        page.wait_for_load_state('networkidle')
+
+        feld = page.locator('select[name="positionen-0-auftragsposition"]'
+                            ' + .select2 .select2-selection')
+        feld.click()
+
+        liste = page.locator('.select2-dropdown.pw-suchauswahl')
+        expect(liste).to_be_visible()
+        kasten = liste.bounding_box()
+        assert kasten['x'] + kasten['width'] <= 1280
+        assert kasten['width'] > feld.bounding_box()['width']
+        lang = liste.locator('.select2-results__option',
+                             has_text='Unterfangungsmaßnahmen')
+        expect(lang).to_contain_text('Lösungsmöglichkeiten')
+        expect(lang).not_to_contain_text('2026-071')
+        assert lang.bounding_box()['height'] > 40, 'der Text bricht nicht um'
+        expect(liste.locator('.select2-results__option',
+                             has_text='Labor Süd')).to_have_count(0)
+
+    def test_neue_zeile_hat_die_suchauswahl(self, live_server, page, chefin,
+                                            bestand):
+        _anmelden(page, live_server.url)
+        page.goto(f'{live_server.url}/admin/erfassung/eingangsrechnung/'
+                  f'{bestand["rechnung"].pk}/change/')
+        page.wait_for_load_state('networkidle')
+        vorhanden = page.locator('select[name$="-auftragsposition"]'
+                                 '.select2-hidden-accessible').count()
+
+        page.get_by_text('Fremdleistung hinzufügen').click()
+
+        expect(page.locator('select[name$="-auftragsposition"]'
+                            '.select2-hidden-accessible')).to_have_count(
+            vorhanden + 1)
+        expect(page.locator('select[name*="__prefix__"]'
+                            '.select2-hidden-accessible')).to_have_count(0)
+
 
 @pytest.mark.django_db(transaction=True)
 class TestErfassungsmaske:

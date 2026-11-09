@@ -1,0 +1,10 @@
+/* Trefferliste der Suchauswahl (suchauswahl.js): breiter als die schmale
+ * Spalte einer Inline-Zeile und im Fenster begrenzt. Lange Einträge brechen
+ * um, damit kein Text verloren geht. */
+.select2-dropdown.pw-suchauswahl {
+    width: min(40rem, 70vw) !important;
+}
+
+.pw-suchauswahl .select2-results__option {
+    white-space: normal;
+}

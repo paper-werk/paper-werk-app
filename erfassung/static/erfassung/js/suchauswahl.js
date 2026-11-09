@@ -18,10 +18,18 @@
  *
  * Tippen auf dem geschlossenen Feld öffnet die Suche mit dem Zeichen,
  * damit nach Tab sofort gesucht werden kann.
+ *
+ * Neue Inline-Zeilen werden bei "formset:added" eingerichtet. Die
+ * Vorlagenzeile (__prefix__) bleibt unberührt, weil Django sie klont und die
+ * Kopie sonst ein funktionsloses Select2 enthielte.
+ *
+ * Start bei DOMContentLoaded, weil die Reihenfolge gegenüber den Skripten
+ * des Autocomplete-Felds in der Fremdleistung nicht festliegt.
  */
 'use strict';
 
-django.jQuery(function ($) {
+document.addEventListener('DOMContentLoaded', function () {
+    const $ = django.jQuery;
     const standard = $.fn.select2.defaults.defaults.matcher;
 
     function passend(angaben, eintrag) {
@@ -31,13 +39,16 @@ django.jQuery(function ($) {
         return standard(angaben, eintrag);
     }
 
-    $('select[data-suche]').each(function () {
+    function einrichten() {
         const auswahl = this;
-        if ($(auswahl).hasClass('select2-hidden-accessible')) {
+        if ($(auswahl).hasClass('select2-hidden-accessible')
+                || auswahl.name.includes('__prefix__')) {
             return;
         }
         $(auswahl).select2({
             allowClear: !auswahl.required,
+            /* Breiter als die schmale Spalte; siehe suchauswahl.css. */
+            dropdownCssClass: 'pw-suchauswahl',
             language: 'de',
             matcher: passend,
             placeholder: {id: '', text: '---------'},
@@ -76,5 +87,10 @@ django.jQuery(function ($) {
                     suche.dispatchEvent(new Event('input', {bubbles: true}));
                 }
             });
+    }
+
+    $('select[data-suche]').each(einrichten);
+    $(document).on('formset:added', function () {
+        $('select[data-suche]').each(einrichten);
     });
 });
