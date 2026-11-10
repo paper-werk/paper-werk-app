@@ -208,6 +208,12 @@ class TestSchema:
     def test_die_doku_wird_ausgeliefert(self, angemeldet):
         assert angemeldet.get('/api/v1/doku/').status_code == 200
 
+    @pytest.mark.parametrize('pfad', ['/api/v1/schema/', '/api/v1/doku/'])
+    def test_schema_und_doku_verlangen_eine_anmeldung(self, pfad):
+        """Das Schema nennt alle registrierten Endpunkte, auch die der
+        Zusätze. Die Vorgabe von drf-spectacular ist ``AllowAny``."""
+        assert APIClient().get(pfad).status_code in (401, 403)
+
     def test_das_schema_warnt_vor_schreibenden_aufrufen(self, angemeldet):
         """Die Beschreibung steht oben auf der Swagger-Seite."""
         inhalt = angemeldet.get('/api/v1/schema/').content.decode()
