@@ -156,6 +156,11 @@ MIDDLEWARE = [
 SESSION_COOKIE_NAME = 'paperwerk_sessionid'
 CSRF_COOKIE_NAME = 'paperwerk_csrftoken'
 
+# Djangos Vorgabe von 1000 Feldern je Request reicht für etwa 64 Positionen
+# (rund 15 Felder je Zeile); darüber antwortet die Belegmaske mit 400. Die
+# Grenze folgt dem ``max_num`` des Positions-Formsets (1000 Zeilen).
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
+
 ROOT_URLCONF = 'paperwerk.urls'
 
 TEMPLATES = [

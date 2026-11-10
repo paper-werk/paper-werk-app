@@ -258,3 +258,51 @@ class TestInDerAbnahme:
 
         assert [p.bezeichnung for p in rechnung.positionen.all()] == ['Leistung']
         assert services.belegsummen(rechnung).netto == Decimal('500.00')
+
+
+class TestGrossesAngebot:
+    """Mehr als 1000 Formularfelder, 80 Positionen, bei denen eine
+    Option gesetzt wird; Djangos Vorgabe beantwortet das mit 400."""
+
+    ANZAHL = 80
+
+    def test_option_setzen_und_weiter_bearbeiten(self, buero, kunde):
+        beleg = _beleg(kunde, BelegTyp.ANGEBOT,
+                       *[('2', '10.00', False)] * self.ANZAHL)
+        positionen = list(beleg.positionen.order_by('pk'))
+        daten = {
+            'kunde': kunde.pk, 'betreff': beleg.betreff,
+            'belegdatum': '', 'leistungsdatum': '01.09.2026',
+            'leistungsdatum_bis': '', 'zahlungsziel_tage': '14',
+            'empfaenger': '', 'empfaenger_ust_id': '',
+            'kopftext': '', 'fusstext': '', '_continue': '1',
+            'positionen-TOTAL_FORMS': str(self.ANZAHL),
+            'positionen-INITIAL_FORMS': str(self.ANZAHL),
+            'positionen-MIN_NUM_FORMS': '0',
+            'positionen-MAX_NUM_FORMS': '1000',
+        }
+        for i, position in enumerate(positionen):
+            daten.update({
+                f'positionen-{i}-id': position.pk,
+                f'positionen-{i}-beleg': beleg.pk,
+                f'positionen-{i}-katalog': '',
+                f'positionen-{i}-position': position.position,
+                f'positionen-{i}-bezeichnung': position.bezeichnung,
+                f'positionen-{i}-zuschlag_prozent': '',
+                f'positionen-{i}-zuschlag_auf': '',
+                f'positionen-{i}-langtext': '',
+                f'positionen-{i}-menge': '2',
+                f'positionen-{i}-einheit': position.einheit,
+                f'positionen-{i}-einzelpreis': '10.00',
+                f'positionen-{i}-steuersatz': '19.00',
+                f'positionen-{i}-fremdschluessel': '',
+            })
+        daten['positionen-1-optional'] = 'on'
+        assert len(daten) > 1000
+
+        antwort = buero.post(
+            reverse('admin:faktura_angebot_change', args=[beleg.pk]), daten)
+
+        assert antwort.status_code == 302
+        positionen[1].refresh_from_db()
+        assert positionen[1].optional
