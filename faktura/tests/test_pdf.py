@@ -1416,3 +1416,59 @@ class TestDieBetraegeAufDemBlatt:
         # gesucht wird der Absolutwert.
         assert formate.geld(abs(summen.netto)) in text
         assert formate.geld(abs(summen.brutto)) in text
+
+
+class TestFetcherLaedtNurStaticUndMedia:
+    """``BelegUrlFetcher`` lädt nur Dateien unter ``STATIC_URL`` und
+    ``MEDIA_URL``. HTML im Beleg darf weder Dateien des Servers noch Dienste
+    im Netz der Installation lesen."""
+
+    @pytest.mark.parametrize('url', [
+        'file:///etc/passwd',
+        'file:///C:/Windows/win.ini',
+        'http://paperless:8000/api/documents/',
+        'https://example.org/bild.png',
+        'ftp://example.org/bild.png',
+    ])
+    def test_fremde_urls_werden_abgelehnt(self, url):
+        from faktura.pdf import BelegUrlFetcher
+
+        with pytest.raises(ValueError, match='nicht zugelassen'):
+            BelegUrlFetcher()(url)
+
+    def test_media_fuehrt_nicht_aus_dem_ordner_heraus(self, settings, tmp_path):
+        from faktura.pdf import BelegUrlFetcher
+
+        (tmp_path / 'geheim.txt').write_text('geheim', encoding='utf-8')
+        medien = tmp_path / 'media'
+        medien.mkdir()
+        settings.MEDIA_ROOT = str(medien)
+
+        with pytest.raises(ValueError, match='nicht zugelassen'):
+            BelegUrlFetcher()('file:///media/../geheim.txt')
+
+    def test_static_fuehrt_nicht_aus_dem_ordner_heraus(self, settings, tmp_path):
+        from faktura.pdf import BelegUrlFetcher
+
+        (tmp_path / 'geheim.txt').write_text('geheim', encoding='utf-8')
+        statisch = tmp_path / 'staticfiles'
+        statisch.mkdir()
+        settings.STATIC_ROOT = str(statisch)
+
+        with pytest.raises(ValueError, match='nicht zugelassen'):
+            BelegUrlFetcher()('file:///static/../geheim.txt')
+
+    def test_eine_datei_unter_media_wird_geladen(self, settings, tmp_path):
+        """Der Weg des Firmenlogos (``firma.logo.url``)."""
+        from faktura.pdf import BelegUrlFetcher
+
+        (tmp_path / 'firma').mkdir()
+        (tmp_path / 'firma' / 'logo.png').write_bytes(b'bild')
+        settings.MEDIA_ROOT = str(tmp_path)
+
+        assert BelegUrlFetcher()('file:///media/firma/logo.png').read() == b'bild'
+
+    def test_data_urls_werden_geladen(self):
+        from faktura.pdf import BelegUrlFetcher
+
+        assert BelegUrlFetcher()('data:text/plain;base64,YQ==').read() == b'a'

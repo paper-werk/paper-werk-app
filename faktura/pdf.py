@@ -17,6 +17,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from django.conf import settings
+from django.core.exceptions import SuspiciousFileOperation
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -151,15 +152,24 @@ def beleg_als_html(beleg, *, entwurf_kennzeichnen: bool = True) -> str:
 
 
 class BelegUrlFetcher(weasyprint.URLFetcher):
-    """Löst ``/static/…`` und ``/media/…`` auf lokale Dateien auf.
+    """Lädt nur ``/static/…`` und ``/media/…`` aus lokalen Dateien sowie
+    ``data:``-URLs; jede andere URL wird mit ``ValueError`` abgelehnt.
 
     WeasyPrint läuft ohne Webserver und hat ``/static/beleg.css`` bereits zu
     ``file:///static/beleg.css`` aufgelöst; ohne diesen Fetcher entstünde das
     PDF ohne Fehlermeldung ohne CSS. Verglichen wird deshalb der Pfad.
+
+    Abgelehnt werden insbesondere ``http://`` und ``file://`` außerhalb der
+    beiden Ordner, damit HTML im Beleg weder Dateien des Servers noch Dienste
+    im Netz der Installation lesen kann. WeasyPrint fängt den ``ValueError``,
+    protokolliert eine Warnung und rendert ohne die Ressource.
     """
 
     def __call__(self, url):
         from django.contrib.staticfiles import finders
+
+        if url.lower().startswith('data:'):
+            return super().__call__(url)
 
         pfadanteil = unquote(urlsplit(url).path)
 
@@ -169,22 +179,36 @@ class BelegUrlFetcher(weasyprint.URLFetcher):
             # Zuerst die Quelldatei (Entwicklung), dann collectstatic, weil
             # der Name im Betrieb einen Hash enthält
             # (beleg.254698946439.css) und nur in STATIC_ROOT existiert.
-            gefunden = finders.find(rest)
+            # ``finders.find`` lehnt Pfade außerhalb der Static-Ordner selbst
+            # ab (``safe_join``).
+            try:
+                gefunden = finders.find(rest)
+            except SuspiciousFileOperation:
+                gefunden = None
 
             if not gefunden and settings.STATIC_ROOT:
-                eingesammelt = Path(settings.STATIC_ROOT) / rest
-                if eingesammelt.is_file():
-                    gefunden = str(eingesammelt)
+                gefunden = _datei_unterhalb(settings.STATIC_ROOT, rest)
 
             if gefunden:
                 return super().__call__(Path(gefunden).as_uri())
 
         if settings.MEDIA_URL and pfadanteil.startswith(settings.MEDIA_URL):
-            datei = Path(settings.MEDIA_ROOT) / pfadanteil[len(settings.MEDIA_URL):]
-            if datei.exists():
+            datei = _datei_unterhalb(
+                settings.MEDIA_ROOT, pfadanteil[len(settings.MEDIA_URL):])
+            if datei:
                 return super().__call__(datei.as_uri())
 
-        return super().__call__(url)
+        raise ValueError(f'Beleg-PDF: URL nicht zugelassen: {url}')
+
+
+def _datei_unterhalb(ordner, rest: str) -> Path | None:
+    """Die Datei ``rest`` unter ``ordner`` oder ``None``, wenn sie fehlt oder
+    der aufgelöste Pfad (``..``, Symlink) außerhalb von ``ordner`` liegt."""
+    wurzel = Path(ordner).resolve()
+    datei = (wurzel / rest).resolve()
+    if datei.is_file() and datei.is_relative_to(wurzel):
+        return datei
+    return None
 
 
 def _xmp_einsetzen(block: bytes):
