@@ -8,9 +8,11 @@ Steuersatz, leere Artikelnummern.
 import io
 from decimal import Decimal
 
+import openpyxl
 import pytest
 import tablib
 from django.urls import reverse
+from import_export.formats import base_formats
 
 from faktura.models import (
     Katalogposition,
@@ -207,6 +209,34 @@ class TestWasHinausgeht:
         assert daten.headers == [*SPALTEN, 'fremdschluessel']
         assert daten[0][0] == '2.10'
         assert 'DIN ISO 10381-1' in daten[0][2]
+
+    @pytest.mark.parametrize('format_klasse', [base_formats.CSV, base_formats.XLSX])
+    def test_eine_formel_im_text_wird_nicht_als_formel_exportiert(
+            self, db, format_klasse):
+        """Eine Zelle, die mit "=" beginnt, werten Excel und LibreOffice als
+        Formel aus. Der Name eines Kontakts kann aus einer eingelesenen
+        E-Rechnung stammen."""
+        Kontakt.anlegen(nummer='K-1000', name='=HYPERLINK("http://x","y")')
+
+        datei = format_klasse().export_data(KontaktResource().export())
+
+        tabelle = format_klasse().create_dataset(datei)
+        name = tabelle.dict[0]['name']
+        assert name == 'HYPERLINK("http://x","y")'
+        if format_klasse is base_formats.XLSX:
+            blatt = openpyxl.load_workbook(io.BytesIO(datei)).active
+            assert all(zelle.data_type != 'f' for zeile in blatt for zelle in zeile)
+
+    def test_ein_negativer_betrag_bleibt_im_export_erhalten(self, db):
+        """Nur "=" wird entfernt; ein führendes Minus gehört zum Betrag."""
+        Katalogposition.objects.create(
+            nummer='9.10', bezeichnung='Nachlass', einheit='psch',
+            einzelpreis=Decimal('-50.00'), art=Leistungsart.ZEIT)
+
+        datei = base_formats.CSV().export_data(KatalogpositionResource().export())
+
+        zeile = base_formats.CSV().create_dataset(datei).dict[0]
+        assert Decimal(zeile['einzelpreis'].replace(',', '.')) == Decimal('-50.00')
 
     def test_und_er_laesst_sich_wieder_einlesen(self, db):
         """Ein Export lässt sich nach Änderung wieder importieren."""

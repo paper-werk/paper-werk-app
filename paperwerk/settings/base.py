@@ -320,6 +320,13 @@ IMPORT_EXPORT_FORMATS = [
     base_formats.JSON,
 ]
 
+# Entfernt beim Export ein führendes "=" aus jeder Zelle, weil Excel und
+# LibreOffice die Zelle sonst als Formel auswerten (CSV Injection). Texte
+# wie Kontaktnamen können aus eingelesenen E-Rechnungen stammen. Zellen, die
+# mit "+", "-" oder "@" beginnen, bleiben unverändert, damit negative Beträge
+# erhalten bleiben; das Paket maskiert sie nicht.
+IMPORT_EXPORT_ESCAPE_FORMULAE_ON_EXPORT = True
+
 # Import verlangt das Änderungsrecht, Export das Ansichtsrecht.
 IMPORT_EXPORT_IMPORT_PERMISSION_CODE = 'change'
 IMPORT_EXPORT_EXPORT_PERMISSION_CODE = 'view'
