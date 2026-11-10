@@ -513,6 +513,10 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     # Den Schema-Endpunkt nicht in der Doku auflisten.
     'SERVE_INCLUDE_SCHEMA': False,
+    # Schema und Doku nur mit Anmeldung. Die Vorgabe von drf-spectacular ist
+    # AllowAny; das Schema nennt auch die Endpunkte der Zusätze, die je
+    # Installation verschieden sind.
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
     # Assets aus dem Sidecar-Paket, damit die Doku ohne CDN funktioniert.
     'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
