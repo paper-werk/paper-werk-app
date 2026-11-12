@@ -53,6 +53,23 @@ Akte. Darunter, für wer die Zahlen sehen darf, die Kennzahlen:
 - **Effektiver Stundensatz**: Erlös je geleisteter Stunde, mit dem Faktor
   auf den Kostensatz; nur, wenn Stunden erfasst sind.
 
+Der effektive Stundensatz zählt nur die eigene Arbeit. Vom Leistungswert
+geht die zugekaufte Leistung ab, der Rest wird durch die geleisteten Stunden
+geteilt. Schon berechneter Zukauf geht mit seinem Rechnungsbetrag ab, noch
+nicht berechneter mit dem Einkaufspreis. Ein Beispiel: 10 Stunden zu 80 €
+und Material, eingekauft für 4.000 € und für 5.000 € weiterberechnet.
+
+| | Leistungswert | ab Zukauf | je Stunde |
+|---|---:|---:|---:|
+| vor der Rechnung | 4.800 € | 4.000 € | 80 € |
+| nach der Rechnung | 5.800 € | 5.000 € | 80 € |
+
+Der Aufschlag von 1.000 € auf das Material steht im Ergebnis, nicht im
+Stundensatz. Nicht herausgerechnet werden Nachlässe und prozentuale
+Zuschläge auf eine Rechnung; sie verändern den Stundensatz. Steht Zukauf
+mit Stunden in derselben Rechnungsposition, zählt die ganze Position als
+Zukauf.
+
 Ist mehr geleistet als beauftragt, steht ein Warnhinweis „über dem
 Auftrag“. Ob das bezahlt wird, entscheidet der Vertrag: nach Aufwand ja,
 pauschal nicht. Ein Nachtrag gehört geprüft.

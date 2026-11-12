@@ -24,7 +24,13 @@ from django.db.models import (
 from django.utils import timezone
 
 from core import rechnen
-from faktura.models import Leistungsart
+from faktura.models import (
+    Belegposition,
+    BelegStatus,
+    Leistungsart,
+    Rechnungsart,
+)
+from faktura.services.summen import POSITIONSNETTO
 
 from ..formate import dauer_zeigen, personenname
 from ..models import Erfassungszeile, Fremdleistung, Kostensatz
@@ -296,6 +302,32 @@ def offene_fremdleistung_je_projekt(*, projekte=None) -> dict[int, Decimal]:
     return {zeile['projekt']: zeile['summe'] or Decimal('0.00')
             for zeile in positionen.values('projekt')
             .annotate(summe=Sum('einkauf_netto'))}
+
+
+def abgerechnete_fremdleistung_je_projekt(*, projekte=None
+                                          ) -> dict[int, Decimal]:
+    """Verkaufswert weiterberechneter Fremdleistung je Projekt: Netto der
+    Rechnungspositionen, auf die ``Fremdleistung.abgerechnet_in`` zeigt.
+
+    Es gelten die Filter von ``abgerechnete_leistung``: keine Entwürfe,
+    keine Abschlagsrechnungen. Eine Position zählt ganz, auch wenn sie
+    zugleich Stunden derselben Auftragsposition trägt. Nachlässe und
+    Prozentzuschläge sind keiner Fremdleistung zugeordnet und bleiben
+    außen vor. Summiert in der Datenbank.
+    """
+    positionen = (
+        Belegposition.objects
+        .filter(pk__in=Fremdleistung.objects
+                .filter(abgerechnet_in__isnull=False)
+                .values('abgerechnet_in'))
+        .exclude(beleg__status=BelegStatus.ENTWURF)
+        .exclude(beleg__rechnungsart=Rechnungsart.ABSCHLAG)
+    )
+    if projekte is not None:
+        positionen = positionen.filter(beleg__projekt__in=projekte)
+    return {zeile['beleg__projekt']: zeile['summe'] or Decimal('0.00')
+            for zeile in positionen.values('beleg__projekt')
+            .annotate(summe=Sum(POSITIONSNETTO))}
 
 
 def aeltester_offener_posten_je_projekt() -> dict[int, "date"]:

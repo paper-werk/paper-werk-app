@@ -59,8 +59,9 @@ class Stundenertrag:
     tatsächlichen Erlös je Stunde, jeweils einzeln wenig, zusammen deutlich.
     """
 
-    #: Eigenleistung netto: Leistungswert ohne weiterberechnete
-    #: Fremdleistung.
+    #: Eigenleistung netto (``Projektergebnis.eigenleistung``): ohne
+    #: weiterberechnete Fremdleistung, weil für sie keine Stunden gebucht
+    #: sind und materiallastige Vorhaben sonst überhöhte Sätze zeigten.
     eigenleistung: Decimal
     #: Geleistete Stunden, ungerundet.
     stunden: Decimal
@@ -374,11 +375,7 @@ def lage(*, monate: int = 12) -> Lage:
     leistungswert = sum((z.leistungswert for z in uebersicht.zeilen), NULL)
     fremdkosten = sum((z.fremdkosten for z in uebersicht.zeilen), NULL)
     personalkosten = sum((z.personalkosten for z in uebersicht.zeilen), NULL)
-    # Offene zugekaufte Leistung geht nicht in den Stundenertrag ein, weil
-    # für weiterberechnete Analysen keine Stunden gebucht sind; Vorhaben mit
-    # viel Analytik hätten sonst überhöhte Stundensätze. Bewertet zum
-    # Einkaufspreis, wie im Leistungswert.
-    fremdverkauf = sum((z.offene_fremdleistung for z in uebersicht.zeilen), NULL)
+    eigenleistung = sum((z.eigenleistung for z in uebersicht.zeilen), NULL)
 
     stunden = sum(
         erfassung_services.stunden_je_projekt().values(), Decimal('0'))
@@ -388,7 +385,7 @@ def lage(*, monate: int = 12) -> Lage:
     return Lage(
         uebersicht=uebersicht,
         stundenertrag=Stundenertrag(
-            eigenleistung=leistungswert - fremdverkauf,
+            eigenleistung=eigenleistung,
             stunden=stunden,
             personalkosten=personalkosten,
         ),
@@ -419,7 +416,7 @@ def projektertrag(ergebnis) -> Stundenertrag:
     stunden = erfassung_services.stunden_je_projekt(
         nur_laufende=False).get(ergebnis.projekt.pk, Decimal('0'))
     return Stundenertrag(
-        eigenleistung=ergebnis.leistungswert - ergebnis.offene_fremdleistung,
+        eigenleistung=ergebnis.eigenleistung,
         stunden=stunden,
         personalkosten=ergebnis.personalkosten,
     )

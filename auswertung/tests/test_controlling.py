@@ -533,6 +533,21 @@ class TestDieLage:
         assert lage.stundenertrag.eigenleistung == Decimal('1000.00')
         assert lage.stundenertrag.erloes_je_stunde == Decimal('100.00')
 
+    def test_berechneter_zukauf_faellt_ebenso_heraus(self, bestand):
+        """Nach dem Fakturieren der Analytik gilt dieselbe Regel wie in der
+        Projektakte (R-086). Regression #94: Die 800 EUR zählten dann als
+        eigene Leistung."""
+        beleg, _ = erfassung_services.in_rechnung_uebernehmen(
+            zeilen=[], fremdleistungen=Fremdleistung.objects.all())
+        beleg.status = BelegStatus.FESTGESCHRIEBEN
+        beleg.nummer = 'RE-900'
+        beleg.save()
+
+        lage = controlling.lage()
+
+        assert lage.stundenertrag.eigenleistung == Decimal('1000.00')
+        assert lage.stundenertrag.erloes_je_stunde == Decimal('100.00')
+
     def test_der_faktor_folgt_aus_erloes_und_kostensatz(self, bestand):
         """100 EUR Erlös bei 50 EUR Kostensatz ergeben Faktor zwei."""
         assert controlling.lage().stundenertrag.faktor == Decimal('2.00')

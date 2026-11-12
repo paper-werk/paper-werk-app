@@ -412,6 +412,115 @@ class TestWasZaehlt:
         assert nachher.ergebnis == Decimal('0.00')
 
 
+# ── Eigenleistung (R-086, R-188) ─────────────────────────────────────────────
+
+def _festschreiben(beleg, nummer):
+    """Festgeschrieben am Modell, Begründung bei
+    test_abgerechnetes_zaehlt_einmal_und_nicht_zweimal."""
+    beleg.status = BelegStatus.FESTGESCHRIEBEN
+    beleg.nummer = nummer
+    beleg.save()
+    return beleg
+
+
+class TestDieEigenleistung:
+    """Leistungswert ohne weiterberechnete Fremdleistung, bewertet, wie sie
+    im Leistungswert steht. 4 Std zu 95,00 = 380,00 eigene Leistung."""
+
+    @pytest.fixture
+    def mit_stunden(self, projekt, ingenieurstunde, person):
+        _stunden(projekt, ingenieurstunde, person, time(8, 0), time(12, 0))
+        return projekt
+
+    def test_offener_zukauf_geht_im_einkauf_ab(self, mit_stunden, labor):
+        _laborkosten(labor, mit_stunden, einkauf=Decimal('96.00'),
+                     menge=Decimal('4'))
+
+        ergebnis = _ergebnis(mit_stunden)
+
+        assert ergebnis.leistungswert == Decimal('764.00')
+        assert ergebnis.eigenleistung == Decimal('380.00')
+
+    def test_abgerechneter_zukauf_geht_zum_verkaufswert_ab(
+            self, mit_stunden, labor):
+        """4 x 96,00 Einkauf, zum Auftragspreis 4 x 145,00 = 580,00
+        berechnet. Die Eigenleistung bleibt beim Fakturieren gleich; die
+        Spanne von 196,00 steht im Ergebnis. Regression #94: Sie stieg um
+        den Verkaufswert."""
+        _laborkosten(labor, mit_stunden, einkauf=Decimal('96.00'),
+                     menge=Decimal('4'),
+                     auftragsposition=_laborauftrag(mit_stunden))
+        vorher = _ergebnis(mit_stunden)
+
+        beleg, _ = erfassung_services.in_rechnung_uebernehmen(
+            zeilen=[], fremdleistungen=Fremdleistung.objects.all())
+        _festschreiben(beleg, '2026-0003')
+
+        nachher = _ergebnis(mit_stunden)
+        assert nachher.abgerechnete_fremdleistung == Decimal('580.00')
+        assert nachher.leistungswert == Decimal('960.00')
+        assert nachher.eigenleistung == vorher.eigenleistung == Decimal('380.00')
+
+    def test_auf_einem_entwurf_bleibt_der_zukauf_offen(
+            self, mit_stunden, labor):
+        """Der Entwurf zählt nicht als abgerechnet; abgezogen wird weiter
+        der Einkaufspreis."""
+        _laborkosten(labor, mit_stunden, einkauf=Decimal('96.00'),
+                     menge=Decimal('4'),
+                     auftragsposition=_laborauftrag(mit_stunden))
+
+        erfassung_services.in_rechnung_uebernehmen(
+            zeilen=[], fremdleistungen=Fremdleistung.objects.all())
+
+        ergebnis = _ergebnis(mit_stunden)
+        assert ergebnis.abgerechnete_fremdleistung == Decimal('0.00')
+        assert ergebnis.eigenleistung == Decimal('380.00')
+
+    def test_eine_position_mit_stunden_und_zukauf_zaehlt_ganz_als_zukauf(
+            self, mit_stunden, labor):
+        """Hängen Stunden und Fremdleistung an derselben Position, geht die
+        ganze Position ab (R-188); die Stunden darin zählen nicht zur
+        Eigenleistung."""
+        from erfassung.models import Erfassungszeile
+        from faktura.models import Beleg, Belegposition, BelegTyp
+
+        fremd = _laborkosten(labor, mit_stunden, einkauf=Decimal('300.00'))
+        beleg = Beleg.objects.create(typ=BelegTyp.RECHNUNG,
+                                     projekt=mit_stunden)
+        position = Belegposition.objects.create(
+            beleg=beleg, position=10, bezeichnung='Probenahme mit Analytik',
+            menge=Decimal('1'), einheit='pausch',
+            einzelpreis=Decimal('1000.00'))
+        Erfassungszeile.objects.update(abgerechnet_in=position)
+        Fremdleistung.objects.filter(pk=fremd.pk).update(
+            abgerechnet_in=position)
+        _festschreiben(beleg, '2026-0004')
+
+        ergebnis = _ergebnis(mit_stunden)
+        assert ergebnis.leistungswert == Decimal('1000.00')
+        assert ergebnis.abgerechnete_fremdleistung == Decimal('1000.00')
+        assert ergebnis.eigenleistung == Decimal('0.00')
+
+    def test_ein_abschlag_zaehlt_nicht(self, mit_stunden, labor):
+        """Abschläge zählen nicht zur abgerechneten Leistung und deshalb
+        auch nicht zur abgerechneten Fremdleistung."""
+        from faktura.models import Beleg, Belegposition, BelegTyp, Rechnungsart
+
+        fremd = _laborkosten(labor, mit_stunden, einkauf=Decimal('300.00'))
+        beleg = Beleg.objects.create(typ=BelegTyp.RECHNUNG,
+                                     rechnungsart=Rechnungsart.ABSCHLAG,
+                                     projekt=mit_stunden)
+        position = Belegposition.objects.create(
+            beleg=beleg, position=10, bezeichnung='Analytik',
+            menge=Decimal('1'), einheit='pausch',
+            einzelpreis=Decimal('400.00'))
+        Fremdleistung.objects.filter(pk=fremd.pk).update(
+            abgerechnet_in=position)
+        _festschreiben(beleg, '2026-0005')
+
+        assert _ergebnis(mit_stunden).abgerechnete_fremdleistung == Decimal('0.00')
+
+
 # ── Stunden ohne Kostensatz ──────────────────────────────────────────────────
 
 class TestOhneKostensatz:
