@@ -9,6 +9,8 @@ Bibliothek steht in der MRO vorn, damit ihre Logik gilt.
 import requests
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
+from axes.admin import AccessAttemptAdmin as AxesAccessAttemptAdmin
+from axes.models import AccessAttempt, AccessFailureLog, AccessLog
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
@@ -354,3 +356,17 @@ class EreignisregelAdmin(Kopfleiste, ModelAdmin):
                 request, f'{regel.url} antwortet mit Status {antwort.status_code}.',
                 level=messages.SUCCESS if antwort.ok else messages.WARNING)
         return redirect(reverse('admin:core_ereignisregel_change', args=[object_id]))
+
+
+# Anmeldesperre (django-axes, AXES_* in den Settings). Nur die Fehlversuche
+# erscheinen im Admin; Löschen eines Eintrags hebt die Sperre auf.
+# AccessLog bleibt leer (AXES_DISABLE_ACCESS_LOG), AccessFailureLog ist
+# abgeschaltet.
+admin.site.unregister(AccessAttempt)
+admin.site.unregister(AccessLog)
+admin.site.unregister(AccessFailureLog)
+
+
+@admin.register(AccessAttempt)
+class AccessAttemptAdmin(Kopfleiste, AxesAccessAttemptAdmin, ModelAdmin):
+    """Fehlgeschlagene Anmeldungen je Benutzername und IP-Adresse."""

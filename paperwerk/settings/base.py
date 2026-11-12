@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/topics/settings/
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -85,6 +86,9 @@ INSTALLED_APPS = [
     # Änderungshistorie (GoBD): je Modell eine Tabelle mit jedem früheren
     # Stand, Benutzer und Zeitpunkt.
     'simple_history',
+    # Sperre nach fehlgeschlagenen Anmeldungen, Zähler in der Datenbank,
+    # damit alle gunicorn-Worker denselben Stand sehen.
+    'axes',
     'core',
     'faktura',
     # Leistungserfassung: Zeiten, Anfahrten, Material. Abhängig von
@@ -144,6 +148,12 @@ MIDDLEWARE = [
     # auch für die API: DRF authentifiziert in der View und setzt den
     # Benutzer dabei im Django-Request.
     'simple_history.middleware.HistoryRequestMiddleware',
+    # Begrenzt den Rumpf von Requests ohne Anmeldung, siehe
+    # DATA_UPLOAD_MAX_NUMBER_FIELDS.
+    'core.begrenzung.AnonymeAnfragenBegrenzen',
+    'django.middleware.csp.ContentSecurityPolicyMiddleware',
+    # Als letzte, wie von django-axes verlangt.
+    'axes.middleware.AxesMiddleware',
 ]
 
 # Die Debug Toolbar bindet dev.py ein; im Betrieb ist sie nicht installiert.
@@ -159,7 +169,63 @@ CSRF_COOKIE_NAME = 'paperwerk_csrftoken'
 # Djangos Vorgabe von 1000 Feldern je Request reicht für etwa 64 Positionen
 # (rund 15 Felder je Zeile); darüber antwortet die Belegmaske mit 400. Die
 # Grenze folgt dem ``max_num`` des Positions-Formsets (1000 Zeilen).
+#
+# Der Wert gilt für jeden Request. Für Requests ohne Anmeldung begrenzt
+# ``core.begrenzung.AnonymeAnfragenBegrenzen`` den Rumpf auf
+# ANONYM_MAX_BYTES; Anmeldeformulare brauchen wenige hundert Byte.
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
+ANONYM_MAX_BYTES = 64 * 1024
+
+# Ob ein Reverse Proxy (Caddy aus compose.https.yml) vor der Anwendung
+# steht. Nur dann sind X-Forwarded-Proto und X-Forwarded-For vertrauenswürdig;
+# ohne Proxy setzt sie der Client selbst. Wirkt auf SECURE_PROXY_SSL_HEADER
+# (prod.py) und die IP-Adresse für die Anmeldesperre.
+HINTER_PROXY = env.bool('DJANGO_HINTER_PROXY', default=False)
+
+# Sperre nach fehlgeschlagenen Anmeldungen (django-axes). Gezählt je
+# Benutzername und IP-Adresse, damit ein Angreifer ein fremdes Konto nicht
+# von einer anderen Adresse aus sperren kann. Eine erfolgreiche Anmeldung
+# setzt den Zähler zurück. Entsperren: Admin unter „Axes“ oder
+# ``manage.py axes_reset``.
+AXES_FAILURE_LIMIT = env.int('DJANGO_ANMELDUNG_VERSUCHE', default=5)
+AXES_COOLOFF_TIME = timedelta(
+    minutes=env.int('DJANGO_ANMELDUNG_SPERRMINUTEN', default=15))
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
+AXES_RESET_ON_SUCCESS = True
+# Erfolgreiche Anmeldungen werden nicht protokolliert, nur Fehlversuche.
+AXES_DISABLE_ACCESS_LOG = True
+AXES_LOCKOUT_TEMPLATE = 'admin/gesperrt.html'
+# Hinter Caddy steht die Adresse des Clients in X-Forwarded-For, sonst ist
+# REMOTE_ADDR die einzige verlässliche Angabe.
+AXES_IPWARE_PROXY_COUNT = 1 if HINTER_PROXY else None
+AXES_IPWARE_META_PRECEDENCE_ORDER = (
+    ('HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR') if HINTER_PROXY
+    else ('REMOTE_ADDR',))
+
+# Content-Security-Policy. Unfold braucht Alpine.js mit eval und
+# Inline-Skripte, die eigenen Templates ebenfalls; eine Policy mit Nonces
+# hieße, jedes Inline-Skript umzubauen. Die Policy erlaubt deshalb Inline und
+# eval, lässt aber nur Quellen dieses Hosts zu und verbietet das Einbetten
+# in fremde Seiten.
+#
+# form-action enthält den OIDC-Anbieter, weil Browser die Direktive auch auf
+# den Redirect nach dem Absenden anwenden; die SSO-Anmeldung führt per POST
+# zum Anbieter.
+from django.utils.csp import CSP  # noqa: E402
+
+SECURE_CSP = {
+    'default-src': [CSP.SELF],
+    'script-src': [CSP.SELF, CSP.UNSAFE_INLINE, CSP.UNSAFE_EVAL],
+    'style-src': [CSP.SELF, CSP.UNSAFE_INLINE],
+    'img-src': [CSP.SELF, 'data:', 'blob:'],
+    'font-src': [CSP.SELF, 'data:'],
+    'worker-src': [CSP.SELF, 'blob:'],
+    'connect-src': [CSP.SELF],
+    'object-src': [CSP.NONE],
+    'base-uri': [CSP.SELF],
+    'frame-ancestors': [CSP.NONE],
+    'form-action': [CSP.SELF],
+}
 
 ROOT_URLCONF = 'paperwerk.urls'
 
@@ -473,7 +539,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # Für Dienstzugänge, wie bei Paperless-ngx ("Authorization: Token");
         # in n8n für beide Systeme gleich einzurichten.
-        'rest_framework.authentication.TokenAuthentication',
+        # Mit Sperre nach ungültigen Tokens, siehe core/drosselung.py.
+        'core.drosselung.TokenMitDrosselung',
         # Mit Session aus dem Admin ist die Browsable API ohne Token nutzbar.
         'rest_framework.authentication.SessionAuthentication',
     ),
@@ -493,6 +560,34 @@ REST_FRAMEWORK = {
     # Ohne Pagination liefert DRF jede Liste vollständig. Die Seitengröße
     # steht an der Klasse (core/pagination.py).
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.Seitenweise',
+
+    # Begrenzung je Minute: Requests je Benutzer, ungültige Tokens je
+    # IP-Adresse. Die Zähler liegen im Cache "drosselung"
+    # (core/drosselung.py).
+    'DEFAULT_THROTTLE_CLASSES': (
+        'core.drosselung.AngemeldetDrosseln',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': env('DJANGO_API_RATE', default='600/min'),
+        'fehlversuch': env('DJANGO_API_FEHLVERSUCHE', default='10/min'),
+    },
+    # Hinter Caddy die Client-Adresse aus X-Forwarded-For.
+    'NUM_PROXIES': 1 if HINTER_PROXY else None,
+}
+
+# Der Cache "drosselung" liegt im Dateisystem, damit die gunicorn-Worker
+# eines Containers dieselben Zähler sehen. Der Standard-Cache bleibt im
+# Speicher je Prozess (Zertifikat, Archivstatus).
+import tempfile  # noqa: E402
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    'drosselung': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': str(Path(tempfile.gettempdir()) / 'paperwerk-drosselung'),
+    },
 }
 
 # Kopf der API-Dokumentation.
@@ -548,6 +643,8 @@ AUTH_USER_MODEL = 'core.User'
 # Im Teststack also http://localhost:8000/accounts/oidc/entra/login/callback/
 
 AUTHENTICATION_BACKENDS = [
+    # Prüft vor jeder Anmeldung die Sperre (AXES_*); als erster Eintrag.
+    'axes.backends.AxesStandaloneBackend',
     # Zuerst Benutzername und Passwort am Admin.
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -577,6 +674,12 @@ SOCIALACCOUNT_PROVIDERS = {
         }] if SSO_CLIENT_ID else [],
     },
 }
+
+if SSO_CLIENT_ID and SSO_SERVER_URL:
+    from urllib.parse import urlsplit  # noqa: E402
+
+    _anbieter = urlsplit(SSO_SERVER_URL)
+    SECURE_CSP['form-action'].append(f'{_anbieter.scheme}://{_anbieter.netloc}')
 
 # Rollen und Gruppen heißen gleich, siehe core/gruppen.py.
 

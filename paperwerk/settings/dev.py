@@ -41,3 +41,11 @@ if not (env('EMAIL_HOST', default='')  # noqa: F405
 # im Container gilt prod.py, wo DJANGO_EINFACHE_PASSWOERTER nötig ist (siehe
 # base.py).
 AUTH_PASSWORD_VALIDATORS = []
+
+# Zähler der API-Drosselung im Speicher, damit runserver und pytest keine
+# Dateien im Temp-Verzeichnis hinterlassen; die Tests leeren den Cache
+# (conftest.py).
+CACHES['drosselung'] = {  # noqa: F405
+    'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    'LOCATION': 'drosselung',
+}
