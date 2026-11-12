@@ -578,6 +578,11 @@ REST_FRAMEWORK = {
 # Der Cache "drosselung" liegt im Dateisystem, damit die gunicorn-Worker
 # eines Containers dieselben Zähler sehen. Der Standard-Cache bleibt im
 # Speicher je Prozess (Zertifikat, Archivstatus).
+#
+# Der Benutzername gehört in den Pfad, weil Django das Verzeichnis beim
+# Erzeugen des Caches mit Rechten 700 anlegt: collectstatic im Image-Build
+# läuft als root, die Anwendung als paperwerk.
+import getpass  # noqa: E402
 import tempfile  # noqa: E402
 
 CACHES = {
@@ -586,7 +591,8 @@ CACHES = {
     },
     'drosselung': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': str(Path(tempfile.gettempdir()) / 'paperwerk-drosselung'),
+        'LOCATION': str(Path(tempfile.gettempdir())
+                        / f'paperwerk-drosselung-{getpass.getuser()}'),
     },
 }
 
