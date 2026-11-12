@@ -70,8 +70,7 @@ einem Block:
   Einzelnen“ zeigt dieselben Projekte als Tabelle.
 - **Was bringt die Stunde?** „Deckungsbeiträge“ führt vom Leistungswert
   über eigene Arbeit und Zukauf zum Ergebnis, über alle laufenden
-  Projekte. Miete, Geräte und Verwaltung kennt Paper-Werk nicht, deshalb
-  heißt es Deckungsbeitrag und nicht Gewinn.
+  Projekte. Gemeinkosten (Miete, Geräte, Verwaltung) sind nicht enthalten.
 - **Wo bleibt Geld liegen?** „Verrechnungsdauer“ zeigt, wie lange
   erbrachte eigene Leistung ohne Rechnung liegt, und wie viel davon älter
   als 90 Tage ist. Zugekauftes zählt hier nicht mit.

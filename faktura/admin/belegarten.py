@@ -110,10 +110,9 @@ class AngebotAdmin(BelegAdmin):
         url_path='duplizieren',
         dialog={
             'title': 'Angebot duplizieren?',
-            'description': 'Es entsteht ein neues Angebot als Entwurf, mit '
-                           'denselben Angaben und Positionen. Seine eigene '
-                           'Nummer bekommt es beim Versenden. Dieses '
-                           'Angebot bleibt, wie es ist.',
+            'description': 'Legt ein neues Angebot als Entwurf mit denselben '
+                           'Angaben und Positionen an. Die Nummer folgt beim '
+                           'Versenden. Dieses Angebot bleibt unverändert.',
             'form_submit_text': 'Duplizieren',
         }, # type: ignore
     )
@@ -185,9 +184,8 @@ class AuftragAdmin(BelegAdmin):
         ohne.insert(1, ('Auftrag', {
             'fields': ['nachtrag_zu'],
             'description': 'Leer beim Hauptauftrag. Bei einem Nachtrag der '
-                           'Auftrag, zu dem er gehört. Dann erscheint '
-                           'er in der Projektakte unter "Auftrag und '
-                           'Nachträge" und zählt dort zur Auftragssumme.',
+                           'Hauptauftrag; der Nachtrag zählt dann zur '
+                           'Auftragssumme.',
         }))
         return ohne
 
@@ -227,12 +225,9 @@ class AuftragAdmin(BelegAdmin):
         url_path='nachtrag',
         dialog={
             'title': 'Nachtrag zu diesem Auftrag anlegen?',
-            'description': 'Es entsteht ein leerer Auftrag, der auf '
-                           'diesen verweist; Empfänger und '
-                           'Konditionen werden übernommen, Positionen '
-                           'sind leer. In der Projektakte erscheint er '
-                           'unter "Auftrag und Nachträge" und zählt zur '
-                           'Auftragssumme.',
+            'description': 'Legt einen leeren Auftrag als Nachtrag zu diesem '
+                           'an. Empfänger und Konditionen werden übernommen. '
+                           'Der Nachtrag zählt zur Auftragssumme.',
             'form_submit_text': 'Nachtrag anlegen',
         }, # type: ignore
     )
@@ -383,12 +378,10 @@ class RechnungskorrekturAdmin(BelegAdmin):
         variant=ActionVariant.DANGER,
         dialog={
             'title': 'Nachlass stornieren?',
-            'description': 'Erzeugt eine Stornorechnung, die diese '
-                           'Rechnungskorrektur aufhebt; die Forderung der '
-                           'Rechnung steigt wieder um den Nachlass. Hat der '
-                           'Kunde den Nachlass bekommen, schicken Sie ihm '
-                           'auch das Storno. Danach lässt sich die Rechnung '
-                           'stornieren.',
+            'description': 'Erzeugt eine Stornorechnung zu dieser '
+                           'Rechnungskorrektur. Die Forderung der Rechnung '
+                           'steigt wieder um den Nachlass. Danach lässt sich '
+                           'die Rechnung stornieren.',
             'form_submit_text': 'Stornieren',
         }, # type: ignore
     )

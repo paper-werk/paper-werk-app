@@ -714,8 +714,7 @@ class ZahlungForm(forms.Form):
         min_value=0,
         localize=True,
         widget=BetragWidget,
-        help_text='Was tatsächlich geflossen ist. Vorbelegt mit dem offenen '
-                  'Betrag der Rechnung.',
+        help_text='Gezahlter Betrag. Vorbelegt mit dem offenen Betrag.',
     )
     skonto = forms.DecimalField(
         label='Skonto',
@@ -737,10 +736,9 @@ class ZahlungForm(forms.Form):
         required=False,
         localize=True,
         widget=BetragWidget,
-        help_text='Was der Kunde (noch) nicht anerkennt, brutto. Der Betrag '
-                  'wird nicht gemahnt; die Schlussrechnung fordert ihn, '
-                  'ebenso alles, was bis dahin sonst nicht bezahlt ist. '
-                  'Nicht für Skonto; Skonto ist erlassen.',
+        help_text='Vom Kunden nicht anerkannter Betrag, brutto. Wird nicht '
+                  'gemahnt; die Schlussrechnung fordert ihn. Nicht für '
+                  'Skonto.',
     )
     zahlungsart = forms.ChoiceField(
         label='Art',

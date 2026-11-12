@@ -293,8 +293,8 @@ def zahlung_verbuchen(*, beleg_id: int, datum: date, betrag: Decimal,
 
     if beleg.typ != BelegTyp.RECHNUNG:
         raise FalscherStatus(
-            f'{beleg}: Ein Zahlungseingang gehört auf eine Rechnung, '
-            f'nicht auf ein Dokument der Art "{beleg.get_typ_display()}".')
+            f'{beleg}: Zahlungseingänge lassen sich nur Rechnungen zuordnen, '
+            f'nicht Belegen der Art „{beleg.get_typ_display()}“.')
     if beleg.status != BelegStatus.FESTGESCHRIEBEN:
         raise FalscherStatus(
             f'{beleg}: Ein Zahlungseingang setzt eine festgeschriebene '

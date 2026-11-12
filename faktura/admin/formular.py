@@ -128,12 +128,10 @@ class FormularMixin:
                        ('empfaenger_plz', 'empfaenger_ort'), 'empfaenger_land',
                        'leitweg_id'],
             'classes': ['tab'],
-            'description': 'Die E-Rechnung verlangt die Anschrift '
-                           'strukturiert und ist redundant zum '
-                           'Empfängerfeld oben, das allein auf dem Beleg '
-                           'erscheint. Beides kommt aus den Stammdaten des '
-                           'Kunden; hier steht es, um einen einzelnen Beleg '
-                           'abweichend zu adressieren.',
+            'description': 'Strukturierte Anschrift für die E-Rechnung. Auf '
+                           'dem Beleg steht nur das Empfängerfeld oben. '
+                           'Vorbelegt aus den Stammdaten des Kunden; hier nur '
+                           'für eine abweichende Anschrift ändern.',
         }),
         ('Status', {
             'fields': ['status', 'nummer', 'vorgaenger', 'nachtrag_zu',
@@ -154,10 +152,10 @@ class FormularMixin:
         ('Empfänger', {
             'fields': [('empfaenger', 'empfaenger_email'),
                        ('empfaenger_ust_id', 'steuerfall')],
-            'description': 'Wird beim Auswählen des Kunden gefüllt, wenn es '
-                           'leer ist. Der Text erscheint zeilengetreu im '
-                           'Anschriftfeld. Eine spätere Adressänderung beim Kunden '
-                           'verändert den Beleg nicht mehr.',
+            'description': 'Wird beim Auswählen des Kunden gefüllt, wenn '
+                           'leer. Erscheint zeilengetreu im Anschriftfeld. '
+                           'Spätere Änderungen beim Kunden wirken nicht auf '
+                           'den Beleg.',
         }),
         ('Termine', {
             'fields': [('belegdatum', 'steuerliches_leistungsdatum'),
@@ -174,11 +172,10 @@ class FormularMixin:
             'fields': ['empfaenger_name', 'empfaenger_strasse',
                        ('empfaenger_plz', 'empfaenger_ort'), 'empfaenger_land',
                        'leitweg_id'],
-            'description': 'Die E-Rechnung verlangt die Anschrift '
-                           'strukturiert und ist redundant zum '
-                           'Empfängerfeld oben, das allein auf dem Beleg '
-                           'erscheint. Leere Felder füllt das System beim '
-                           'Sichern aus den Stammdaten.',
+            'description': 'Strukturierte Anschrift für die E-Rechnung. Auf '
+                           'dem Beleg steht nur das Empfängerfeld oben. Leere '
+                           'Felder werden beim Sichern aus den Stammdaten '
+                           'gefüllt.',
             'classes': ['tab'],
         }),
     ]

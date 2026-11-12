@@ -86,10 +86,7 @@ class FirmaAdmin(Kopfleiste, unfold_admin.ModelAdmin):
         ('Mahngebühren', {
             'fields': [('mahngebuehr_erinnerung', 'mahngebuehr_mahnung',
                         'mahngebuehr_letzte')],
-            'description': 'Je Mahnstufe, in EUR, ohne Umsatzsteuer. '
-                           'Ersetzt werden nur die tatsächlichen Kosten '
-                           '(Porto, Papier), die erste Mahnung, die den '
-                           'Verzug erst auslöst, gar nicht.',
+            'description': 'Je Mahnstufe, in EUR, ohne Umsatzsteuer.',
         }),
         ('Texte', {'fields': ['standard_fusstext'], 'classes': ['collapse']}),
     ]
@@ -222,9 +219,8 @@ class KontaktAdmin(Kopfleiste, VersionAdminMixin, ImportExportModelAdmin,
             'fields': ['ust_id', 'eigene_kundennummer', 'zahlungsziel_tage',
                        ('skonto_prozent', 'skonto_tage'),
                        'steuerfall'],
-            'description': 'Skonto wirkt nirgends automatisch; es steht '
-                           'hier, damit man es beim Zuordnen einer Zahlung '
-                           'nachsehen kann.',
+            'description': 'Wird nicht automatisch angewendet. Zum Nachsehen '
+                           'beim Zuordnen einer Zahlung.',
         }),
         ('E-Rechnung und Versand', {
             'fields': ['zustellweg', 'kaeuferreferenz'],
@@ -233,10 +229,10 @@ class KontaktAdmin(Kopfleiste, VersionAdminMixin, ImportExportModelAdmin,
         ('Besonderheiten', {
             'fields': ['rechnungsempfaenger', 'notiz'],
             'classes': ['collapse'],
-            'description': 'Der Rechnungsempfänger ist nur für den Fall da, '
-                           'dass ein <b>anderer Kunde</b> die Rechnung '
-                           'bekommt, etwa Hausverwaltung, Konzernmutter, '
-                           'Versicherung. Ansprechpartner stehen unten.',
+            'description': 'Der Rechnungsempfänger gilt nur, wenn ein '
+                           '<b>anderer Kunde</b> die Rechnung bekommt '
+                           '(Hausverwaltung, Konzernmutter, Versicherung). '
+                           'Ansprechpartner stehen unten.',
         }),
     ]
     autocomplete_fields = ['rechnungsempfaenger']

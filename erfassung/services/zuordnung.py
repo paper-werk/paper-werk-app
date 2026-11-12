@@ -101,9 +101,8 @@ def auftragsposition_setzen(fremdleistungen,
     projekte = {f.projekt for f in liste}
     if len(projekte) > 1:
         raise MehrereProjekte(
-            'Die Auswahl enthält Fremdleistungen mehrerer Projekte. Die '
-            'Auftragsposition gehört zu einem Projekt; bitte nach Projekt '
-            'filtern.')
+            'Die Auswahl enthält Fremdleistungen mehrerer Projekte. Bitte '
+            'nach Projekt filtern.')
     befund = Zuordnungsbefund()
     if not liste:
         return befund

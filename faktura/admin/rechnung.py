@@ -200,15 +200,12 @@ class RechnungAdmin(BelegAdmin):
         url_path='duplizieren',
         dialog={
             'title': 'Rechnung duplizieren?',
-            'description': 'Es entsteht eine neue Rechnung als Entwurf, mit '
-                           'denselben Angaben und Positionen. Ihre eigene '
-                           'Nummer bekommt sie beim Versenden. Bitte '
-                           'beachten: Übernommene Positionen haben keinen '
-                           'Bezug zu erfassten Leistungen; die Zeiten '
-                           'bleiben auf dieser Rechnung abgerechnet. '
-                           'Positionen aus Fremdleistungen werden nicht '
-                           'übernommen. Beauftragte Mengen werden beim '
-                           'Versenden wie immer geprüft.',
+            'description': 'Legt eine neue Rechnung als Entwurf mit denselben '
+                           'Angaben und Positionen an. Die Nummer folgt beim '
+                           'Versenden. Die Positionen haben keinen Bezug zu '
+                           'erfassten Leistungen; die Zeiten bleiben auf '
+                           'dieser Rechnung abgerechnet. Positionen aus '
+                           'Fremdleistungen werden nicht übernommen.',
             'form_submit_text': 'Duplizieren',
         }, # type: ignore
     )
@@ -290,9 +287,8 @@ class RechnungAdmin(BelegAdmin):
         dialog={
             'title': 'Rechnung stornieren und neu schreiben?',
             'description': 'Erzeugt eine Stornorechnung und eine Neufassung '
-                           'der Rechnung als Entwurf. Die ursprüngliche Rechnung '
-                           'bleibt im Bestand. Nach Festschreibung einer Rechnung '
-                           'ist dies die einzige Möglichkeit, die Rechnung zu ändern.',
+                           'als Entwurf. Die ursprüngliche Rechnung bleibt im '
+                           'Bestand.',
             'form_submit_text': 'Stornieren',
         }, # type: ignore
     )
@@ -376,9 +372,8 @@ class RechnungAdmin(BelegAdmin):
         if len(queryset) != 1:
             self.message_user(
                 request,
-                'Ein Nachlass wird je Rechnung einzeln gewährt: Betrag und '
-                'Grund gehören zu genau einer. Bitte eine einzelne Rechnung '
-                'auswählen.',
+                'Bitte eine einzelne Rechnung auswählen. Ein Nachlass gilt je '
+                'Rechnung.',
                 messages.WARNING,
             )
             return None
@@ -551,9 +546,8 @@ class RechnungAdmin(BelegAdmin):
         if len(queryset) != 1:
             self.message_user(
                 request,
-                'Bitte genau eine Rechnung auswählen; ein Geldeingang '
-                'gehört zu einem Beleg. Eine Überweisung über mehrere '
-                'Rechnungen wird unter "Zahlungseingänge" erfasst.',
+                'Bitte genau eine Rechnung auswählen. Zahlungen für mehrere '
+                'Rechnungen unter „Zahlungseingänge“ erfassen.',
                 messages.WARNING,
             )
             return None

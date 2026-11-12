@@ -145,17 +145,17 @@ class Zahlungszuordnung(ErhoehtElternversion):
     skonto = models.DecimalField(
         'Skonto', max_digits=12, decimal_places=2, default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text='Was zusätzlich als Abzug gilt und deshalb nicht '
-                  'überwiesen wurde. Mindert die Forderung, nicht die Zahlung.',
+        help_text='Zusätzlicher Abzug, nicht überwiesen. Mindert die '
+                  'Forderung, nicht die Zahlung.',
         db_comment='Kein Geld: der vereinbarte Abzug. Zusammen mit betrag '
                    'ergibt er, was die Rechnung ausgleicht.',
     )
     kuerzung = models.DecimalField(
         'Gekürzt', max_digits=12, decimal_places=2, default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text='Nur bei Abschlagsrechnungen: was der Kunde noch nicht '
-                  'anerkennt und später gefordert wird. Schließt den offenen '
-                  'Posten, die Schlussrechnung fordert den Betrag erneut.',
+        help_text='Nur bei Abschlagsrechnungen: vom Kunden noch nicht '
+                  'anerkannter Betrag. Schließt den offenen Posten; die '
+                  'Schlussrechnung fordert ihn erneut.',
         db_comment='Kein Geld und nicht erlassen; verschoben in einen '
                    'späteren Abschlag oder die Schlussrechnung. Zählt zum '
                    'Ausgleich, nicht zum Vereinnahmten.',

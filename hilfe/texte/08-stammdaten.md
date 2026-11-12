@@ -153,8 +153,7 @@ er für jemanden, der Stunden erfasst hat, meldet die Startseite
 
 Je Eintrag: **Person**, **Gültig ab** und **Kostensatz je Stunde**, dazu
 eine Notiz. Ein neuer Satz gilt ab seinem Datum bis zum nächsten dieser
-Person; frühere Stunden bleiben mit dem alten Satz gerechnet. Ändern Sie
-deshalb nicht den alten Eintrag, sondern legen Sie einen neuen an.
+Person; frühere Stunden bleiben mit dem alten Satz gerechnet. Ein geänderter Eintrag wirkt auf alle Stunden seines Zeitraums; ein neuer Satz wird deshalb als neuer Eintrag angelegt.
 
 Die Liste zeigt je Person den neuesten Satz oben. Kostensätze sieht nur,
 wer das Recht dafür hat; sie sind eine Leistungsbewertung.

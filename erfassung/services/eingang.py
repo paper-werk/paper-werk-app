@@ -79,11 +79,9 @@ def _pruefe_uebertrag_erlaubt(rechnung: Eingangsrechnung) -> None:
     belege = sorted({str(p.abgerechnet_in.beleg) for p in abgerechnet})
     if belege:
         raise UebertragGesperrt(
-            f'{rechnung} ist bereits weiterberechnet '
-            f'({", ".join(belege)}) und wird nicht mehr aus dem Archiv '
-            f'aktualisiert. Was sich am Dokument geändert hat, gehört '
-            f'hier von Hand nachgezogen oder über eine Korrektur der '
-            f'Ausgangsrechnung.'
+            f'{rechnung} ist bereits weiterberechnet ({", ".join(belege)}) '
+            f'und wird nicht mehr aus dem Archiv aktualisiert. Änderungen von '
+            f'Hand nachtragen oder die Ausgangsrechnung korrigieren.'
         )
 
 

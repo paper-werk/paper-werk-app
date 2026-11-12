@@ -124,8 +124,7 @@ Projekt: Gegen seine Positionen wird abgerechnet, auf sie werden Stunden
 kontiert. Er geht nicht an den Kunden und wird deshalb nicht versendet,
 sondern festgeschrieben.
 
-**Entstehen** sollte er aus dem Angebot („Auftrag erzeugen“). Ohne
-Angebot legen Sie ihn in der Liste mit „+“ an.
+**Entstehen** kann er aus dem Angebot („Auftrag erzeugen“) oder ohne Angebot in der Liste mit „+“.
 
 **Die Knöpfe:**
 

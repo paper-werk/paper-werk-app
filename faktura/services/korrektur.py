@@ -79,12 +79,10 @@ def rechnung_korrigieren(*, beleg_id: int, benutzer=None) -> tuple[Beleg, Beleg]
     if korrekturen.exists():
         nummern = ', '.join(k.nummer for k in korrekturen)
         raise FalscherStatus(
-            f'Auf {original} ist mit {nummern} ein Nachlass gewährt. Ein '
-            f'Storno höbe die volle Rechnung auf, und der Nachlass käme '
-            f'noch einmal dazu. Stornieren Sie zuerst den Nachlass (an der '
-            f'Rechnungskorrektur „Weitere …“, „Nachlass stornieren“), dann '
-            f'die Rechnung. Ist die Rechnung nur im Betrag zu hoch, genügt '
-            f'ein weiterer Nachlass.'
+            f'Auf {original} ist mit {nummern} ein Nachlass gewährt. Zuerst '
+            f'den Nachlass stornieren (an der Rechnungskorrektur unter '
+            f'„Weitere …“, „Nachlass stornieren“), dann die Rechnung. Ist nur '
+            f'der Betrag zu hoch, genügt ein weiterer Nachlass.'
         )
 
     storno = _beleg_kopieren(
@@ -331,9 +329,7 @@ def mahnung_erstellen(*, beleg_id: int, stufe: int) -> Beleg:
     heute = timezone.localdate()
     if rechnung.faellig_am and rechnung.faellig_am >= heute:
         raise FalscherStatus(
-            f'{rechnung} ist erst am {rechnung.faellig_am:%d.%m.%Y} fällig. '
-            f'Vor der Fälligkeit gibt es keinen Verzug und damit nichts zu '
-            f'mahnen.'
+            f'{rechnung} ist erst am {rechnung.faellig_am:%d.%m.%Y} fällig.'
         )
 
     # Offener Betrag, weil die Rechnungssumme nach einer Teilzahlung falsch
