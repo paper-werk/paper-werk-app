@@ -40,6 +40,9 @@ class Projektergebnis:
     #: Eingangsrechnungen Dritter für das Vorhaben zum Einkaufspreis,
     #: einschließlich nicht weiterberechneter Anteile.
     fremdkosten: Decimal
+    #: Weiterberechnete Fremdleistung zum Verkaufswert, also das Netto der
+    #: Rechnungspositionen, an denen sie hängt.
+    abgerechnete_fremdleistung: Decimal = NULL
 
     @property
     def projekt(self):
@@ -83,6 +86,17 @@ class Projektergebnis:
         Mengenkontingent in ``faktura.services``.
         """
         return self.abgerechnete_leistung + self.nicht_abgerechnet
+
+    @property
+    def eigenleistung(self) -> Decimal:
+        """Leistungswert ohne weiterberechnete Fremdleistung.
+
+        Abgerechnete Fremdleistung zum Verkaufswert, offene zum
+        Einkaufspreis, jeweils so, wie sie im Leistungswert steht. Die
+        Handelsspanne gehört damit nicht zur Eigenleistung.
+        """
+        return (self.leistungswert - self.abgerechnete_fremdleistung
+                - self.offene_fremdleistung)
 
     @property
     def kosten(self) -> Decimal:
@@ -194,7 +208,7 @@ def projektergebnisse(*, nur_laufende: bool = True,
     """Erlös und Kosten aller Vorhaben oder der in ``projekte`` genannten
     Primärschlüssel.
 
-    Fünf Abfragen unabhängig von der Zahl der Projekte. Jede Zahl kommt aus
+    Sechs Abfragen unabhängig von der Zahl der Projekte. Jede Zahl kommt aus
     der Funktion, die sie auch sonst liefert, der offene Leistungswert aus
     derselben Abrechnungsvorschau wie die Rechnung. Sortiert nach offenem
     Auftragsbestand (``projektstaende``).
@@ -205,6 +219,9 @@ def projektergebnisse(*, nur_laufende: bool = True,
         projekte=projekte)
     offene_fremd = erfassung_services.offene_fremdleistung_je_projekt(
         projekte=projekte)
+    abgerechnete_fremd = (
+        erfassung_services.abgerechnete_fremdleistung_je_projekt(
+            projekte=projekte))
     fremdkosten = erfassung_services.fremdkosten_je_projekt(
         nur_laufende=nur_laufende, projekte=projekte)
     personal = erfassung_services.personalkosten_je_projekt(
@@ -217,6 +234,8 @@ def projektergebnisse(*, nur_laufende: bool = True,
             offene_fremdleistung=offene_fremd.get(stand.projekt.pk, NULL),
             personalkosten=personal.je_projekt.get(stand.projekt.pk, NULL),
             fremdkosten=fremdkosten.get(stand.projekt.pk, NULL),
+            abgerechnete_fremdleistung=abgerechnete_fremd.get(
+                stand.projekt.pk, NULL),
         )
         for stand in staende
     ]

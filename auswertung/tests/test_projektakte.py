@@ -606,6 +606,28 @@ class TestDerEffektiveStundensatz:
         assert ertrag.stunden == Decimal('4.00')
         assert ertrag.erloes_je_stunde == Decimal('95.00')
 
+    def test_berechneter_zukauf_mit_aufschlag_zaehlt_nicht_in_den_satz(
+            self, akte_gefuellt):
+        """Die Analytik (192 EUR Einkauf) geht mit Aufschlag für 250 EUR in
+        die Rechnung. Der Satz bleibt bei 95 EUR. Regression #94: Der
+        Verkaufswert zählte nach dem Festschreiben als eigene Leistung,
+        (380 + 250) / 4 = 157,50 EUR."""
+        from auswertung import controlling, ergebnisse
+
+        beleg, _ = erfassung_services.in_rechnung_uebernehmen(
+            zeilen=[], fremdleistungen=Fremdleistung.objects.all())
+        beleg.positionen.update(menge=Decimal('1'),
+                                einzelpreis=Decimal('250.00'))
+        beleg.status = BelegStatus.FESTGESCHRIEBEN
+        beleg.nummer = '2026-0001'
+        beleg.save()
+
+        ergebnis = ergebnisse.projektergebnis(akte_gefuellt)
+        ertrag = controlling.projektertrag(ergebnis)
+
+        assert ergebnis.leistungswert == Decimal('630.00')
+        assert ertrag.erloes_je_stunde == Decimal('95.00')
+
 
 class TestDieWegeAusDerAkte:
     """Links von den Zahlen auf die zugrunde liegenden Datensätze."""

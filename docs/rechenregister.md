@@ -15,7 +15,7 @@ und reine Sortierungen. Für sie gelten die übrigen Tests.
 | `~` | Nur mittelbar geprüft: Ein Test durchläuft die Funktion, prüft aber etwas anderes. |
 | `-` | Kein Test nennt diese Funktion. |
 
-Derzeit tragen 156 Einträge `+`, 23 `~` und keiner `-`. Die mittelbar
+Derzeit tragen 157 Einträge `+`, 23 `~` und keiner `-`. Die mittelbar
 geprüften sind fast alle abgeleitete Aussagen wie `ist_klumpen`, `ist_knapp`
 oder `traegt`: ein Vergleich auf einer Zahl, die selbst geprüft ist.
 
@@ -155,7 +155,8 @@ vergleicht beide.
 
 | Nr | Größe | Rechenregel | Implementierung | Test |
 | --- | --- | --- | --- | --- |
-| R-086 | Eigenleistung | Leistungswert minus dem Verkaufswert der zugekauften Leistung | `controlling.lage`, `projektertrag` | `+` |
+| R-086 | Eigenleistung | Leistungswert minus weiterberechneter Fremdleistung, so bewertet, wie sie darin steht: abgerechnete zum Verkaufswert (R-188), offene im Einkauf (R-056). Die Handelsspanne bleibt im Ergebnis | `Projektergebnis.eigenleistung`, `controlling.lage`, `projektertrag` | `+` |
+| R-188 | Abgerechnete Fremdleistung je Projekt | Netto (R-001) der Rechnungspositionen, auf die eine Fremdleistung verweist, **ganz**, auch wenn sie zugleich Stunden trägt. Ohne Entwürfe und Abschlagsrechnungen wie die abgerechnete Leistung. Nachlässe und Prozentzuschläge zählen nicht | `services.abgerechnete_fremdleistung_je_projekt` | `+` |
 | R-087 | Erlös je Stunde | Eigenleistung durch geleistete Stunden; **unbestimmt** ohne Stunden | `Stundenertrag.erloes_je_stunde` | `+` |
 | R-088 | Kosten je Stunde | Personalkosten durch geleistete Stunden: nach Stunden gewichtet, kein Mittelwert der Sätze | `Stundenertrag.kosten_je_stunde` | `+` |
 | R-089 | Faktor | Eigenleistung durch Personalkosten | `Stundenertrag.faktor` | `+` |
