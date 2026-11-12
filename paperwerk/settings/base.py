@@ -357,7 +357,7 @@ MARKE_FAVICON = env('PAPER_WERK_MARKE_FAVICON', default='').strip()
 # Ziel von "Webseite anzeigen" im Benutzermenü, gedacht für die Webseite des
 # Betriebs.
 MARKE_WEBSEITE = env('PAPER_WERK_MARKE_WEBSEITE',
-                     default='https://www.ki-werkstatt.net')
+                     default='https://www.paper-werk.de')
 
 
 # --- Oberfläche des Admin (django-unfold) -----------------------------------
