@@ -229,9 +229,7 @@
             {% if not ergebnis.traegt %}
               <p class="mt-4 text-red-600 text-xs dark:text-red-500">
                 Die Kosten übersteigen den Leistungswert um
-                {{ ergebnis.ergebnis|geld }} €. Der Ring zeigt deshalb nur,
-                wie sich die Kosten aufteilen &ndash; einen negativen Anteil
-                an einem Ganzen gibt es nicht.
+                {{ ergebnis.ergebnis|geld }} €. Der Ring zeigt nur die Aufteilung der Kosten.
               </p>
             {% endif %}
           {% endcomponent %}
@@ -265,9 +263,7 @@
             {% if staffel.db1_quote is not None %}({{ staffel.db1_quote }} %){% endif %},
             Deckungsbeitrag II zusätzlich nach eigener Arbeit
             {% if staffel.db2_quote is not None %}({{ staffel.db2_quote }} %){% endif %}.
-            Was dieses Programm nicht kennt &ndash; Miete, Geräte,
-            Versicherung, Verwaltung &ndash; ist darin noch nicht abgezogen.
-            Deshalb heißt die Zahl Deckungsbeitrag und nicht Gewinn.
+            Ohne Gemeinkosten (Miete, Geräte, Versicherung, Verwaltung).
           </p>
         {% endcomponent %}
       </div>
@@ -336,8 +332,7 @@
         </div>
       {% else %}
         <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
-          Zu diesem Projekt gibt es noch keinen festgeschriebenen Beleg.
-          Entwürfe stehen hier nicht &ndash; sie sind eine Absicht, kein Beleg.
+          Keine Belege.
         </p>
       {% endif %}
     {% endcomponent %}

@@ -178,7 +178,7 @@ class TestWasAufDerSeiteSteht:
         """Ein leeres Vorhaben zeigt Hinweistexte an Stelle der Tabellen."""
         inhalt = als_buchhalterin.get(_akte(projekt)).content.decode()
 
-        assert 'noch keinen festgeschriebenen Beleg' in inhalt
+        assert 'Keine Belege.' in inhalt
         assert 'noch nichts kontiert' in inhalt
         assert 'nichts zugekauft' in inhalt
 

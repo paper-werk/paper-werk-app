@@ -309,7 +309,7 @@ class TestDerLeereBestand:
         inhalt = als_leitung.get(ADRESSE).content.decode()
 
         assert 'data-type="bubble"' not in inhalt
-        assert 'keine Ausschöpfung' in inhalt
+        assert 'Noch kein Projekt mit Auftrag.' in inhalt
 
     def test_ohne_umsatz_bleibt_die_kundenstruktur_hoeflich(
             self, als_leitung, projekt):
