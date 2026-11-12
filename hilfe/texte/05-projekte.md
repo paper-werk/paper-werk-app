@@ -70,9 +70,8 @@ Zuschläge auf eine Rechnung; sie verändern den Stundensatz. Steht Zukauf
 mit Stunden in derselben Rechnungsposition, zählt die ganze Position als
 Zukauf.
 
-Ist mehr geleistet als beauftragt, steht ein Warnhinweis „über dem
-Auftrag“. Ob das bezahlt wird, entscheidet der Vertrag: nach Aufwand ja,
-pauschal nicht. Ein Nachtrag gehört geprüft.
+Liegt der Leistungswert über dem Auftrag, zeigt die Akte den Betrag als
+Warnung.
 
 Darunter die Abschnitte:
 
@@ -177,7 +176,9 @@ Kennzahlen:
 - **Erfasst, nicht berechnet**: geleistet und auf diesen Auftrag
   kontiert, aber auf keiner Rechnung.
 
-Ist mehr abgerechnet als beauftragt, steht ein Hinweis mit dem Prozentsatz.
+Ist mehr abgerechnet als beauftragt, zeigt die Akte den Prozentsatz als
+Warnung, mit dem Link **Nachtrag anlegen**. Beim Versenden warnt Paper-Werk
+je überschrittener Position; Festschreiben verlangt dann eine Bestätigung.
 
 Die Abschnitte:
 

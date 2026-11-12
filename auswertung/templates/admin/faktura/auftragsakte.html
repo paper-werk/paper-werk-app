@@ -68,12 +68,9 @@
           <div class="font-medium text-red-600 dark:text-red-500">
             {{ fortschritt }} % des Auftrags berechnet
           </div>
-          <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
-            Es ist mehr abgerechnet als beauftragt. Beim Versenden wird je
-            Position gewarnt, festgeschrieben wird nur mit Bestätigung
-            &ndash; über die Summe hinweg kann es auch sonst vorkommen, etwa
-            nach einer Preisänderung. Ein Nachtrag gehört geprüft.
-          </div>
+          {% if nachtrag_url %}
+            <a href="{{ nachtrag_url }}" class="mt-1 inline-block text-primary-600 text-sm dark:text-primary-500">Nachtrag anlegen</a>
+          {% endif %}
         </div>
       </div>
     {% endif %}
@@ -150,9 +147,8 @@
 
         <p class="mt-4 text-font-subtle-light text-xs dark:text-font-subtle-dark">
           Gezählt wird, was auf einer festgeschriebenen Rechnung steht.
-          Abschlagsrechnungen zählen nicht mit &ndash; sie sind steuerlich
-          Anzahlungen, und die Schlussrechnung führt dieselbe Leistung noch
-          einmal auf.
+          Abschlagsrechnungen zählen nicht mit, weil die Schlussrechnung
+          dieselbe Leistung erneut aufführt.
         </p>
       {% else %}
         <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
@@ -222,8 +218,8 @@
               Abnahme erfassen
             </a>
             <span class="text-xs text-font-subtle-light dark:text-font-subtle-dark">
-              &ndash; Gesamtabnahme für die Schlussrechnung, Teilabnahme für eine
-              gesondert abgenommene Teilleistung.
+              (Gesamtabnahme für die Schlussrechnung, Teilabnahme für eine
+              gesondert abgenommene Teilleistung)
             </span>
           </p>
         {% endif %}
