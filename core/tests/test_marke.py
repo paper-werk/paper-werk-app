@@ -92,13 +92,15 @@ def test_eigener_name_steht_im_kopf_und_im_browsertab(verwaltung, client, settin
 def test_der_alte_name_verschwindet_vollstaendig(verwaltung, client, settings):
     """Nach dem Umbenennen enthält die Seite „Paper-Werk“ nicht mehr.
 
-    Findet übersehene Vorkommen in Kopf, Titel oder Hinweistexten.
+    Findet übersehene Vorkommen in Kopf, Titel oder Hinweistexten. Geprüft
+    wird die Schreibweise des Namens, weil URLs wie die Vorgabe von
+    ``MARKE_WEBSEITE`` (www.paper-werk.de) klein geschrieben bleiben.
     """
     settings.MARKE_NAME = EIGENER
 
     html = seite(client)
 
-    assert 'paper-werk' not in html.lower()
+    assert 'Paper-Werk' not in html
 
 
 def test_untertitel_laesst_sich_leeren(verwaltung, client, settings):
@@ -234,7 +236,7 @@ def test_anmeldeseiten_tragen_den_eigenen_namen(db, settings, vorlage):
     html = render_to_string(vorlage, {'anbieter': 'Microsoft'}, request=anfrage)
 
     assert EIGENER in html
-    assert 'paper-werk' not in html.lower()
+    assert 'Paper-Werk' not in html
 
 
 def test_anmeldeseite_des_admin_traegt_den_eigenen_namen(db, client, settings):
@@ -262,7 +264,7 @@ def test_zertifikatshinweis_nennt_den_eigenen_namen(verwaltung, client, settings
         html = client.get('/admin/').content.decode()
 
     assert f'Danach öffnen die Browser {EIGENER} und das Archiv' in html
-    assert 'paper-werk' not in html.lower()
+    assert 'Paper-Werk' not in html
 
 
 # --- Systemprüfung -----------------------------------------------------------
