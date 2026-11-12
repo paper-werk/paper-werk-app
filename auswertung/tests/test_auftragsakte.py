@@ -116,6 +116,47 @@ class TestDerAbrechnungsstand:
         assert '60 %' in inhalt
         assert 'RE-2026-0001' in inhalt
 
+    @pytest.fixture
+    def gegliedert(self, projekt):
+        """Auftrag mit Titel, Textzeile, zwei Leistungen und Zuschlag."""
+        from faktura.models import Zeilenart
+
+        beleg = Beleg.objects.create(typ=BelegTyp.AUFTRAG, projekt=projekt)
+        zeilen = [
+            ('1', 'Erkundung', Zeilenart.TITEL, '0', '0'),
+            ('1.0', 'Vorbemerkung zum Leistungsumfang', Zeilenart.TEXT,
+             '0', '0'),
+            ('1.10', 'Ingenieurstunde', Zeilenart.LEISTUNG, '10', '95.00'),
+            ('1.20', 'Bohrung', Zeilenart.LEISTUNG, '2', '400.00'),
+            ('90', 'Nebenkosten', Zeilenart.ZUSCHLAG, '1', '87.50'),
+        ]
+        for nummer, text, art, menge, preis in zeilen:
+            Belegposition.objects.create(
+                beleg=beleg, position=nummer, bezeichnung=text,
+                zeilenart=art, menge=Decimal(menge), einheit='Stk',
+                einzelpreis=Decimal(preis))
+        beleg.status = BelegStatus.FESTGESCHRIEBEN
+        beleg.nummer = 'AU-2026-0013'
+        beleg.belegdatum = date(2026, 7, 1)
+        beleg.save()
+        return beleg
+
+    def test_titel_und_text_sind_keine_posten(self, gegliedert):
+        """Regression #92: Titel und Textzeile standen mit Menge 0 im
+        Abrechnungsstand. Der Zuschlag bleibt, weil er einen Betrag hat."""
+        from auswertung import ergebnisse
+
+        stand = ergebnisse.auftragsstand(gegliedert)
+
+        assert [p.position.bezeichnung for p in stand.posten] == [
+            'Ingenieurstunde', 'Bohrung', 'Nebenkosten']
+
+    def test_die_karte_zaehlt_nur_posten(self, als_buchhalterin, gegliedert):
+        inhalt = als_buchhalterin.get(_akte(gegliedert)).content.decode()
+
+        assert '3 Positionen, netto.' in inhalt
+        assert 'Vorbemerkung zum Leistungsumfang' not in inhalt
+
     def test_ein_abschlag_verbraucht_sie_nicht(self, als_buchhalterin,
                                                auftrag):
         """Ein Abschlag verbraucht keine beauftragte Menge.

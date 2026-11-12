@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from erfassung import services as erfassung_services
 from faktura import services as faktura_services
+from faktura.models import Zeilenart
 
 NULL = Decimal('0.00')
 
@@ -341,11 +342,17 @@ def auftragsstand(auftrag, positionen=None) -> Auftragsstand:
 
     ``positionen`` ist die bereits geladene Liste der Aktenseite. Drei
     Abfragen, unabhängig von der Zahl der Positionen.
+
+    Titel- und Textzeilen (``Zeilenart.ohne_betrag``) fallen heraus, weil
+    sie weder Menge noch Betrag haben; Posten, Zählung und
+    ``ueberzogene_posten`` beruhen damit auf den abrechenbaren Zeilen.
     """
     from erfassung.models import Erfassungszeile
 
-    positionen = (list(auftrag.positionen.order_by('sortierung', 'pk'))
-                  if positionen is None else list(positionen))
+    if positionen is None:
+        positionen = auftrag.positionen.order_by('sortierung', 'pk')
+    positionen = [p for p in positionen
+                  if p.zeilenart not in Zeilenart.ohne_betrag()]
     abgerechnet = faktura_services.abgerechnete_mengen(
         [p.pk for p in positionen])
 
