@@ -42,8 +42,7 @@ Prozentwerte, weil Fachlogik in Templates schlecht testbar ist.
                     {% endif %}
                 </div>
                 <div class="mt-1 text-font-subtle-light text-sm dark:text-font-subtle-dark">
-                    {% if not zertifikat.abgelaufen %}Danach öffnen die Browser {{ marke }} und das Archiv nicht mehr. {% endif %}Bitte geben Sie der Person Bescheid, die bei Ihnen die IT betreut:
-                    Das Zertifikat für diesen Server muss erneuert werden.
+                    {% if not zertifikat.abgelaufen %}Danach öffnen die Browser {{ marke }} und das Archiv nicht mehr. {% endif %}Das Zertifikat muss erneuert werden. Zuständig ist Ihre IT-Betreuung.
                 </div>
             </div>
         </div>
@@ -217,8 +216,7 @@ Prozentwerte, weil Fachlogik in Templates schlecht testbar ist.
                         </p>
                     {% else %}
                         <p class="text-font-subtle-light text-sm dark:text-font-subtle-dark">
-                            Kein laufendes Projekt. Sobald eines angelegt ist und Belege trägt,
-                            steht seine Lage hier.
+                            Kein laufendes Projekt.
                         </p>
                     {% endif %}
                 {% endcomponent %}

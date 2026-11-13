@@ -17,9 +17,7 @@
   </div>
 
   <p class="mb-6 text-font-subtle-light text-sm dark:text-font-subtle-dark">
-    Aus einer E-Rechnung entsteht eine Eingangsrechnung mit ihren Positionen.
-    Danach steht sie zum Verteilen bereit &ndash; nichts davon ist
-    festgeschrieben.
+    Legt eine Eingangsrechnung mit ihren Positionen an. Sie bleibt änderbar.
   </p>
 
   <form method="post" enctype="multipart/form-data" novalidate>
@@ -60,18 +58,13 @@
     <div class="mt-6 text-font-subtle-light text-xs dark:text-font-subtle-dark">
       <p class="mb-1">
         <strong class="font-medium text-font-important-light dark:text-font-important-dark">
-          Beides geht</strong>: das PDF einer E-Rechnung (ZUGFeRD/Factur-X)
-        oder das nackte XML. Aus dem PDF wird das eingebettete XML geholt.
+          Formate</strong>: PDF mit eingebettetem XML (ZUGFeRD/Factur-X) oder XML.
       </p>
       <p class="mb-1">
-        Ein <strong class="font-medium text-font-important-light dark:text-font-important-dark">gew&ouml;hnliches
-        PDF</strong> &ndash; ein Scan oder eine gedruckte Rechnung &ndash;
-        tr&auml;gt nur das Bild und keine Daten. Es wird abgewiesen und
-        geh&ouml;rt von Hand erfasst oder &uuml;ber das Archiv &uuml;bernommen.
+        Ein <strong class="font-medium text-font-important-light dark:text-font-important-dark">PDF ohne XML</strong> (Scan, gedruckte Rechnung) wird abgewiesen.
       </p>
       <p>
-        Die UBL-Syntax wird nicht gelesen. Viele Erzeuger k&ouml;nnen beide
-        ausgeben &ndash; dann bitte die CII-Fassung anfordern.
+        Gelesen wird die CII-Syntax, nicht UBL.
       </p>
     </div>
 

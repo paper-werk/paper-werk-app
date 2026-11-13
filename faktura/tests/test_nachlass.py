@@ -419,7 +419,7 @@ class TestOberflaeche:
         dialog = buero.get(adresse).content.decode()
         buero.post(adresse, {'_form_submitted': 'on'})
 
-        assert 'schicken Sie ihm' in dialog
+        assert 'steigt wieder um den Nachlass' in dialog
         korrektur.refresh_from_db()
         assert korrektur.status == BelegStatus.STORNIERT
         assert korrektur.nachfolger.get().typ == BelegTyp.STORNO

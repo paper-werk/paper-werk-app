@@ -152,8 +152,8 @@ class VersandMixin:
                     request,
                     f'{versendet} festgeschrieben. Die E-Mail an '
                     f'{versendet.versendet_an} wurde NICHT verschickt, '
-                    f'sondern nur in die Server-Konsole geschrieben; '
-                    f'dieser Rechner hat keinen Postausgang eingerichtet.',
+                    f'sondern in die Server-Konsole geschrieben (kein '
+                    f'Postausgang eingerichtet).',
                     messages.WARNING)
             return self._zurueck_zum_beleg(request, beleg.pk)
 

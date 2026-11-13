@@ -161,7 +161,7 @@ Schlussrechnung.
 Die Schlussrechnung führt die volle Leistung auf und setzt die gestellten
 Abschläge ab.
 
-**Entstehen** sollte sie aus einer Gesamtabnahme („Rechnung erzeugen“ an
+**Entstehen** kann sie aus einer Gesamtabnahme („Rechnung erzeugen“ an
 der Abnahme). Dann übernimmt sie Leistungsdatum und Zeitraum aus der
 Abnahme, die Leistung aus den Abschlägen und setzt die Abschläge gleich
 ab. Die Titel des Auftrags kommen mit, damit die Zwischensummen stehen,

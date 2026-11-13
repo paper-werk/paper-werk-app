@@ -387,9 +387,8 @@ def beleg_festschreiben(
         if veraltet:
             nummern = ', '.join(b.nummer or str(b) for b in veraltet)
             raise UngueltigerBetrag(
-                f'Seit dem Absetzen hat sich geändert, was auf {nummern} '
-                f'bezahlt ist. Bitte „Abschläge absetzen“ noch einmal '
-                f'ausführen, dann stimmt der nicht bezahlte Teil wieder.'
+                f'Die Zahlungen auf {nummern} haben sich seit dem Absetzen '
+                f'geändert. Bitte „Abschläge absetzen“ erneut ausführen.'
             )
 
     if beleg.typ == BelegTyp.MAHNUNG:

@@ -130,9 +130,9 @@ class Katalogposition(models.Model):
     # Angebotszeilen werden abgewählt.
     kontierbar = models.BooleanField(
         'In der Erfassung', default=True,
-        help_text='Diese Leistung erscheint in der Leistungserfassung. '
-                  'Abwählen bei Positionen, die nur auf Angebote gehören; '
-                  'eine "Baustelleneinrichtung pauschal" bucht niemand im Feld.',
+        help_text='Erscheint in der Leistungserfassung. Abwählen für '
+                  'Positionen nur für Angebote, etwa „Baustelleneinrichtung '
+                  'pauschal“.',
         db_comment='Erscheint diese Leistung in der Leistungserfassung? '
                    'Vorgabe an; abgewählt wird bei reinen Angebotszeilen.',
     )

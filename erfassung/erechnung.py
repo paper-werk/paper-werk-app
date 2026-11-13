@@ -272,10 +272,9 @@ def _parsen(daten: bytes) -> Document:
 
     if wurzel_tag in (_SYNTAX_UBL, _SYNTAX_UBL_GUTSCHRIFT):
         raise ERechnungFehler(
-            'Das ist eine E-Rechnung in der UBL-Syntax. Gelesen wird hier '
-            'nur die CII-Syntax (UN/CEFACT), dieselbe, die auch in einem '
-            'ZUGFeRD-PDF steckt. Viele Erzeuger können beides ausgeben; '
-            'bitte den Lieferanten um die CII-Fassung bitten.')
+            'E-Rechnung in UBL-Syntax. Gelesen wird nur die CII-Syntax '
+            '(UN/CEFACT, wie im ZUGFeRD-PDF). Beim Lieferanten die '
+            'CII-Fassung anfordern.')
 
     try:
         return Document.parse(daten, strict=False)
@@ -303,11 +302,8 @@ def _xml_aus_pdf(daten: bytes) -> bytes:
         return xml
 
     raise ERechnungFehler(
-        'In diesem PDF steckt keine E-Rechnung. Ein gewöhnliches PDF, auch '
-        'ein eingescanntes oder ein sauber gesetztes, trägt nur das Bild '
-        'der Rechnung; bei einer E-Rechnung liegen die Daten als XML *im* '
-        'PDF. Diese hier gehört von Hand erfasst oder über das Archiv '
-        'übernommen.')
+        'Das PDF enthält keine E-Rechnung (kein eingebettetes XML). Bitte von '
+        'Hand oder über das Archiv erfassen.')
 
 
 def _xml_anhang(daten: bytes) -> bytes | None:
@@ -357,9 +353,8 @@ def _typ_pruefen(doc: Document) -> None:
         return
     if typ in ('381', '384', '389'):
         raise ERechnungFehler(
-            f'Das Dokument ist keine Rechnung, sondern eine Gutschrift oder '
-            f'Korrektur (Typ {typ}). Solche Belege werden hier von Hand '
-            f'erfasst; eine Eingangsrechnung kennt nur den Rechnungsfall.')
+            f'Das Dokument ist eine Gutschrift oder Korrektur (Typ {typ}), '
+            f'keine Rechnung. Bitte von Hand erfassen.')
     raise ERechnungFehler(
         f'Unbekannte Dokumentenart "{typ}". Eingelesen wird nur die '
         f'Rechnung (Typ {TYP_RECHNUNG}).')
@@ -374,9 +369,8 @@ def _waehrung_pruefen(doc: Document) -> None:
     waehrung = _text(doc.trade.settlement.currency_code).upper()
     if waehrung and waehrung != 'EUR':
         raise ERechnungFehler(
-            f'Die Rechnung ist in {waehrung} ausgestellt. Dieses Programm '
-            f'rechnet in Euro; eine Fremdwaehrungsrechnung gehört '
-            f'umgerechnet und von Hand erfasst.')
+            f'Die Rechnung ist in {waehrung} ausgestellt. Eingelesen wird nur '
+            f'Euro; bitte umgerechnet von Hand erfassen.')
 
 
 def _betrag_netto(doc: Document) -> Decimal:

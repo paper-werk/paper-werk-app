@@ -187,11 +187,9 @@ class ERechnungForm(forms.Form):
         queryset=Projekt.objects.none(),
         required=False,
         empty_label='Noch nicht zuordnen',
-        help_text='Alle Positionen der Rechnung werden darauf kontiert. '
-                  'Leer lassen: Dann gilt das Projekt, das der Lieferant '
-                  'als Projektreferenz angegeben hat, sofern es eindeutig '
-                  'passt; sonst steht die Rechnung mit offenem Rest da '
-                  'und wird danach verteilt.',
+        help_text='Alle Positionen der Rechnung werden darauf kontiert. Leer: '
+                  'das Projekt aus der Projektreferenz des Lieferanten, wenn '
+                  'sie eindeutig passt; sonst bleibt ein Rest zum Verteilen.',
     )
 
     def __init__(self, *args, **kwargs):
@@ -695,7 +693,7 @@ class FremdleistungAdmin(MengeOhneNullen, Kopfleiste, AuftragspositionFeld,
         if len(projekte) != 1:
             self.message_user(
                 request, 'Bitte Fremdleistungen genau eines Projekts '
-                         'auswählen, etwa über den Filter Projekt.',
+                         'auswählen (Filter Projekt).',
                 level=messages.WARNING)
             return None
         (projekt,) = projekte

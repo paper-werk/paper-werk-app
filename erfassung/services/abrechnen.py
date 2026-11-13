@@ -543,8 +543,8 @@ def abrechnungsvorschau(zeilen, fremdleistungen=None, *,
     if len(projekte) > 1:
         namen = ', '.join(sorted(str(p) for p in projekte.values()))
         raise MehrereProjekte(
-            f'Die Auswahl umfasst mehrere Projekte ({namen}). Eine Rechnung '
-            f'gehört zu einem davon; bitte getrennt abrechnen.'
+            f'Die Auswahl umfasst mehrere Projekte ({namen}). Bitte je '
+            f'Projekt abrechnen.'
         )
 
     # Der Schlüssel enthält das Modell, damit Auftrags- und Katalogposition
@@ -770,8 +770,8 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
         # Vorhabens alle anderen Prüfungen bestünde.
         if beleg.typ != BelegTyp.RECHNUNG:
             raise ZielUngeeignet(
-                f'{beleg} ist keine Rechnung. Erfasste Leistung ist erbracht '
-                f'und gehört nicht in ein Angebot.'
+                f'{beleg} ist keine Rechnung. Erfasste Leistung lässt sich '
+                f'nur in Rechnungen übernehmen.'
             )
         if beleg.projekt_id and vorschau.projekt and beleg.projekt_id != vorschau.projekt.pk:
             raise ZielUngeeignet(

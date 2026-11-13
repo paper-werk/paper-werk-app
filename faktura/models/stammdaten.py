@@ -332,9 +332,9 @@ class Kontakt(MitVersion):
         limit_choices_to={'ist_kunde': True},
         verbose_name='Abweichender Rechnungsempfänger',
         null=True, blank=True,
-        help_text='Nur setzen, wenn die Rechnung an einen anderen Kunden '
-                  'geht, etwa Hausverwaltung, Konzernmutter, Versicherung. '
-                  'Für Ansprechpartner ist dieses Feld nicht gedacht.',
+        help_text='Nur, wenn die Rechnung an einen anderen Kunden geht '
+                  '(Hausverwaltung, Konzernmutter, Versicherung). Nicht für '
+                  'Ansprechpartner.',
     )
 
     zahlungsziel_tage = models.PositiveSmallIntegerField('Zahlungsziel (Tage)', default=14)

@@ -61,8 +61,8 @@ def beleg_archivieren(*, beleg_id: int, warten: bool = True) -> Beleg:
 
     if beleg.ist_entwurf:
         raise FalscherStatus(
-            f'{beleg} ist ein Entwurf. Ins Archiv gehört nur, was '
-            f'festgeschrieben ist.'
+            f'{beleg} ist ein Entwurf. Archiviert werden nur festgeschriebene '
+            f'Belege.'
         )
 
     # Belegarten ohne Dokument überspringen; hier und im Command, damit
@@ -157,8 +157,8 @@ def archivierung_vermerken(*, beleg_id: int, paperless_id: int) -> Beleg:
 
     if beleg.ist_entwurf:
         raise FalscherStatus(
-            f'{beleg} ist ein Entwurf und hat kein Dokument, das ins Archiv '
-            f'gehört. Erst festschreiben.'
+            f'{beleg} ist ein Entwurf und hat kein Dokument. Erst '
+            f'festschreiben.'
         )
 
     if beleg.paperless_id is not None and beleg.paperless_id != paperless_id:

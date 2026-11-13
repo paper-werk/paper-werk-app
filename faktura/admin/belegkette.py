@@ -172,12 +172,9 @@ class BelegketteMixin:
             'title': 'Beleg wieder öffnen?',
             # Der Hinweis erklärt, warum die Positionen eines geöffneten
             # Auftrags in der Erfassung fehlen.
-            'description': 'Der Beleg wird erneut zum Entwurf und lässt '
-                           'sich bearbeiten. Seine Nummer behält er bei. '
-                           'Vermeiden Sie nachträgliches Öffnen und Ändern, '
-                           'wenn immer möglich. Bei einem Auftrag gilt '
-                           'außerdem: Solange er offen ist, kann niemand '
-                           'Stunden darauf kontieren.',
+            'description': 'Der Beleg wird wieder zum Entwurf, die Nummer '
+                           'bleibt. Solange ein Auftrag offen ist, lassen '
+                           'sich keine Stunden darauf kontieren.',
             'form_submit_text': 'Wieder öffnen',
         }, # type: ignore
     )

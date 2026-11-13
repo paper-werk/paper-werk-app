@@ -318,10 +318,9 @@ class Beleg(MitVersion):
     #: ``save()``. Der Abschlag hat keines.
     steuerliches_leistungsdatum = models.DateField(
         'Leistungsdatum', null=True, blank=True,
-        help_text='Der Tag, an dem die Leistung vollendet bzw. abgenommen '
-                  'ist, die Pflichtangabe nach § 14 Abs. 4 Nr. 6 UStG. '
-                  'Leer gelassen, gilt das Ende des Zeitraums. Ein Abschlag '
-                  'hat keines.',
+        help_text='Pflichtangabe nach § 14 Abs. 4 Nr. 6 UStG: Tag, an dem die '
+                  'Leistung vollendet oder abgenommen ist. Leer: Ende des '
+                  'Zeitraums. Abschläge haben keines.',
         db_comment='BT-72. Bei Abschlägen immer leer (Anzahlung).',
     )
 

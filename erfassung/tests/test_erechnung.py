@@ -491,7 +491,7 @@ class TestAbgewiesen:
 
         text = str(fehler.value)
         assert 'keine E-Rechnung' in text
-        assert 'XML' in text and 'im' in text
+        assert 'eingebettetes XML' in text
 
     def test_kaputte_pdf_daten(self):
         with pytest.raises(erechnung.ERechnungFehler) as fehler:

@@ -330,21 +330,20 @@ def _zahlen(stand) -> dict:
             {
                 'titel': 'Abgerechnet',
                 'wert': euro(stand.berechnet),
-                'hinweis': ('Festgeschriebene Rechnungen auf diesen Auftrag. '
-                            'Abschläge zählen nicht mit.'),
+                'hinweis': ('Festgeschriebene Rechnungen auf diesen Auftrag, '
+                            'ohne Abschläge.'),
                 'icon': 'request_quote',
             },
             {
                 'titel': 'Offen',
                 'wert': euro(stand.offen),
-                'hinweis': 'Was vom Auftrag noch abzurechnen ist.',
+                'hinweis': 'Beauftragt, noch nicht abgerechnet.',
                 'icon': 'pending_actions',
             },
             {
                 'titel': 'Erfasst, nicht berechnet',
                 'wert': euro(stand.nicht_berechnet),
-                'hinweis': 'Geleistet und auf diesen Auftrag kontiert, aber '
-                           'noch auf keiner Rechnung.',
+                'hinweis': 'Auf diesen Auftrag kontiert, ohne Rechnung.',
                 'icon': 'savings',
             },
         ],

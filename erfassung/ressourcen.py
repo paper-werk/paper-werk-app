@@ -86,8 +86,8 @@ class LeistungWidget(widgets.ForeignKeyWidget):
         if len(treffer) == 1:
             return treffer[0]
         if treffer:
-            raise ValueError(f'"{text}" passt auf mehrere Katalogleistungen '
-                             f'- bitte die Artikelnummer eintragen.')
+            raise ValueError(f'"{text}" passt auf mehrere Katalogleistungen; '
+                             f'bitte die Artikelnummer eintragen.')
         raise ValueError(f'Leistung "{text}" steht nicht im Katalog.')
 
     def render(self, value, obj=None, **kwargs):

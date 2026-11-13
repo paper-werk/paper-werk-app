@@ -39,8 +39,7 @@
           {% endif %}
           und ist danach nicht mehr &auml;nderbar.
           {% if entsperrbar %}
-            &Uuml;ber &bdquo;Wieder &ouml;ffnen&ldquo; l&auml;sst er sich
-            zur&uuml;ckholen &ndash; die Nummer bleibt ihm dabei.
+            „Wieder öffnen“ hebt das auf, die Nummer bleibt.
           {% endif %}
         </p>
 
@@ -48,14 +47,11 @@
            Angebot (BelegTyp.mit_dokument()). {% endcomment %}
         {% if mit_dokument %}
           <p class="text-font-default-light text-sm dark:text-font-default-dark">
-            Sein PDF wird dabei eingefroren und im Archiv abgelegt.
+            Das PDF wird eingefroren und archiviert.
           </p>
         {% else %}
           <p class="text-font-default-light text-sm dark:text-font-default-dark">
-            Ein Dokument entsteht dabei nicht. Die
-            <strong class="text-font-important-light dark:text-font-important-dark">Auftragsbest&auml;tigung</strong>
-            erzeugt der Knopf &bdquo;PDF anzeigen&ldquo;, wann immer sie
-            gebraucht wird.
+            Es entsteht kein Dokument. Die <strong class="text-font-important-light dark:text-font-important-dark">Auftragsbestätigung</strong> erzeugt „PDF anzeigen“.
           </p>
         {% endif %}
       {% endcomponent %}

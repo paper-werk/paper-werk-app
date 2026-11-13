@@ -102,8 +102,8 @@ def aufgaben(request, *, uebersicht, posten, alt_ueber_90) -> list[Aufgabe]:
         liste.append(Aufgabe(
             schwere='blau',
             titel='Kostensatz fehlt',
-            text=(f'{", ".join(namen)}: {stunden} Std ohne Bewertung, '
-                  'die Ergebnisse sind deshalb zu gut'),
+            text=(f'{", ".join(namen)}: {stunden} Std ohne Kostensatz, '
+                  f'Ergebnisse zu hoch'),
             groesse=f'{stunden} Std',
             knopf='Kostensätze pflegen',
             url=(reverse('admin:erfassung_kostensatz_changelist')

@@ -639,9 +639,8 @@ class Fremdleistung(ErhoehtElternversion):
                           'zeilenart': 'leistung'},
         related_name='fremdkontierungen',
         verbose_name='Auftragsposition',
-        help_text='Freiwillig: die beauftragte Leistung, zu der dieser '
-                  'Einkauf gehört. Beim Übernehmen in die Rechnung gilt '
-                  'dann ihr Preis, wenn die Einheit passt.',
+        help_text='Optional. Beim Übernehmen in die Rechnung gilt ihr Preis, '
+                  'wenn die Einheit passt.',
     )
     bezeichnung = models.CharField(
         'Bezeichnung', max_length=300,
@@ -650,10 +649,8 @@ class Fremdleistung(ErhoehtElternversion):
     )
     fremdschluessel = models.CharField(
         'Fremdschlüssel', max_length=50, blank=True, default='',
-        help_text='Artikel- oder Paketnummer des Lieferanten. Trägt genau '
-                  'eine Auftragsposition des Projekts denselben Schlüssel, '
-                  'wird sie über die Aktion „Über Fremdschlüssel zuordnen“ '
-                  'gesetzt.',
+        help_text='Artikel- oder Paketnummer des Lieferanten. Grundlage für '
+                  '„Über Fremdschlüssel zuordnen“.',
         db_comment='Gleich Belegposition.fremdschluessel; Grundlage der '
                    'automatischen Zuordnung (erfassung.services.zuordnung).',
     )
@@ -681,9 +678,9 @@ class Fremdleistung(ErhoehtElternversion):
     )
     einkauf_netto = models.DecimalField(
         'Betrag netto', max_digits=12, decimal_places=2, blank=True,
-        help_text='Was der Lieferant für diese Zeile berechnet. Leer lassen '
-                  '- dann Menge mal Einkaufspreis. Abweichend eintragen bei '
-                  'Rabatt oder Zuschlag auf der Zeile.',
+        help_text='Zeilenbetrag laut Lieferant. Leer: Menge mal '
+                  'Einkaufspreis. Abweichend bei Rabatt oder Zuschlag auf der '
+                  'Zeile.',
         db_comment='Der Zeilenbetrag laut Lieferant (E-Rechnung: BT-131). '
                    'Belastet das Projektergebnis, auch wenn nichts '
                    'weiterberechnet wird. Die Summe über die Eingangsrechnung '

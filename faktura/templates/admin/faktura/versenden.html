@@ -29,22 +29,14 @@
 
         {% if ist_entwurf %}
           <p class="text-font-default-light text-sm dark:text-font-default-dark">
-            <strong class="text-font-important-light dark:text-font-important-dark">Der Beleg wird dabei festgeschrieben</strong>
-            &ndash; {% if beleg.nummer %}sein PDF wird neu erzeugt{% else %}er
-            bekommt seine Nummer, sein PDF wird eingefroren{% endif %}, und
-            &Auml;nderungen sind danach nur noch nach erneutem &Ouml;ffnen
-            m&ouml;glich. Das gilt f&uuml;r alle Wege unten.
+            <strong class="text-font-important-light dark:text-font-important-dark">Der Beleg wird festgeschrieben</strong>{% if beleg.nummer %}, das PDF neu erzeugt{% else %}: Er bekommt seine Nummer, das PDF wird eingefroren{% endif %}. Ändern nur nach „Wieder öffnen“. Gilt für alle Wege unten.
           </p>
         {% elif beleg.versendet_am %}
           {% comment %} Ein erneuter Versand überschreibt versendet_am nicht, weil
              das Datum den ersten Zugang nachweist.
           {% endcomment %}
           <p class="text-font-default-light text-sm dark:text-font-default-dark">
-            Dieser Beleg ging am {{ beleg.versendet_am|date:"d.m.Y H:i" }} an
-            {{ beleg.versendet_an }} hinaus.
-            <strong class="text-font-important-light dark:text-font-important-dark">Dieses Datum bleibt stehen</strong>
-            &ndash; der neue Versand kommt im Reiter &bdquo;Status&ldquo;
-            dazu, als weitere Zeile im Versandverlauf.
+            Versendet am {{ beleg.versendet_am|date:"d.m.Y H:i" }} an {{ beleg.versendet_an }}. <strong class="text-font-important-light dark:text-font-important-dark">Dieses Datum bleibt.</strong> Der neue Versand steht im Reiter „Status“ im Versandverlauf.
           </p>
         {% else %}
           <p class="text-font-default-light text-sm dark:text-font-default-dark">
@@ -94,9 +86,7 @@
         {% if not geht_hinaus %}
           <p class="mt-4 text-red-600 text-xs dark:text-red-500">
             <strong>Auf diesem Rechner ist kein Postausgang eingerichtet.</strong>
-            Die Nachricht wird nicht verschickt, sondern in die
-            Server-Konsole geschrieben. Der Beleg wird trotzdem
-            festgeschrieben.
+            Die Nachricht geht in die Server-Konsole. Der Beleg wird festgeschrieben.
           </p>
         {% endif %}
       {% endcomponent %}
@@ -127,7 +117,7 @@
             <label class="flex gap-2 items-center text-font-important-light text-sm dark:text-font-important-dark">
               <input type="checkbox" name="mengen_bestaetigt" value="1"
                      class="border-base-300 rounded-sm dark:border-base-600">
-              Ja, trotzdem festschreiben &ndash; die Überschreitung ist gewollt.
+              Trotzdem festschreiben
             </label>
           {% endcomponent %}
         </div>
@@ -148,12 +138,7 @@
               {% endfor %}
             </ul>
             <p class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
-              Abgesetzt wird nur, was bezahlt ist. Steht der Rest nicht schon
-              in einem sp&auml;teren Abschlag, fordert ihn diese Rechnung. Mit dem
-              Festschreiben ist die Abschlagsrechnung erledigt, eine sp&auml;tere
-              Zahlung darauf geh&ouml;rt zu dieser Rechnung. Ist inzwischen Geld
-              eingegangen, erst die Zahlung vermerken, dann
-              &bdquo;Abschl&auml;ge absetzen&ldquo; erneut ausf&uuml;hren.
+              Abgesetzt wird nur Bezahltes. Den Rest fordert diese Rechnung, sofern kein späterer Abschlag ihn enthält. Nach dem Festschreiben gehören spätere Zahlungen auf den Abschlag zu dieser Rechnung. Neue Zahlungen vorher vermerken und „Abschläge absetzen“ erneut ausführen.
             </p>
           {% endcomponent %}
         </div>

@@ -717,7 +717,7 @@ class TestDieKnopfleisteDesAuftrags:
             reverse('admin:faktura_auftrag_detail_festschreiben',
                     args=[auftragsentwurf.pk])).content.decode()
 
-        assert 'Ein Dokument entsteht dabei nicht' in inhalt
+        assert 'Es entsteht kein Dokument' in inhalt
 
     def test_der_knopf_schreibt_fest(self, buero, auftragsentwurf):
         buero.post(reverse('admin:faktura_auftrag_detail_festschreiben',

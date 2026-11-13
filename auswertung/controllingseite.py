@@ -142,8 +142,7 @@ def _kennzahlen(lage) -> list[dict]:
         'titel': 'Deckungsbeitrag II',
         'wert': f'{quote} %' if quote is not None else 'kein Maßstab',
         'hinweis': (f'{geld(lage.deckungsbeitrag.db2)} € nach Zukauf und '
-                    f'eigener Arbeit. Miete, Geräte und Verwaltung sind '
-                    f'darin noch nicht abgezogen.'),
+                    f'eigener Arbeit, ohne Gemeinkosten.'),
         'icon': 'account_balance',
         'warnung': quote is not None and quote < 0,
     })
@@ -158,8 +157,8 @@ def _stundenhinweis(lage) -> str:
     """
     ertrag = lage.stundenertrag
     if ertrag.faktor is None:
-        return (f'{menge(ertrag.stunden)} Std geleistet. Ohne Kostensätze lässt '
-                f'sich kein Faktor bilden.')
+        return (f'{menge(ertrag.stunden)} Std geleistet. Ohne Kostensätze '
+                f'kein Faktor.')
     satz = (f'Faktor {faktor(ertrag.faktor)} auf {geld(ertrag.kosten_je_stunde)} € '
             f'Kostensatz.')
     if not lage.vollstaendig:
@@ -171,8 +170,7 @@ def _stundenhinweis(lage) -> str:
 
 def _reichweitenhinweis(reichweite) -> str:
     if reichweite.monate is None:
-        return ('Noch kein abgeschlossener Monat mit Umsatz; ohne Nenner '
-                'gibt es keine Reichweite.')
+        return 'Noch kein abgeschlossener Monat mit Umsatz.'
     grundlage = (f'Bestand {geld(reichweite.auftragsbestand)} € gegen '
                  f'{geld(reichweite.monatsleistung)} € Monatsleistung '
                  f'(letzte {reichweite.monate_grundlage} Monate).')
