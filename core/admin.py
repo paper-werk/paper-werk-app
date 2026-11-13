@@ -13,6 +13,7 @@ from axes.admin import AccessAttemptAdmin as AxesAccessAttemptAdmin
 from axes.models import AccessAttempt, AccessFailureLog, AccessLog
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
@@ -153,6 +154,25 @@ class UserAdmin(Kopfleiste, BaseUserAdmin, ModelAdmin):
         css = {'all': ['core/css/auswahlfelder.css']}
 
 
+
+class Anmeldeformular(AdminAuthenticationForm):
+    """Anmeldung am Admin mit eigener Meldung bei falschen Zugangsdaten.
+
+    Djangos Text verlangt einen „Staff-Account“. Dieselbe Meldung gilt für
+    ein Konto ohne Mitarbeiter-Status, damit die Antwort nicht verrät, ob
+    der Benutzername existiert. Der Benutzername wird ohne Rücksicht auf
+    Groß- und Kleinschreibung gesucht (allauths ``AuthenticationBackend``),
+    das Passwort nicht.
+    """
+
+    error_messages = {
+        **AdminAuthenticationForm.error_messages,
+        'invalid_login': 'Benutzername oder Passwort falsch. Beim Passwort '
+                         'zählt die Groß- und Kleinschreibung.',
+    }
+
+
+admin.site.login_form = Anmeldeformular
 admin.site.unregister(Group)
 
 
