@@ -66,6 +66,8 @@ ERWARTET = [
         ('Benutzer', 'person', 'admin:core_user_changelist'),
         ('Gruppen', 'shield_person', 'admin:auth_group_changelist'),
         ('API-Schlüssel', 'key', 'admin:authtoken_tokenproxy_changelist'),
+        ('Anmeldesperren', 'lock_person',
+         'admin:axes_accessattempt_changelist'),
         ('Ereignisse', 'campaign', 'admin:core_ereignisregel_changelist'),
     ]),
     # Aus hilfe/apps.py.
