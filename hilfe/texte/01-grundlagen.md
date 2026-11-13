@@ -22,7 +22,7 @@ Die Seitenleiste folgt dem Arbeitsablauf:
 | Weitere Rechnungsarten | Teilschlussrechnungen, Stornorechnungen, Rechnungskorrekturen |
 | Leistung | Erfassung, Nicht abgerechnet, Eingangsrechnungen |
 | Stammdaten | Kontakte, Leistungskatalog, Textbausteine, Kostensätze, Steuersätze, Eigene Firma |
-| Verwaltung | Benutzer, Gruppen, API-Schlüssel |
+| Verwaltung | Benutzer, Gruppen, API-Schlüssel, Anmeldesperren |
 | Hilfe | Bedienungsanleitung |
 
 Die Gruppen „Weitere Rechnungsarten“, „Stammdaten“ und „Verwaltung“ sind
@@ -33,6 +33,10 @@ eingeklappt; ein Klick auf die Überschrift öffnet sie. Eine Zahl neben
 Ganz unten stehen Ihr Name und die Versionsnummer von Paper-Werk. Über
 Ihren Namen melden Sie sich ab, ändern Ihr Passwort und wechseln zwischen
 heller und dunkler Darstellung.
+
+Nach fünf falschen Passwörtern ist die Anmeldung für diesen Benutzernamen
+15 Minuten gesperrt. Ein Administrator kann die Sperre vorher aufheben
+(siehe [Anmeldesperren](#accessattempt)).
 
 Mit der Taste <kbd>[</kbd> blenden Sie die Seitenleiste aus und wieder ein,
 etwa wenn eine breite Liste mehr Platz braucht. Dasselbe tut das Symbol

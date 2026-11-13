@@ -185,8 +185,8 @@ HINTER_PROXY = env.bool('DJANGO_HINTER_PROXY', default=False)
 # Sperre nach fehlgeschlagenen Anmeldungen (django-axes). Gezählt je
 # Benutzername und IP-Adresse, damit ein Angreifer ein fremdes Konto nicht
 # von einer anderen Adresse aus sperren kann. Eine erfolgreiche Anmeldung
-# setzt den Zähler zurück. Entsperren: Admin unter „Axes“ oder
-# ``manage.py axes_reset``.
+# setzt den Zähler zurück. Entsperren: Verwaltung > Anmeldesperren oder
+# ``manage.py axes_reset_username <name>``.
 AXES_FAILURE_LIMIT = env.int('DJANGO_ANMELDUNG_VERSUCHE', default=5)
 AXES_COOLOFF_TIME = timedelta(
     minutes=env.int('DJANGO_ANMELDUNG_SPERRMINUTEN', default=15))
