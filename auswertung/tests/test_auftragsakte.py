@@ -157,6 +157,33 @@ class TestDerAbrechnungsstand:
         assert '3 Positionen, netto.' in inhalt
         assert 'Vorbemerkung zum Leistungsumfang' not in inhalt
 
+    def test_ueber_dem_auftrag_steht_der_link_zum_nachtrag(
+            self, client, auftrag):
+        """Bei 120 % Warnung mit Link auf das Formular des Auftrags, an dem
+        die Aktion „Nachtrag anlegen“ liegt."""
+        person = User.objects.create_user(
+            username='nora', password='geheim12345', is_staff=True)
+        person.user_permissions.add(*Permission.objects.filter(
+            codename__in=['view_auftrag', 'change_auftrag',
+                          'view_rechnung']))
+        client.force_login(person)
+        _rechnung(auftrag, '120', Rechnungsart.NORMAL, 'RE-2026-0009')
+
+        inhalt = client.get(_akte(auftrag)).content.decode()
+
+        assert '120 % des Auftrags berechnet' in inhalt
+        formular = reverse('admin:faktura_auftrag_change', args=[auftrag.pk])
+        assert f'<a href="{formular}" class="mt-1' in inhalt
+
+    def test_ohne_aenderungsrecht_fehlt_der_link(self, als_buchhalterin,
+                                                 auftrag):
+        _rechnung(auftrag, '120', Rechnungsart.NORMAL, 'RE-2026-0009')
+
+        inhalt = als_buchhalterin.get(_akte(auftrag)).content.decode()
+
+        assert '120 % des Auftrags berechnet' in inhalt
+        assert 'Nachtrag anlegen' not in inhalt
+
     def test_ein_abschlag_verbraucht_sie_nicht(self, als_buchhalterin,
                                                auftrag):
         """Ein Abschlag verbraucht keine beauftragte Menge.

@@ -84,6 +84,7 @@ def akte(request, pk):
         'klammer': _klammer(auftrag),
         'rechnungen': _rechnungen(auftrag, darf_zahlen_sehen),
         'formular_url': adresse_im_admin(auftrag),
+        'nachtrag_url': _nachtrag_url(request, auftrag),
         'projektakte_url': (reverse('projektakte', args=[auftrag.projekt_id])
                             if auftrag.projekt_id else ''),
         # Der Auftraggeber steht am Beleg oder am Projekt, beides zugleich
@@ -149,6 +150,15 @@ def _abnahmen(request, auftrag) -> dict:
             f'{reverse("admin:faktura_abnahme_add")}?auftrag={auftrag.pk}'
             if darf_erfassen else ''),
     }
+
+
+def _nachtrag_url(request, auftrag) -> str:
+    """Formular des Hauptauftrags, an dem die Aktion „Nachtrag anlegen“
+    liegt; leer ohne Änderungsrecht. Bei einem Nachtrag der Hauptauftrag,
+    weil Nachträge nicht verschachtelt werden."""
+    if not request.user.has_perm('faktura.change_auftrag'):
+        return ''
+    return adresse_im_admin(auftrag.nachtrag_zu or auftrag)
 
 
 def _positionszeilen(posten, darf_zahlen_sehen: bool) -> list[dict]:
