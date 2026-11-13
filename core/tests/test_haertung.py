@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import Client
 
 from core import drosselung
 
@@ -59,6 +60,26 @@ class TestDieAnmeldesperre:
 
         for _ in range(4):
             assert _anmelden(client, 'falsch').status_code == 200
+
+    def test_loeschen_im_admin_hebt_die_sperre_auf(
+            self, client, konto, admin_user):
+        from axes.models import AccessAttempt
+        for _ in range(5):
+            _anmelden(client, 'falsch')
+        verwalter = Client()
+        verwalter.force_login(admin_user)
+        eintrag = AccessAttempt.objects.get(username='bea')
+
+        verwalter.post(
+            f'/admin/axes/accessattempt/{eintrag.pk}/delete/', {'post': 'yes'})
+
+        assert _anmelden(client, 'richtig-12345').status_code == 302
+
+    def test_das_menue_fuehrt_zur_liste(self, admin_client):
+        seite = admin_client.get('/admin/').content.decode()
+
+        assert 'Anmeldesperren' in seite
+        assert '/admin/axes/accessattempt/' in seite
 
 
 class TestDieDrosselung:

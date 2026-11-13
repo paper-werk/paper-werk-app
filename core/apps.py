@@ -57,6 +57,13 @@ class CoreConfig(AppConfig):
                     'authtoken.view_tokenproxy'),
             },
             {
+                'title': 'Anmeldesperren',
+                'icon': 'lock_person',
+                'link': reverse_lazy('admin:axes_accessattempt_changelist'),
+                'permission': lambda r: r.user.has_perm(
+                    'axes.view_accessattempt'),
+            },
+            {
                 'title': 'Ereignisse',
                 'icon': 'campaign',
                 'link': reverse_lazy('admin:core_ereignisregel_changelist'),
