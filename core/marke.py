@@ -18,6 +18,7 @@ abgelegtes Logo erscheint dadurch ohne Neustart.
 from pathlib import Path
 
 from django.conf import settings
+from django.http.request import split_domain_port
 from django.templatetags.static import static
 
 #: Dateiendung und Medientyp für das Favicon. Unfold schreibt den Typ in das
@@ -122,4 +123,18 @@ def marke(request):
     Unfold setzt ``site_title`` nur im Admin; die Anmeldeseiten liegen zum
     Teil außerhalb.
     """
-    return {'marke': settings.MARKE_NAME, 'marke_untertitel': settings.MARKE_UNTERTITEL}
+    return {'marke': settings.MARKE_NAME,
+            'marke_untertitel': settings.MARKE_UNTERTITEL,
+            'einstiegsseite': einstiegsseite(request)}
+
+
+def einstiegsseite(request) -> str:
+    """Adresse der Einstiegsseite des Stacks (Caddy, Port 80 bzw. 443).
+
+    Gleiches Schema und gleicher Host wie der Request, ohne Port; damit
+    stimmt sie unter jedem Namen, unter dem der Stack erreicht wird.
+    """
+    host, _ = split_domain_port(request.get_host())
+    if ':' in host:
+        host = f'[{host}]'
+    return f'{request.scheme}://{host}/'
