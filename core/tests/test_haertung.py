@@ -80,6 +80,41 @@ class TestDieAnmeldesperre:
         assert '/admin/axes/accessattempt/' in seite
 
 
+class TestDieListeDerSperren:
+
+    def test_die_liste_laedt_mit_gesperrtem_eintrag(
+            self, client, konto, admin_client):
+        for _ in range(5):
+            _anmelden(client, 'falsch')
+
+        assert admin_client.get(
+            '/admin/axes/accessattempt/').status_code == 200
+
+    def test_die_aktion_entfernt_nur_abgelaufene(self, admin_client):
+        from datetime import timedelta
+
+        from axes.models import AccessAttempt
+        from django.utils import timezone
+        jetzt = timezone.now()
+        for name, alter in (('alt', timedelta(hours=1)),
+                            ('neu', timedelta(minutes=1))):
+            eintrag = AccessAttempt.objects.create(
+                username=name, ip_address='10.0.0.1', user_agent='',
+                path_info=LOGIN, get_data='', post_data='',
+                http_accept='', failures_since_start=5)
+            AccessAttempt.objects.filter(pk=eintrag.pk).update(
+                attempt_time=jetzt - alter)
+
+        admin_client.post('/admin/axes/accessattempt/', {
+            'action': 'abgelaufene_entfernen',
+            '_selected_action': list(
+                AccessAttempt.objects.values_list('pk', flat=True)),
+        })
+
+        assert list(AccessAttempt.objects.values_list(
+            'username', flat=True)) == ['neu']
+
+
 class TestDieDrosselung:
 
     @pytest.fixture

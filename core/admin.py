@@ -10,8 +10,10 @@ import requests
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
 from axes.admin import AccessAttemptAdmin as AxesAccessAttemptAdmin
+from axes.admin import IsLockedOutFilter
 from axes.models import AccessAttempt, AccessFailureLog, AccessLog
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -19,6 +21,7 @@ from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.authtoken.admin import TokenAdmin as DRFTokenAdmin
 from rest_framework.authtoken.models import TokenProxy
 from sequences.models import Sequence
@@ -387,4 +390,31 @@ admin.site.unregister(AccessFailureLog)
 
 @admin.register(AccessAttempt)
 class AccessAttemptAdmin(Kopfleiste, AxesAccessAttemptAdmin, ModelAdmin):
-    """Fehlgeschlagene Anmeldungen je Benutzername und IP-Adresse."""
+    """Fehlgeschlagene Anmeldungen je Benutzername und IP-Adresse.
+
+    Status, Filter und Aktion ersetzen die von django-axes, deren Texte
+    keine deutsche Übersetzung haben. Der Status berücksichtigt
+    ``AXES_COOLOFF_TIME``: ``attempt_time`` ist der letzte Fehlversuch, die
+    Sperre endet eine Sperrzeit danach.
+    """
+
+    class GesperrtFilter(IsLockedOutFilter):
+        title = 'Gesperrt'
+
+    list_filter = ['attempt_time', 'path_info', GesperrtFilter]
+    actions = ['abgelaufene_entfernen']
+
+    @admin.display(description='Status')
+    def status(self, obj):
+        rest = settings.AXES_FAILURE_LIMIT - obj.failures_since_start
+        if rest > 0:
+            return f'noch {rest} Versuche'
+        ende = obj.attempt_time + settings.AXES_COOLOFF_TIME
+        if ende <= timezone.now():
+            return 'Sperre abgelaufen'
+        return f'gesperrt bis {timezone.localtime(ende):%H:%M} Uhr'
+
+    @admin.action(description='Abgelaufene Einträge entfernen')
+    def abgelaufene_entfernen(self, request, queryset):
+        anzahl = self.handler.clean_expired_user_attempts(request=request)
+        self.message_user(request, f'{anzahl} abgelaufene Einträge entfernt.')
