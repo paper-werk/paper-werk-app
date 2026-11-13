@@ -26,6 +26,15 @@ def schnelles_passwort_hashing(settings):
 
 
 @pytest.fixture(autouse=True)
+def drosselung_zuruecksetzen():
+    """Leert die Zähler der API-Drosselung, damit Tests einander nicht
+    ausbremsen."""
+    from django.core.cache import caches
+
+    caches['drosselung'].clear()
+
+
+@pytest.fixture(autouse=True)
 def kein_pdf_beim_festschreiben(request, monkeypatch):
     """Festschreiben ohne PDF und ohne Archivierung, außer bei ``mit_pdf``.
 

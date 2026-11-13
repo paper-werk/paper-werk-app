@@ -309,7 +309,7 @@ class TestDieZahlenDerAkte:
             username='monteur', password='geheim12345', is_staff=True)
         nutzer.user_permissions.add(
             Permission.objects.get(codename='view_kontakt'))
-        client.login(username='monteur', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='monteur'))
         _rechnung(kunde, netto='1000.00')
 
         antwort = akte(client, kunde)
@@ -322,7 +322,7 @@ class TestDieZahlenDerAkte:
     def test_ohne_kundenrecht_gar_nichts(self, client, db, kunde):
         User.objects.create_user(
             username='fremd', password='geheim12345', is_staff=True)
-        client.login(username='fremd', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='fremd'))
 
         assert akte(client, kunde).status_code == 403
 

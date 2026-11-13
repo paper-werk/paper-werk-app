@@ -5,6 +5,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
@@ -115,7 +116,7 @@ class TestRechteAnDenJsonDiensten:
             username='monteur', email='m@example.com',
             password='geheim12345', is_staff=True,
         )
-        client.login(username='monteur', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='monteur'))
         return client
 
     def test_ohne_recht_kein_zugriff(self, monteur, dienste):

@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from core import gruppen
@@ -48,7 +49,7 @@ class TestArbeitsgruppeKannArbeiten:
             password='geheim12345', is_staff=True,
         )
         benutzer.groups.add(Group.objects.get(name=gruppen.BUERO))
-        client.login(username='buerokraft', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='buerokraft'))
         return client
 
     def test_alle_eigenen_dienste_antworten(self, mitarbeiterin, kunde):
@@ -173,7 +174,7 @@ class TestOhneRechteKeinBeleg:
             username='ohne-faktura', email='o@example.com',
             password='geheim12345', is_staff=True,
         )
-        client.login(username='ohne-faktura', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='ohne-faktura'))
         return client
 
     @pytest.fixture
@@ -240,7 +241,7 @@ class TestOhneRechteKeinBeleg:
         benutzer.user_permissions.add(*Permission.objects.filter(
             content_type__app_label='faktura',
             codename__in=['view_rechnung', 'view_beleg']))
-        client.login(username='darf-lesen', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='darf-lesen'))
 
         beleg = services.beleg_anlegen(
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))

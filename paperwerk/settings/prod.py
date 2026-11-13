@@ -35,7 +35,10 @@ WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [*Compressor.SKIP_COMPRESS_EXTENSIONS, 'ma
 # Hinter dem Reverse Proxy kommt der Request per HTTP an, auch wenn der
 # Browser HTTPS verwendet. Ohne den Header hält Django jeden Request für
 # unverschlüsselt, und SECURE_SSL_REDIRECT erzeugt eine Redirect-Schleife.
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Nur mit Proxy (DJANGO_HINTER_PROXY), weil der Client den Header sonst
+# selbst setzen kann.
+if HINTER_PROXY:  # noqa: F405
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Vertrauenswürdige Origins für POST. Muss die URL enthalten, unter der die
 # Anwendung im Browser erreichbar ist, hinter einem Reverse Proxy also dessen

@@ -9,7 +9,11 @@ Bibliothek steht in der MRO vorn, damit ihre Logik gilt.
 import requests
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
+from axes.admin import AccessAttemptAdmin as AxesAccessAttemptAdmin
+from axes.admin import IsLockedOutFilter
+from axes.models import AccessAttempt, AccessFailureLog, AccessLog
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -17,6 +21,7 @@ from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.authtoken.admin import TokenAdmin as DRFTokenAdmin
 from rest_framework.authtoken.models import TokenProxy
 from sequences.models import Sequence
@@ -24,6 +29,7 @@ from unfold.admin import ModelAdmin
 from unfold.decorators import action as unfold_action
 from unfold.forms import (
     AdminPasswordChangeForm,
+    AuthenticationForm,
     UnfoldReadOnlyPasswordHashWidget,
     UserChangeForm,
     UserCreationForm,
@@ -151,6 +157,23 @@ class UserAdmin(Kopfleiste, BaseUserAdmin, ModelAdmin):
         css = {'all': ['core/css/auswahlfelder.css']}
 
 
+
+class Anmeldeformular(AuthenticationForm):
+    """Anmeldung am Admin mit eigener Meldung bei falschen Zugangsdaten.
+
+    Djangos Text verlangt einen „Staff-Account“. Dieselbe Meldung gilt für
+    ein Konto ohne Mitarbeiter-Status, damit die Antwort nicht verrät, ob
+    der Benutzername existiert. Abgeleitet von Unfolds Formular, das die
+    Eingabefelder gestaltet.
+    """
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        'invalid_login': 'Benutzername oder Passwort falsch.',
+    }
+
+
+admin.site.login_form = Anmeldeformular
 admin.site.unregister(Group)
 
 
@@ -354,3 +377,44 @@ class EreignisregelAdmin(Kopfleiste, ModelAdmin):
                 request, f'{regel.url} antwortet mit Status {antwort.status_code}.',
                 level=messages.SUCCESS if antwort.ok else messages.WARNING)
         return redirect(reverse('admin:core_ereignisregel_change', args=[object_id]))
+
+
+# Anmeldesperre (django-axes, AXES_* in den Settings). Nur die Fehlversuche
+# erscheinen im Admin; Löschen eines Eintrags hebt die Sperre auf.
+# AccessLog bleibt leer (AXES_DISABLE_ACCESS_LOG), AccessFailureLog ist
+# abgeschaltet.
+admin.site.unregister(AccessAttempt)
+admin.site.unregister(AccessLog)
+admin.site.unregister(AccessFailureLog)
+
+
+@admin.register(AccessAttempt)
+class AccessAttemptAdmin(Kopfleiste, AxesAccessAttemptAdmin, ModelAdmin):
+    """Fehlgeschlagene Anmeldungen je Benutzername und IP-Adresse.
+
+    Status, Filter und Aktion ersetzen die von django-axes, deren Texte
+    keine deutsche Übersetzung haben. Der Status berücksichtigt
+    ``AXES_COOLOFF_TIME``: ``attempt_time`` ist der letzte Fehlversuch, die
+    Sperre endet eine Sperrzeit danach.
+    """
+
+    class GesperrtFilter(IsLockedOutFilter):
+        title = 'Gesperrt'
+
+    list_filter = ['attempt_time', 'path_info', GesperrtFilter]
+    actions = ['abgelaufene_entfernen']
+
+    @admin.display(description='Status')
+    def status(self, obj):
+        rest = settings.AXES_FAILURE_LIMIT - obj.failures_since_start
+        if rest > 0:
+            return f'noch {rest} Versuche'
+        ende = obj.attempt_time + settings.AXES_COOLOFF_TIME
+        if ende <= timezone.now():
+            return 'Sperre abgelaufen'
+        return f'gesperrt bis {timezone.localtime(ende):%H:%M} Uhr'
+
+    @admin.action(description='Abgelaufene Einträge entfernen')
+    def abgelaufene_entfernen(self, request, queryset):
+        anzahl = self.handler.clean_expired_user_attempts(request=request)
+        self.message_user(request, f'{anzahl} abgelaufene Einträge entfernt.')

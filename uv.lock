@@ -498,6 +498,19 @@ socialaccount = [
 ]
 
 [[package]]
+name = "django-axes"
+version = "9.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/99/5c830ecc3933a1b8ce2edbd9570dee7399a8c0fd001e496733a7bddf3ac9/django_axes-9.0.0.tar.gz", hash = "sha256:863aef4563673c1e77bb3d21be1ba1d2612b0cf9d5365c27c9af9ae1c614c3c0", size = 265598, upload-time = "2026-10-30T20:54:52.763Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2d/a0/da4e8cb4c43c8aa5266a5fcde1394fe68b2e86b43fc2a0df2b282b18962b/django_axes-9.0.0-py3-none-any.whl", hash = "sha256:fb7b0322a09d8f090d5a980690cb5468dc1903d3d950f1968c4e067348d58059", size = 79432, upload-time = "2026-10-30T20:54:51.056Z" },
+]
+
+[[package]]
 name = "django-debug-toolbar"
 version = "8.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1078,6 +1091,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "django" },
     { name = "django-allauth", extra = ["socialaccount"] },
+    { name = "django-axes" },
     { name = "django-environ" },
     { name = "django-filter" },
     { name = "django-import-export", extra = ["xlsx"] },
@@ -1116,6 +1130,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=45" },
     { name = "django", specifier = ">=6.1,<7" },
     { name = "django-allauth", extras = ["socialaccount"], specifier = ">=65.16" },
+    { name = "django-axes", specifier = ">=8.0" },
     { name = "django-environ", specifier = ">=0.12" },
     { name = "django-filter", specifier = ">=26.1" },
     { name = "django-import-export", extras = ["xlsx"], specifier = ">=4.4.1" },

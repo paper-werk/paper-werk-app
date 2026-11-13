@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from faktura.models import (
@@ -151,7 +152,7 @@ class TestBausteinAuswahl:
             benutzer.user_permissions.add(
                 Permission.objects.get(codename=recht)
             )
-        client.login(username='schreibkraft', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='schreibkraft'))
 
         inhalt = client.get(
             reverse('admin:faktura_angebot_add')

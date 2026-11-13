@@ -1,7 +1,7 @@
 # Verwaltung
 
-Die Gruppe „Verwaltung“ ist für Administratoren: Benutzer, Gruppen und
-API-Schlüssel. Wer hier nichts sieht, braucht hier nichts.
+Die Gruppe „Verwaltung“ ist für Administratoren: Benutzer, Gruppen,
+API-Schlüssel und Anmeldesperren. Wer hier nichts sieht, braucht hier nichts.
 
 ## Benutzer {#user}
 
@@ -100,3 +100,23 @@ im anderen Programm ein.
 Dienstzugänge für die Automatisierung richtet in der Regel der Betreuer
 der Installation ein: als eigenes Konto ohne Passwort, ohne Zugang zur
 Oberfläche und mit Rechten nur über die Gruppe „Faktura Dienst“.
+
+**Grenzen:** Ein Konto darf in der Grundeinstellung 600 Anfragen je
+Minute stellen. Darüber antwortet die Schnittstelle mit dem Fehler 429,
+bis die Minute um ist. Nach zehn ungültigen Schlüsseln in einer Minute
+sperrt sie die IP-Adresse des Absenders für eine Minute, auch für gültige
+Schlüssel.
+
+## Anmeldesperren {#accessattempt}
+
+Nach fünf falschen Passwörtern für denselben Benutzernamen von derselben
+IP-Adresse ist die Anmeldung für diesen Benutzernamen von dieser Adresse
+aus 15 Minuten gesperrt, auch mit dem richtigen Passwort. Eine
+erfolgreiche Anmeldung vor dem fünften Fehlversuch setzt den Zähler
+zurück. Die Anmeldung mit Microsoft ist davon nicht betroffen.
+
+**Die Liste** (Überschrift „Zugriffsversuche“) zeigt je Benutzername und
+IP-Adresse den Zeitpunkt, den Browser und die Zahl der Fehlversuche.
+
+**Sperre aufheben:** den Eintrag löschen. Die Person kann sich danach
+sofort wieder anmelden. Ohne Eingriff endet die Sperre nach 15 Minuten.

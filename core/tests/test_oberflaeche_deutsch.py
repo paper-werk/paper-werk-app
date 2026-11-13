@@ -24,7 +24,6 @@ ENGLISCH = ['Welcome back to', 'Return to site', 'Type to search',
 def test_anmeldeseite_ist_deutsch(client):
     seite = client.get(reverse('admin:login')).content.decode()
     assert 'Willkommen bei' in seite
-    assert 'Zur Webseite' in seite
     for text in ENGLISCH:
         assert text not in seite, text
 

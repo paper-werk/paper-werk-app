@@ -205,6 +205,9 @@ Regeln stehen unter „Verwaltung > Ereignisse“ (Modell `Ereignisregel`).
 - Rechte sind die Modellrechte von `core.ereignisregel`; die Gruppen von
   `faktura_rechte` erhalten sie nicht, die Pflege bleibt Superusern
   vorbehalten, weil eine Regel Belegdaten an eine beliebige URL schickt.
+  Rechte an `core.ereignisregel` nur an Verwalter vergeben: Ein Ziel darf
+  ein Dienst im Compose-Netz sein (`http://paperless:8000`), eine Regel
+  erreicht damit Dienste, die von außen nicht erreichbar sind.
 
 ## Szenarien
 

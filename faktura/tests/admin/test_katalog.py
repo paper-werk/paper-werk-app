@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from faktura import services
@@ -279,7 +280,7 @@ class TestKatalogsuche:
             username='ohne-faktura', email='o@example.com',
             password='geheim12345', is_staff=True,
         )
-        client.login(username='ohne-faktura', password='geheim12345')
+        client.force_login(get_user_model().objects.get(username='ohne-faktura'))
 
         antwort = client.get(
             reverse('admin:faktura_katalogposition_suche'), {'term': 'Boden'})

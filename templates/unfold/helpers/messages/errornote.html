@@ -1,0 +1,14 @@
+{% load i18n %}
+{% comment %}
+Unfolds Sammelhinweis über einem Formular mit Fehlern. Ausgeblendet, wenn
+nur allgemeine Fehler (__all__) vorliegen, etwa falsche Zugangsdaten bei
+der Anmeldung: Die Meldung steht dann direkt darunter, und es gibt keine
+Felder, auf die der Hinweis verweisen könnte. Bei Listen von Fehlern
+(Änderungsmaske, Formsets) ist errors.keys leer, der Hinweis bleibt.
+{% endcomment %}
+
+{% if errors and errors.keys|join:"" != "__all__" %}
+    <p class="errornote bg-red-100 mb-4 text-red-700 px-3 py-2.5 leading-[18px] rounded-default dark:bg-red-500/20 dark:border-red-500/20 dark:text-red-400 {% if class %} {{ class }}{% endif %}">
+        {% blocktranslate count counter=errors.items|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}
+    </p>
+{% endif %}
