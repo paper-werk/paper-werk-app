@@ -13,7 +13,6 @@ from axes.admin import AccessAttemptAdmin as AxesAccessAttemptAdmin
 from axes.models import AccessAttempt, AccessFailureLog, AccessLog
 from django import forms
 from django.contrib import admin, messages
-from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
@@ -27,6 +26,7 @@ from unfold.admin import ModelAdmin
 from unfold.decorators import action as unfold_action
 from unfold.forms import (
     AdminPasswordChangeForm,
+    AuthenticationForm,
     UnfoldReadOnlyPasswordHashWidget,
     UserChangeForm,
     UserCreationForm,
@@ -155,16 +155,17 @@ class UserAdmin(Kopfleiste, BaseUserAdmin, ModelAdmin):
 
 
 
-class Anmeldeformular(AdminAuthenticationForm):
+class Anmeldeformular(AuthenticationForm):
     """Anmeldung am Admin mit eigener Meldung bei falschen Zugangsdaten.
 
     Djangos Text verlangt einen „Staff-Account“. Dieselbe Meldung gilt für
     ein Konto ohne Mitarbeiter-Status, damit die Antwort nicht verrät, ob
-    der Benutzername existiert.
+    der Benutzername existiert. Abgeleitet von Unfolds Formular, das die
+    Eingabefelder gestaltet.
     """
 
     error_messages = {
-        **AdminAuthenticationForm.error_messages,
+        **AuthenticationForm.error_messages,
         'invalid_login': 'Benutzername oder Passwort falsch.',
     }
 
