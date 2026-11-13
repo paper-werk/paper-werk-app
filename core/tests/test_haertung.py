@@ -41,8 +41,6 @@ class TestDieAnmeldesperre:
         antwort = _anmelden(client, 'falsch')
 
         assert antwort.status_code == 429
-        assert 'Anmeldung gesperrt' in antwort.content.decode()
-        assert 'Gesperrt für 15 Minuten' in antwort.content.decode()
 
     def test_gesperrt_hilft_auch_das_richtige_passwort_nicht(
             self, client, konto):

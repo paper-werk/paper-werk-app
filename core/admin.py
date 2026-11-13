@@ -160,15 +160,12 @@ class Anmeldeformular(AdminAuthenticationForm):
 
     Djangos Text verlangt einen „Staff-Account“. Dieselbe Meldung gilt für
     ein Konto ohne Mitarbeiter-Status, damit die Antwort nicht verrät, ob
-    der Benutzername existiert. Der Benutzername wird ohne Rücksicht auf
-    Groß- und Kleinschreibung gesucht (allauths ``AuthenticationBackend``),
-    das Passwort nicht.
+    der Benutzername existiert.
     """
 
     error_messages = {
         **AdminAuthenticationForm.error_messages,
-        'invalid_login': 'Benutzername oder Passwort falsch. Beim Passwort '
-                         'zählt die Groß- und Kleinschreibung.',
+        'invalid_login': 'Benutzername oder Passwort falsch.',
     }
 
 
