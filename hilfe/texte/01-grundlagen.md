@@ -22,7 +22,7 @@ Die Seitenleiste folgt dem Arbeitsablauf:
 | Weitere Rechnungsarten | Teilschlussrechnungen, Stornorechnungen, Rechnungskorrekturen |
 | Leistung | Erfassung, Nicht abgerechnet, Eingangsrechnungen |
 | Stammdaten | Kontakte, Leistungskatalog, Textbausteine, Kostensätze, Steuersätze, Eigene Firma |
-| Verwaltung | Benutzer, Gruppen, API-Schlüssel, Anmeldesperren |
+| Verwaltung | Benutzer, Gruppen, API-Schlüssel, Anmeldesperren, Ereignisse |
 | Hilfe | Bedienungsanleitung |
 
 Die Gruppen „Weitere Rechnungsarten“, „Stammdaten“ und „Verwaltung“ sind

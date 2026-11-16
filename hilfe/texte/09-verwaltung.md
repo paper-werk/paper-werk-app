@@ -1,7 +1,8 @@
 # Verwaltung
 
 Die Gruppe „Verwaltung“ ist für Administratoren: Benutzer, Gruppen,
-API-Schlüssel und Anmeldesperren. Wer hier nichts sieht, braucht hier nichts.
+API-Schlüssel, Anmeldesperren und Ereignisse. Wer hier nichts sieht,
+braucht hier nichts.
 
 ## Benutzer {#user}
 
@@ -120,3 +121,39 @@ IP-Adresse den Zeitpunkt, den Browser und die Zahl der Fehlversuche.
 
 **Sperre aufheben:** den Eintrag löschen. Die Person kann sich danach
 sofort wieder anmelden. Ohne Eingriff endet die Sperre nach 15 Minuten.
+
+## Ereignisse {#ereignisregel}
+
+Eine Ereignisregel meldet Aktionen an Belegen an ein anderes Programm,
+etwa an einen Workflow in n8n. Paper-Werk schickt dazu Typ, Nummer,
+Betreff, Bruttobetrag, Kunde und Projekt des Belegs an die Ziel-URL der
+Regel.
+
+**Die Liste** zeigt Name, Aktiv, den Auslöser als Satz (etwa „Rechnung:
+Festgeschrieben“) und die Ziel-URL.
+
+**Die Maske:**
+
+- **Name**: frei wählbar, erscheint in der Liste.
+- **Aktiv**: Ohne den Haken meldet die Regel nichts.
+- **Ereignis**: wovon die Regel ausgelöst wird, derzeit nur Belege.
+- **Aktionen**: Angelegt, Geändert, Festgeschrieben, Versendet,
+  Wiedereröffnet. Ohne Auswahl gilt die Regel für alle Aktionen.
+- **Typen**: Angebot, Auftrag, Rechnung und die übrigen Belegarten. Ohne
+  Auswahl gilt die Regel für alle Typen.
+- **Ziel-URL**: die Adresse, an die gemeldet wird.
+- **Token**: wird beim Anlegen erzeugt und mit jeder Meldung im Header
+  `X-PaperWerk-Token` mitgeschickt. Das andere Programm prüft daran, dass
+  die Meldung von Paper-Werk kommt.
+
+**Test senden** in der Kopfleiste der Maske schickt eine Meldung mit
+einem erfundenen Beleg (Nummer `TEST-0001`) an die Ziel-URL. Die Antwort
+des Ziels erscheint als Meldung.
+
+Paper-Werk meldet jede Aktion einmal und wiederholt nicht, wenn das Ziel
+nicht antwortet.
+
+Rechte an Ereignisregeln haben nur Administratoren. Eine Regel schickt
+Belegdaten an eine beliebige Adresse, auch an Dienste, die von außen
+nicht erreichbar sind; vergeben Sie die Rechte deshalb nicht an andere
+Gruppen.

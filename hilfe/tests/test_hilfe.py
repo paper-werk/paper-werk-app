@@ -73,6 +73,8 @@ def test_jeder_verweis_hat_ein_ziel():
     reverse('admin:faktura_angebot_changelist'),
     reverse('admin:faktura_angebot_add'),
     reverse('admin:faktura_abschlagsrechnung_changelist'),
+    reverse('admin:core_ereignisregel_changelist'),
+    reverse('admin:core_ereignisregel_add'),
     # Seiten ohne Modell, über ``hilfe_anker`` im Kontext.
     reverse('admin:index'),
     reverse('controlling'),
