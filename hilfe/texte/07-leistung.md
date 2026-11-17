@@ -116,6 +116,14 @@ Wählen Sie dafür vorher die passende Sortierung, etwa „Nachweis“. Der
 Nachweis bekommt keine Nummer und wird nicht gespeichert; wer ihn morgen
 neu zieht, bekommt den Stand von morgen. An den Zeilen ändert er nichts.
 
+**Leistungsnachweis zur Rechnung.** An einer Rechnung öffnet der Knopf
+**Leistungsnachweis** die Zeilen, die auf dieser Rechnung abgerechnet
+sind, nach Positionsnummer geordnet. Pauschalen stehen dort mit
+„1 pausch“, ohne Uhrzeiten und ohne Stunden. Erfassungen mit Uhrzeiten
+auf eine Pauschale werden in diesem Nachweis nicht aufgeführt. Mit
+Stunden erscheinen sie nur im Leistungsnachweis aus der Erfassungsliste,
+wenn sie dort ausgewählt sind, und im Controlling des Projekts.
+
 ### In Rechnung übernehmen {#in-rechnung-uebernehmen}
 
 Markieren Sie die Zeilen eines Projekts und wählen Sie **In Rechnung
