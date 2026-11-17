@@ -220,7 +220,7 @@ class VersandMixin:
              'andere_anschrift': services.andere_anschrift(beleg),
              'summe': services.belegsummen(beleg).brutto,
              'ist_entwurf': beleg.status == BelegStatus.ENTWURF,
-             'kopie_an': services.absenderadresse(),
+             'kopie_an': services.kopieadresse(beleg),
              'mit_kopie': getattr(settings, 'FAKTURA_VERSAND_KOPIE', True),
              'geht_hinaus': services.versand_geht_hinaus(),
              'formattext': self._formattext(beleg),

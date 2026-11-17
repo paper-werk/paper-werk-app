@@ -24,6 +24,7 @@ from faktura.models import (
     Beleg,
     BelegStatus,
     BelegTyp,
+    Firma,
     Kontakt,
     Textbaustein,
     TextbausteinVerwendung,
@@ -176,6 +177,90 @@ class TestDiePost:
 
         assert mail.outbox[0].to == ['andere@muster.example']
         assert versendet.versendet_an == 'andere@muster.example'
+
+
+LOCMEM = {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}
+DUMMY = {'BACKEND': 'django.core.mail.backends.dummy.EmailBackend'}
+
+
+@pytest.fixture
+def postausgaenge(settings):
+    """Eigene Postausgänge für Angebote und Rechnungen. Nur sie schreiben in
+    ``mail.outbox``; eine Mail über ``default`` fällt dadurch auf."""
+    settings.MAILERS = {'default': DUMMY, 'angebot': LOCMEM,
+                        'rechnung': LOCMEM}
+    settings.FAKTURA_ABSENDER = {'angebot': 'angebote@firma.example',
+                                 'rechnung': 'rechnungen@firma.example'}
+    settings.FAKTURA_VERSAND_KOPIE = True
+    Firma.objects.update(email='buero@firma.example')
+    return settings
+
+
+@pytest.fixture
+def angebot(kunde):
+    beleg = services.beleg_anlegen(kunde=kunde, typ=BelegTyp.ANGEBOT,
+                                   betreff='Angebot Beratung')
+    services.position_hinzufuegen(
+        beleg=beleg, bezeichnung='Beratung', menge=Decimal('10'),
+        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='Std')
+    return beleg
+
+
+class TestPostausgangJeBelegart:
+    """Wahl des SMTP-Zugangs nach Belegart, Absender und Blindkopie."""
+
+    def test_rechnung_geht_ueber_den_rechnungspostausgang(
+            self, entwurf, postausgaenge):
+        services.beleg_versenden(beleg_id=entwurf.pk)
+
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].from_email == 'rechnungen@firma.example'
+        assert mail.outbox[0].bcc == ['buero@firma.example']
+
+    def test_angebot_geht_ueber_den_angebotspostausgang(
+            self, angebot, postausgaenge):
+        services.beleg_versenden(beleg_id=angebot.pk)
+
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].from_email == 'angebote@firma.example'
+        assert mail.outbox[0].bcc == ['buero@firma.example']
+
+    @pytest.mark.parametrize('typ', [
+        BelegTyp.RECHNUNG, BelegTyp.STORNO, BelegTyp.GUTSCHRIFT,
+        BelegTyp.MAHNUNG,
+    ])
+    def test_rechnungsartige_belege_nutzen_den_rechnungspostausgang(
+            self, typ, postausgaenge):
+        assert services.postausgang(Beleg(typ=typ)) == 'rechnung'
+
+    @pytest.mark.parametrize('typ', [BelegTyp.AUFTRAG,
+                                     BelegTyp.LIEFERSCHEIN])
+    def test_uebrige_belege_nutzen_den_standard(self, typ, postausgaenge):
+        assert services.postausgang(Beleg(typ=typ)) == 'default'
+
+    def test_ohne_eigenen_postausgang_gilt_der_standard(
+            self, entwurf, settings):
+        """Ohne ``RECHNUNG_EMAIL_HOST`` fehlt der Alias; versendet wird wie
+        bisher über ``default`` mit Kopie an die Firma."""
+        settings.MAILERS = {'default': LOCMEM}
+        settings.FAKTURA_ABSENDER = {}
+        settings.DEFAULT_FROM_EMAIL = 'standard@firma.example'
+        settings.FAKTURA_VERSAND_KOPIE = True
+        Firma.objects.update(email='buero@firma.example')
+
+        services.beleg_versenden(beleg_id=entwurf.pk)
+
+        assert services.postausgang(entwurf) == 'default'
+        assert mail.outbox[0].from_email == 'standard@firma.example'
+        assert mail.outbox[0].bcc == ['buero@firma.example']
+
+    def test_ohne_kopie_auch_beim_eigenen_postausgang_keine(
+            self, entwurf, postausgaenge):
+        postausgaenge.FAKTURA_VERSAND_KOPIE = False
+
+        services.beleg_versenden(beleg_id=entwurf.pk)
+
+        assert mail.outbox[0].bcc == []
 
 
 class TestDieMaske:

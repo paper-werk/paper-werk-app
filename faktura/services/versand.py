@@ -12,22 +12,63 @@ from django.db.models import TextChoices
 from django.utils import timezone
 
 from .. import ereignisse
-from ..models import Beleg, Firma
+from ..models import Beleg, BelegTyp, Firma
 from .anlagen import anlage_dateiname, anlage_pdf, anlagenquellen
 from .fehler import EmpfaengeradresseFehlt, VersandFehlgeschlagen
 from .festschreiben import _dokument_einfrieren, beleg_festschreiben
 
+STANDARD_POSTAUSGANG = 'default'
 
-def absenderadresse() -> str:
-    """Absenderadresse.
+#: Alias in ``MAILERS`` je Belegart. Storno, Rechnungskorrektur und Mahnung
+#: gehen über den Postausgang der Rechnung, weil der Empfänger auf sie an
+#: dieselbe Adresse antwortet. Ist der Alias nicht konfiguriert, gilt
+#: ``STANDARD_POSTAUSGANG``.
+POSTAUSGANG = {
+    BelegTyp.ANGEBOT: 'angebot',
+    BelegTyp.RECHNUNG: 'rechnung',
+    BelegTyp.STORNO: 'rechnung',
+    BelegTyp.GUTSCHRIFT: 'rechnung',
+    BelegTyp.MAHNUNG: 'rechnung',
+}
 
-    ``DEFAULT_FROM_EMAIL`` hat Vorrang vor der Firmenadresse, weil manche
-    SMTP-Server nur einen bestimmten Absender akzeptieren.
+
+def postausgang(beleg: Beleg | None = None) -> str:
+    """Alias des Postausgangs in ``MAILERS``, über den ``beleg`` versendet
+    wird."""
+    alias = POSTAUSGANG.get(beleg.typ) if beleg else None
+    return alias if alias and alias in mailers else STANDARD_POSTAUSGANG
+
+
+def absenderadresse(beleg: Beleg | None = None) -> str:
+    """Absenderadresse des Postausgangs von ``beleg``.
+
+    Ein eigener Postausgang hat seinen Absender in ``FAKTURA_ABSENDER``.
+    Für den Standard hat ``DEFAULT_FROM_EMAIL`` Vorrang vor der
+    Firmenadresse, weil manche SMTP-Server nur einen bestimmten Absender
+    akzeptieren.
     """
+    alias = postausgang(beleg)
+    if alias != STANDARD_POSTAUSGANG:
+        if eigener := getattr(settings, 'FAKTURA_ABSENDER', {}).get(alias):
+            return eigener
     if eingestellt := getattr(settings, 'DEFAULT_FROM_EMAIL', ''):
         return eingestellt
     firma = Firma.objects.first()
     return firma.email if firma else ''
+
+
+def kopieadresse(beleg: Beleg | None = None) -> str:
+    """Empfänger der Blindkopie, leer bei ``FAKTURA_VERSAND_KOPIE=False``.
+
+    Die Firmenadresse, unabhängig vom Postausgang, damit alle Kopien in
+    einem Postfach liegen. Ohne Firmenadresse der Absender.
+    """
+    if not getattr(settings, 'FAKTURA_VERSAND_KOPIE', True):
+        return ''
+    firma = Firma.objects.first()
+    if firma and firma.email:
+        return firma.email
+    return absenderadresse(beleg)
 
 
 def versand_geht_hinaus() -> bool:
@@ -138,22 +179,16 @@ def _post_hinaus(beleg: Beleg, an: str, betreff: str, nachricht: str,
         _dokument_einfrieren(beleg)
     anhang = versandformat(beleg)
 
-    absender = absenderadresse()
-    kopie = []
-    if getattr(settings, 'FAKTURA_VERSAND_KOPIE', True):
-        firma = Firma.objects.first()
-        # Keine Kopie an den Absender, weil sie im Postausgang liegt.
-        if firma and firma.email and firma.email != absender:
-            kopie = [firma.email]
-        elif absender:
-            kopie = [absender]
+    alias = postausgang(beleg)
+    absender = absenderadresse(beleg)
+    kopie = kopieadresse(beleg)
 
     post = EmailMessage(
         subject=betreff or f'{beleg.get_typ_display()} {beleg.nummer}',
         body=nachricht,
         from_email=absender or None,
         to=[an],
-        bcc=kopie,
+        bcc=[kopie] if kopie else [],
     )
     if anhang == Versandanhang.PDF:
         beleg.pdf.open('rb')
@@ -179,7 +214,7 @@ def _post_hinaus(beleg: Beleg, an: str, betreff: str, nachricht: str,
                         anlage_pdf(beleg, art), 'application/pdf')
 
     try:
-        post.send()
+        post.send(using=alias)
     except Exception as fehler:
         raise VersandFehlgeschlagen(
             f'{beleg} ist festgeschrieben und gültig, aber die E-Mail an '

@@ -496,20 +496,43 @@ FAKTURA_VERSAND_KOPIE = env.bool('FAKTURA_VERSAND_KOPIE', default=True)
 # Ohne SMTP_HOST schreibt Django die Mail auf die Konsole, damit sich eine
 # neue Installation ohne echten Versand testen lässt. MAILERS, weil
 # Django 6.1 die EMAIL_*-Settings als veraltet markiert.
+def _smtp_optionen(praefix: str = '') -> dict:
+    """SMTP-Zugang aus ``<praefix>EMAIL_*``."""
+    return {
+        'host': env(f'{praefix}EMAIL_HOST', default=''),
+        'port': env.int(f'{praefix}EMAIL_PORT', default=587),
+        'username': env(f'{praefix}EMAIL_HOST_USER', default=''),
+        'password': env(f'{praefix}EMAIL_HOST_PASSWORD', default=''),
+        'use_tls': env.bool(f'{praefix}EMAIL_USE_TLS', default=True),
+        'timeout': env.int(f'{praefix}EMAIL_TIMEOUT', default=20),
+    }
+
+
 MAILERS = {
     'default': {
         'BACKEND': ('django.core.mail.backends.smtp.EmailBackend' if SMTP_HOST
                     else 'django.core.mail.backends.console.EmailBackend'),
-        'OPTIONS': {
-            'host': SMTP_HOST,
-            'port': env.int('EMAIL_PORT', default=587),
-            'username': env('EMAIL_HOST_USER', default=''),
-            'password': env('EMAIL_HOST_PASSWORD', default=''),
-            'use_tls': env.bool('EMAIL_USE_TLS', default=True),
-            'timeout': env.int('EMAIL_TIMEOUT', default=20),
-        } if SMTP_HOST else {},
+        'OPTIONS': _smtp_optionen() if SMTP_HOST else {},
     },
 }
+
+# Eigene Postausgänge für Angebote und Rechnungen, optional. Jeder ist ein
+# vollständiger SMTP-Zugang, weil die Adressen bei verschiedenen Anbietern
+# liegen können. Ohne <PRAEFIX>EMAIL_HOST gilt "default". Die Zuordnung der
+# Belegarten steht in ``faktura.services.versand.POSTAUSGANG``.
+#
+# FAKTURA_ABSENDER: Absenderadresse je Alias, ohne <PRAEFIX>EMAIL_FROM der
+# Benutzername des Zugangs.
+FAKTURA_ABSENDER: dict[str, str] = {}
+for _alias, _praefix in (('angebot', 'ANGEBOT_'), ('rechnung', 'RECHNUNG_')):
+    _optionen = _smtp_optionen(_praefix)
+    if _optionen['host']:
+        MAILERS[_alias] = {
+            'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+            'OPTIONS': _optionen,
+        }
+        FAKTURA_ABSENDER[_alias] = env(f'{_praefix}EMAIL_FROM',
+                                       default=_optionen['username'])
 
 # Wartezeit auf die Dokumentnummer nach dem Upload, in Sekunden. Nach Ablauf
 # holt "manage.py belege_archivieren" die Nummer nach.
