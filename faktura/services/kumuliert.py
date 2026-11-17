@@ -101,12 +101,10 @@ def ist_kumulierbar(beleg: Beleg) -> bool:
 
 def vorgaenger_abschlaege(beleg: Beleg) -> list[Beleg]:
     """Festgeschriebene, nicht stornierte Abschläge des Projekts vor diesem,
-    in der Reihenfolge von ``Beleg.abschlagsnummer`` (Belegdatum, pk)."""
-    geschwister = list(
-        Beleg.objects
-        .filter(projekt_id=beleg.projekt_id, typ=BelegTyp.RECHNUNG,
-                rechnungsart=Rechnungsart.ABSCHLAG)
-        .order_by('belegdatum', 'pk'))
+    in der Reihenfolge von ``Beleg.abschlagsreihe``. Die Neufassung eines
+    stornierten Abschlags hat damit dieselben Vorgänger wie das Original."""
+    geschwister = [b for stelle in Beleg.abschlagsreihe(beleg.projekt_id)
+                   for b in stelle]
     davor = []
     for b in geschwister:
         if b.pk == beleg.pk:

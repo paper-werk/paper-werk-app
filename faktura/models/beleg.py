@@ -756,24 +756,50 @@ class Beleg(MitVersion):
         nummer = self.nachtragsnummer
         return f'{nummer}. Nachtrag' if nummer else 'Nachtrag'
 
+    @classmethod
+    def abschlagsreihe(cls, projekt_id: int) -> list[list['Beleg']]:
+        """Abschläge des Projekts in Zählreihenfolge, je Abschlagsnummer eine
+        Liste: der Abschlag, danach seine Neufassungen.
+
+        Eine Neufassung ist ein Abschlag, dessen Vorgänger ein Abschlag
+        desselben Projekts ist (``rechnung_korrigieren``). Sie steht an der
+        Stelle des stornierten Abschlags, damit sie dessen Nummer trägt und
+        spätere Abschläge ihre Nummer behalten. Sortiert nach Belegdatum und
+        pk, die Stellen nach dem jeweils ersten Abschlag.
+        """
+        abschlaege = list(
+            cls.objects
+            .filter(projekt_id=projekt_id, typ=BelegTyp.RECHNUNG,
+                    rechnungsart=Rechnungsart.ABSCHLAG)
+            .order_by('belegdatum', 'pk'))
+        nach_pk = {b.pk: b for b in abschlaege}
+        stellen: dict[int, list[Beleg]] = {}
+        for beleg in abschlaege:
+            erster = beleg
+            while erster.vorgaenger_id in nach_pk:
+                erster = nach_pk[erster.vorgaenger_id]
+            stellen.setdefault(erster.pk, []).append(beleg)
+        rang = {b.pk: i for i, b in enumerate(abschlaege)}
+        for stelle in stellen.values():
+            stelle.sort(key=lambda b: (b.vorgaenger_id in nach_pk, rang[b.pk]))
+        return [stellen[pk] for pk in sorted(stellen, key=rang.__getitem__)]
+
     @property
     def abschlagsnummer(self) -> int | None:
         """Laufende Nummer des Abschlags im Projekt (1, 2, 3).
 
         Je Projekt, weil eine Rechnung Positionen mehrerer Aufträge enthalten
-        kann. Berechnet wie ``nachtragsnummer``; Entwürfe zählen mit, nach
+        kann. Position in ``abschlagsreihe``: Die Neufassung eines
+        stornierten Abschlags trägt dessen Nummer. Entwürfe zählen mit, nach
         dem Löschen eines Entwurfs rücken die folgenden auf.
         """
         if self.rechnungsart != Rechnungsart.ABSCHLAG or not self.projekt_id:
             return None
-        geschwister = list(
-            Beleg.objects
-            .filter(projekt_id=self.projekt_id,
-                    rechnungsart=Rechnungsart.ABSCHLAG)
-            .order_by('belegdatum', 'pk')
-            .values_list('pk', flat=True)
-        )
-        return geschwister.index(self.pk) + 1 if self.pk in geschwister else None
+        for nummer, stelle in enumerate(
+                Beleg.abschlagsreihe(self.projekt_id), start=1):
+            if any(b.pk == self.pk for b in stelle):
+                return nummer
+        return None
 
     @property
     def rechnungsbezeichnung(self) -> str:

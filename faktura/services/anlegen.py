@@ -488,7 +488,10 @@ def beleg_duplizieren(*, beleg_id: int) -> Duplikat:
     **Vorgänger** ist der Vorgänger des Originals, damit die Kopie neben dem
     Original steht: Eine Rechnung aus einem Auftrag bleibt in dessen Akte,
     ein Angebot ohne Vorgänger bleibt ohne. Ein Verweis auf das Original
-    verhinderte über ``PROTECT`` dessen Löschung.
+    verhinderte über ``PROTECT`` dessen Löschung. Bei der Neufassung eines
+    stornierten Abschlags der Vorgänger des ersten Abschlags, weil die Kopie
+    sonst als weitere Neufassung dessen Abschlagsnummer trüge
+    (``Beleg.abschlagsreihe``).
 
     **Bei Rechnungen:**
 
@@ -513,8 +516,15 @@ def beleg_duplizieren(*, beleg_id: int) -> Duplikat:
     ohne_fremd = [p for p in positionen
                   if not erweiterungen.hat_besonderen_bezug(p)]
 
+    vorgaenger = original.vorgaenger
+    while (vorgaenger is not None
+           and original.rechnungsart == Rechnungsart.ABSCHLAG
+           and vorgaenger.typ == BelegTyp.RECHNUNG
+           and vorgaenger.rechnungsart == Rechnungsart.ABSCHLAG):
+        vorgaenger = vorgaenger.vorgaenger
+
     kopie = _beleg_kopieren(
-        original, typ=original.typ, vorgaenger=original.vorgaenger,
+        original, typ=original.typ, vorgaenger=vorgaenger,
         betreff=original.betreff,
         rechnungsart=original.rechnungsart or None,
         positionen=ohne_fremd,

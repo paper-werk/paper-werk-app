@@ -46,7 +46,7 @@ vergleicht beide.
 | R-010 | Offene Menge | Beauftragte minus abgerechnete Menge, **nie negativ** | `Belegposition.offene_menge` | `+` |
 | R-011 | Abrechnungsstand | "60 von 100 Std abgerechnet": Text aus R-009 und der Menge; darüber hinaus mit ", 2 mehr als beauftragt" | `Belegposition.abrechnungsstand` | `+` |
 | R-157 | Mengenüberschreitung | Je Auftragsposition: R-008 plus die Mengen dieser Rechnung mit Bezug auf sie, minus beauftragt; gemeldet, wenn größer null. Nur `normal` und `schluss`. **Nie an einer optionalen Auftragsposition** (R-178): beauftragt ist dort der Preis, nicht die Menge. Ein Hinweis, festgeschrieben wird mit Bestätigung | `services.mengenueberschreitungen` | `+` |
-| R-012 | Abschlagsnummer | Der wievielte Abschlag des Vorhabens, nach Belegdatum | `Beleg.abschlagsnummer` | `+` |
+| R-012 | Abschlagsnummer | Der wievielte Abschlag des Vorhabens, nach Belegdatum. Die Neufassung eines stornierten Abschlags trägt dessen Nummer | `Beleg.abschlagsnummer` | `+` |
 | R-013 | Nachtragsnummer | Der wievielte Nachtrag zu diesem Auftrag | `Beleg.nachtragsnummer` | `+` |
 | R-014 | Summe über eine Belegmenge, netto | In SQL: Positionsnetto gerundet, gruppiert nach Beleg und Satz, dann summiert; Lieferscheine bleiben draußen | `services.summe_ueber` | `+` |
 | R-015 | Summe über eine Belegmenge, Steuer | Je Gruppe (Beleg, Satz) aus der Nettosumme, kaufmännisch | `services.summe_ueber` | `+` |

@@ -133,7 +133,9 @@ Leistungsdatum hat ein Abschlag nicht.
 
 Im PDF steht „1. Abschlagsrechnung“, „2. Abschlagsrechnung“ und so
 weiter, gezählt je Projekt nach Belegdatum; die Liste zeigt die Zählung in
-der Spalte „Abschlag“. Knöpfe und Versand wie bei jeder Rechnung.
+der Spalte „Abschlag“. Die Neufassung aus „Stornieren und neu schreiben“
+trägt die Nummer des stornierten Abschlags. Knöpfe und Versand wie bei jeder
+Rechnung.
 
 **Ab dem zweiten Abschlag kumuliert.** Sie tragen nur ein, was seit dem
 letzten Abschlag hinzugekommen ist, meist mit „Erbrachte Leistungen
@@ -145,6 +147,18 @@ offener Abschlag bleibt offen und wird für sich gemahnt. Unter den
 Positionen der Maske steht dieselbe Aufstellung („Kumuliert, wie im PDF“).
 Mitgezählt werden nur festgeschriebene, nicht stornierte Abschläge. In einem
 Projekt mit Teilabnahme bleibt jeder Abschlag in der einfachen Form.
+
+**Korrektur eines früheren Abschlags.** Wird die 1. Abschlagsrechnung
+storniert und neu geschrieben, nachdem die 2. bereits festgeschrieben ist,
+bleibt das PDF der 2. Abschlagsrechnung unverändert: Es zeigt den
+Leistungsstand und den Abzug der stornierten 1. Abschlagsrechnung. Ihr
+Abschlagsbetrag bleibt gültig. Die Maske der 2. Abschlagsrechnung zeigt
+dagegen den aktuellen Stand: ohne Vorgänger, solange die Neufassung Entwurf
+ist, danach mit der Neufassung als Vorgänger. Weicht die Neufassung in
+Mengen oder Beträgen ab, passt der Leistungsstand im PDF der 2.
+Abschlagsrechnung nicht mehr zum aktuellen Stand. Wird auch die 2.
+Abschlagsrechnung storniert und neu geschrieben, rechnet ihre Neufassung auf
+dem Stand der neuen 1. Abschlagsrechnung und trägt wieder die Nummer 2.
 
 **Gekürzte Zahlung.** Zahlt der Kunde weniger, weil er einen Teil (noch)
 nicht anerkennt, tragen Sie beim Vermerken der Zahlung den Betrag unter
