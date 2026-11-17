@@ -1385,6 +1385,12 @@ class Angebot(Beleg):
         proxy = True
         verbose_name = 'Angebot'
         verbose_name_plural = 'Angebote'
+        permissions = [
+            # Festschreiben, Versenden und Wiedereröffnen von Angeboten,
+            # einzeln am Benutzer vergeben. ``faktura_rechte`` vergibt es
+            # nicht (``NICHT_VERWALTET``).
+            ('angebot_festschreiben', 'Kann Angebote festschreiben'),
+        ]
 
 
 class Auftrag(Beleg):

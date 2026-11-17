@@ -299,7 +299,8 @@ class VersandMixin:
 
         Ohne eigenes Recht, das auf jeder Installation erst zu vergeben wäre,
         und ohne Schalter, weil Versenden an vielen Belegarten das
-        Festschreiben ersetzt.
+        Festschreiben ersetzt. Ausnahme: ``AngebotAdmin`` verlangt
+        zusätzlich ``angebot_festschreiben``.
         """
         beleg = self._darf_versenden(request, object_id)
         return beleg is not None and beleg.versendet_am is None

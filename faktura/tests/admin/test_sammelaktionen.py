@@ -65,7 +65,8 @@ def test_jede_aktion_einer_belegliste_nennt_ihr_recht():
     (Rechnung, 'action_nachlass', 'change_rechnung'),
     (Rechnung, 'action_mahnen', 'change_rechnung'),
     (Rechnung, 'action_zahlung', 'add_zahlung'),
-    (Angebot, 'action_festschreiben', 'change_angebot'),
+    # Am Angebot zusätzlich das eigene Recht zum Festschreiben.
+    (Angebot, 'action_festschreiben', 'change_angebot angebot_festschreiben'),
     (Angebot, 'action_in_auftrag', 'change_angebot'),
     (Angebot, 'action_in_rechnung', 'change_angebot'),
     (Auftrag, 'action_in_lieferschein', 'change_auftrag'),
@@ -79,9 +80,8 @@ def test_angeboten_wird_die_aktion_nur_mit_ihrem_recht(modell, aktion, recht):
     assert aktion not in modeladmin.get_actions(anfrage)
 
     anfrage.user = User.objects.get(pk=anfrage.user.pk)
-    anfrage.user.user_permissions.add(
-        Permission.objects.get(content_type__app_label='faktura',
-                               codename=recht))
+    anfrage.user.user_permissions.add(*Permission.objects.filter(
+        content_type__app_label='faktura', codename__in=recht.split()))
     assert aktion in modeladmin.get_actions(anfrage)
 
 

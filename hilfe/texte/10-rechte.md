@@ -36,7 +36,9 @@ Dabei gilt:
   „Position“, Anschriften im Kontakt „Adresse“. Fehlt das Recht, fehlt der
   Teilbereich.
 - Die Schaltflächen für Versenden, Festschreiben, Mahnen und Stornieren
-  erscheinen mit dem Änderungsrecht an der Belegart.
+  erscheinen mit dem Änderungsrecht an der Belegart. Am Angebot verlangen
+  Versenden, Festschreiben und Wieder öffnen zusätzlich „Kann Angebote
+  festschreiben“.
 
 Einige Vorgänge haben ein eigenes Recht:
 
@@ -44,7 +46,8 @@ Einige Vorgänge haben ein eigenes Recht:
 |---|---|
 | Kann für andere Personen erfassen | Sieht die Stunden aller, erfasst für andere, entscheidet über „abrechenbar“ |
 | Kann die Auswertungen sehen | Kennzahlen der Startseite und Controlling |
-| Kann Belege wieder öffnen | Festgeschriebene Angebote und Aufträge zurück in den Entwurf |
+| Kann Angebote festschreiben | Angebote versenden, festschreiben, herunterladen und wieder öffnen; wird am Benutzer vergeben, siehe unten |
+| Kann Belege wieder öffnen | Festgeschriebene Aufträge zurück in den Entwurf |
 | Kann den Archivvermerk setzen | Nur für die Anbindung an das Archiv |
 | Kann Kopffelder über die API ändern | Nur für automatisierte Abläufe über die Schnittstelle |
 
@@ -91,7 +94,9 @@ Rechte auswählbar.
 |---|---|
 | Angebot, Auftrag, Lieferschein, Abschlags- oder Schlussrechnung erstellen | Die jeweilige Belegart: ansehen, anlegen; Position: anlegen; Kontakt: ansehen |
 | Beleg versenden, Auftrag festschreiben | Die jeweilige Belegart: ändern |
-| Angebot oder Auftrag wieder öffnen | „Kann Belege wieder öffnen“ |
+| Angebot versenden oder festschreiben | Angebot: ändern; „Kann Angebote festschreiben“ |
+| Angebot wieder öffnen | „Kann Angebote festschreiben“ |
+| Auftrag wieder öffnen | „Kann Belege wieder öffnen“ |
 | Aus Angebot Auftrag oder Rechnung, aus Auftrag Rechnung, Lieferschein oder Nachtrag erzeugen | Quellbeleg: ändern. Für die Bearbeitung des neuen Belegs zusätzlich Rechte an dessen Belegart |
 | Rechnung aus einer Abnahme erzeugen | Abnahme: ansehen; Rechnung: anlegen |
 
@@ -137,6 +142,10 @@ Rechte erweitern. Vergeben Sie es nur an Administratoren.
 - Die Einrichtung setzt die Rechte von „Büro“, „Projektleitung“, „Faktura
   Dienst“ und „Belegübernahme“ an Belegen, Stammdaten und Erfassung auf den
   Standard zurück. Pflegen Sie Abweichungen in einer eigenen Gruppe.
+- „Kann Angebote festschreiben“ hat nach der Einrichtung keine Gruppe. Sie
+  vergeben es am Benutzer unter „Benutzerberechtigungen“ oder über eine
+  eigene Gruppe. Die Einrichtung ändert es nicht, auch nicht in „Büro“ oder
+  „Projektleitung“. Administratoren haben es immer.
 - Bei Anmeldung über Microsoft Entra werden Gruppen mit dem Präfix
   „paper-werk-“ und der Mitarbeiter-Status bei jeder Anmeldung aus den
   Rollen gesetzt. Gruppen ohne dieses Präfix bleiben unverändert.
