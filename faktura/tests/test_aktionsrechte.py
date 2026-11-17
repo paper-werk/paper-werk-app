@@ -13,6 +13,7 @@ from decimal import Decimal
 import pytest
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.test import RequestFactory
 
 from core import gruppen
@@ -69,7 +70,15 @@ def test_das_buero_bekommt_dieselben_knoepfe(konto, kunde, typ, felder,
     chef = get_user_model().objects.create_superuser(
         username='chef', email='chef@example.invalid', password='x')
 
-    beim_buero = _angebotene(konto(gruppen.BUERO, 'bea'), beleg)
+    bea = konto(gruppen.BUERO, 'bea')
+    if typ == BelegTyp.ANGEBOT:
+        # ``faktura_rechte`` vergibt es nicht; siehe
+        # ``test_recht_angebot_festschreiben``.
+        bea.user_permissions.add(Permission.objects.get(
+            codename='angebot_festschreiben'))
+        bea = get_user_model().objects.get(pk=bea.pk)
+
+    beim_buero = _angebotene(bea, beleg)
     beim_chef = _angebotene(chef, beleg)
 
     assert beim_buero == beim_chef, (

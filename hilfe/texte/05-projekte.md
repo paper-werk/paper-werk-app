@@ -101,12 +101,12 @@ steuerliche Bedeutung. Wie die Positionen funktionieren, steht unter
 
 | Knopf | Wo | Wann | Wirkung |
 |---|---|---|---|
-| Versenden | vorn | am Entwurf | Versandseite, schreibt fest, siehe [Versenden](#versenden) |
+| Versenden | vorn | am Entwurf | Versandseite, schreibt fest, siehe [Versenden](#versenden); Recht „Kann Angebote festschreiben“ |
 | PDF anzeigen | vorn | immer | PDF im neuen Reiter |
-| Erneut versenden | Weitere … | nach dem Versand | Noch einmal schicken oder herunterladen |
+| Erneut versenden | Weitere … | nach dem Versand | Noch einmal schicken oder herunterladen; Recht „Kann Angebote festschreiben“ |
 | Auftrag erzeugen | Weitere … | festgeschrieben | Auftrag als Entwurf mit allen Positionen |
 | Rechnung erzeugen | Weitere … | festgeschrieben | Rechnung direkt aus dem Angebot, ohne Auftrag |
-| Wieder öffnen | Weitere … | festgeschrieben | Zurück in den Entwurf, Nummer bleibt; eigenes Recht |
+| Wieder öffnen | Weitere … | festgeschrieben | Zurück in den Entwurf, Nummer bleibt; Recht „Kann Angebote festschreiben“ |
 | Angebot duplizieren | Weitere … | immer | Neues Angebot mit denselben Positionen |
 | Verlauf | Weitere … | immer | Wer hat wann was getan |
 

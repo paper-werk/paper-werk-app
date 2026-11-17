@@ -79,8 +79,18 @@ def konto(rollenrechte):
 
 @pytest.fixture
 def buero(client, konto):
-    """Angemeldet als Büro: Belege, Stammdaten, eigene Stunden."""
-    client.force_login(konto(gruppen.BUERO, 'sekretariat'))
+    """Angemeldet als Büro: Belege, Stammdaten, eigene Stunden.
+
+    Dazu ``angebot_festschreiben``, das ``faktura_rechte`` nicht vergibt,
+    damit Tests des Versands auch Angebote festschreiben. Büro ohne dieses
+    Recht: ``faktura/tests/admin/test_recht_angebot_festschreiben.py``.
+    """
+    from django.contrib.auth.models import Permission
+
+    person = konto(gruppen.BUERO, 'sekretariat')
+    person.user_permissions.add(Permission.objects.get(
+        content_type__app_label='faktura', codename='angebot_festschreiben'))
+    client.force_login(person)
     return client
 
 

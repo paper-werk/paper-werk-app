@@ -45,6 +45,24 @@ class AngebotAdmin(BelegAdmin):
     typ = BelegTyp.ANGEBOT
     actions = ['action_festschreiben', 'action_in_auftrag', 'action_in_rechnung']
 
+    #: Eigenes Recht für Festschreiben, Versenden und Wiedereröffnen. Die
+    #: Versandmaske schreibt bei jedem Button fest; ein Angebot verlässt das
+    #: Haus also nur mit diesem Recht.
+    FESTSCHREIBRECHT = 'faktura.angebot_festschreiben'
+    wiedereroeffnen_recht = FESTSCHREIBRECHT
+
+    def has_festschreiben_permission(self, request, object_id=None):
+        return (request.user.has_perm(self.FESTSCHREIBRECHT)
+                and super().has_festschreiben_permission(request, object_id))
+
+    def has_versenden_permission(self, request, object_id=None):
+        return (request.user.has_perm(self.FESTSCHREIBRECHT)
+                and super().has_versenden_permission(request, object_id))
+
+    def has_erneut_versenden_permission(self, request, object_id=None):
+        return (request.user.has_perm(self.FESTSCHREIBRECHT)
+                and super().has_erneut_versenden_permission(request, object_id))
+
     #: Mit Projekt, weil Angebote meist nach Vorhaben gesucht werden.
     list_display = ['nummer_und_betreff', 'projekt_zeile', 'empfaenger_zeile',
                     'belegdatum', 'summe_brutto', 'dokument', 'schloss']

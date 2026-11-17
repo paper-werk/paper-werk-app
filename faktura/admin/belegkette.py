@@ -145,14 +145,19 @@ class BelegketteMixin:
             request, f'{abweichung.bezeichnung} übernommen.', messages.SUCCESS)
         return self._zurueck_zum_beleg(request, object_id)
 
+    #: Recht zum Wiedereröffnen; ``AngebotAdmin`` setzt
+    #: ``angebot_festschreiben``.
+    wiedereroeffnen_recht = 'faktura.beleg_wiedereroeffnen'
+
     def has_wiedereroeffnen_permission(self, request, object_id=None):
-        """Eigenes Recht ``beleg_wiedereroeffnen``, nur an festgeschriebenem
+        """Eigenes Recht ``wiedereroeffnen_recht``, nur an festgeschriebenem
         Angebot oder Auftrag.
 
         Eigenes Recht, damit nicht jeder, der Angebote schreibt, ein beim
-        Kunden liegendes öffnen kann. ``faktura_rechte`` vergibt es.
+        Kunden liegendes öffnen kann. ``faktura_rechte`` vergibt
+        ``beleg_wiedereroeffnen``.
         """
-        if not request.user.has_perm('faktura.beleg_wiedereroeffnen'):
+        if not request.user.has_perm(self.wiedereroeffnen_recht):
             return False
 
         beleg = self._beleg_oder_none(object_id)

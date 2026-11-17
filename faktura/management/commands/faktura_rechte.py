@@ -34,7 +34,8 @@ GRUPPE_DIENST = gruppen.DIENST
 # Die Custom Permissions am Beleg sind enthalten (``archivieren_beleg``,
 # ``controlling_ansehen``, ``beleg_wiedereroeffnen``), weil über den
 # Modelltyp gefiltert wird. Eine Einschränkung gehört hierher; im Admin
-# entfernt, setzte der nächste Lauf das Recht wieder.
+# entfernt, setzte der nächste Lauf das Recht wieder. Ausgenommen sind die
+# Rechte in ``NICHT_VERWALTET``.
 VOLL = [
     'kontakt',
     # Alle Tabellen eines Kunden einzeln, weil das Kundenformular sonst ein
@@ -84,6 +85,14 @@ OHNE_DIENST = ['firma']
 # erlaubte. Weitere Einträge aus demselben Grund einzeln ergänzen.
 DIENST_ZUSAETZLICH = ['archivieren_beleg', 'kopf_aendern_beleg']
 
+#: Rechte, die der Befehl weder vergibt noch entzieht, obwohl ihr Modell in
+#: ``VOLL`` steht. Sie werden einzeln am Benutzer oder über eine eigene
+#: Gruppe vergeben.
+#
+# ``angebot_festschreiben``: Festschreiben, Versenden und Wiedereröffnen von
+# Angeboten, nur für benannte Personen.
+NICHT_VERWALTET = ['angebot_festschreiben']
+
 
 class Command(BaseCommand):
     help = 'Setzt die Faktura-Rechte der paper-werk-Gruppen und von "Faktura Dienst".'
@@ -113,9 +122,10 @@ class Command(BaseCommand):
         # Erst suchen, dann anlegen, damit ``--trocken`` nichts ändert.
         gruppe = Group.objects.filter(name=name).first()
         alle = set(gruppe.permissions.all()) if gruppe else set()
-        # Nur Rechte dieser App; Rechte anderer Apps bleiben (siehe
-        # Modul-Docstring).
-        ist = {r for r in alle if r.content_type.app_label == 'faktura'}
+        # Nur Rechte dieser App; Rechte anderer Apps und ``NICHT_VERWALTET``
+        # bleiben (siehe Modul-Docstring).
+        ist = {r for r in alle if r.content_type.app_label == 'faktura'
+               and r.codename not in NICHT_VERWALTET}
 
         dazu = soll - ist
         weg = ist - soll
@@ -159,7 +169,8 @@ class Command(BaseCommand):
         einer anderen App passen kann.
         """
         gesucht = Permission.objects.filter(
-            content_type__app_label='faktura')
+            content_type__app_label='faktura').exclude(
+            codename__in=NICHT_VERWALTET)
 
         rechte = set(gesucht.filter(content_type__model__in=VOLL))
 
