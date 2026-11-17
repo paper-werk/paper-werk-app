@@ -58,6 +58,13 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   kein eigener Belegtyp. Eigene Menüeinträge entstehen über Proxy-Modelle.
 - Abschläge werden je Projekt gezählt, nicht je Auftrag
   (`Beleg.abschlagsnummer`).
+- Die Neufassung eines stornierten Abschlags (`rechnung_korrigieren`) trägt
+  dessen Nummer und steht in der kumulierten Sicht an dessen Stelle
+  (`Beleg.abschlagsreihe`), damit spätere Abschläge ihre Nummer behalten.
+  Verworfen: stornierte Abschläge nicht mitzählen, weil dann festgeschriebene
+  spätere Abschläge nachträglich eine andere Nummer bekämen. Verworfen: eine
+  manuell änderbare Nummer, weil der Vorschlagswert dieselbe Regel braucht
+  und Eingabefehler erst beim Kunden auffallen.
 - Festschreiben behält ein im Entwurf gesetztes Belegdatum
   (`services.beleg_festschreiben`).
 - **Wiedereröffnen** führt Angebot und Auftrag zurück in den Entwurf; die

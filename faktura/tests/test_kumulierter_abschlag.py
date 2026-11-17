@@ -250,6 +250,62 @@ class TestLeistungsstand:
         assert services.belegsummen(ab2).netto == Decimal('2204.50')
 
 
+def _neufassen(abschlag):
+    """Storniert den Abschlag und schreibt die Neufassung fest."""
+    _, neu = services.rechnung_korrigieren(beleg_id=abschlag.pk,
+                                           benutzer=None)
+    return services.beleg_festschreiben(beleg_id=neu.pk)
+
+
+class TestNeufassung:
+    """Die Neufassung eines stornierten Abschlags trägt dessen Nummer und
+    steht an dessen Stelle in der Reihe der Abschläge."""
+
+    def test_traegt_die_nummer_des_stornierten(self, zwei_abschlaege):
+        ab1, ab2 = zwei_abschlaege
+        _, neu = services.rechnung_korrigieren(beleg_id=ab1.pk, benutzer=None)
+        ab1.refresh_from_db()
+
+        assert [ab1.abschlagsnummer, neu.abschlagsnummer,
+                ab2.abschlagsnummer] == [1, 1, 2]
+
+    def test_der_naechste_abschlag_zaehlt_weiter(self, projekt, auftrag):
+        ab1 = _abschlag(projekt, (None, 'Planung', '1', 'pausch', '1000.00',
+                                  '19.00'), tag=date(2026, 1, 5))
+        neu = _neufassen(ab1)
+        ab2 = _abschlag(projekt, (None, 'Planung', '1', 'pausch', '500.00',
+                                  '19.00'), tag=date(2026, 2, 4),
+                        festschreiben=False)
+
+        assert neu.abschlagsnummer == 1
+        assert ab2.abschlagsnummer == 2
+
+    def test_zweite_neufassung_traegt_dieselbe_nummer(self, zwei_abschlaege):
+        ab1, ab2 = zwei_abschlaege
+        neu = _neufassen(_neufassen(ab1))
+
+        assert neu.abschlagsnummer == 1
+        assert ab2.abschlagsnummer == 2
+
+    def test_hat_die_vorgaenger_des_originals(self, zwei_abschlaege):
+        """Die Neufassung von AB 1 hat keinen Vorgänger, für AB 2 ist sie
+        der Vorgänger, obwohl ihr Belegdatum später liegt."""
+        ab1, ab2 = zwei_abschlaege
+        neu = _neufassen(ab1)
+
+        assert services.kumulierter_abschlag(neu) is None
+        assert services.kumulierter_abschlag(ab2).vorgaenger == [neu]
+
+    def test_duplikat_der_neufassung_ist_ein_neuer_abschlag(
+            self, zwei_abschlaege):
+        ab1, ab2 = zwei_abschlaege
+        neu = _neufassen(ab1)
+        kopie = services.beleg_duplizieren(beleg_id=neu.pk).beleg
+
+        assert kopie.abschlagsnummer == 3
+        assert neu.abschlagsnummer == 1
+
+
 @pytest.mark.django_db
 class TestPdfUndXml:
 
