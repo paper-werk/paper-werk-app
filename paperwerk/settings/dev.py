@@ -28,12 +28,13 @@ INTERNAL_IPS = ['127.0.0.1']
 #
 # Echter Versand braucht zwei Angaben: EMAIL_HOST und EMAIL_ECHT_SENDEN=True.
 # Eine von einer anderen Installation kopierte .env enthält nur die erste.
-if not (env('EMAIL_HOST', default='')  # noqa: F405
-        and env.bool('EMAIL_ECHT_SENDEN', default=False)):  # noqa: F405
-    MAILERS = {
-        'default': {
-            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-        },
+#
+# Alle Aliase bleiben erhalten, damit die Konsole den Absender des
+# Postausgangs zeigt, über den die Mail im Betrieb ginge.
+if not env.bool('EMAIL_ECHT_SENDEN', default=False):  # noqa: F405
+    MAILERS = {  # noqa: F405
+        alias: {'BACKEND': 'django.core.mail.backends.console.EmailBackend'}
+        for alias in MAILERS  # noqa: F405
     }
 
 # Keine Passwortregeln in der Entwicklung, weil dort nur Testkonten

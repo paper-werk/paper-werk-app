@@ -141,6 +141,8 @@ from .versand import (
     Versandanhang,
     absenderadresse,
     beleg_versenden,
+    kopieadresse,
+    postausgang,
     versand_geht_hinaus,
     versandformat,
 )
@@ -198,6 +200,7 @@ __all__ = [
     'UngueltigerBetrag', 'UnzulaessigerSteuersatz', 'VersandFehlgeschlagen',
     'Versandanhang', 'WiedereroeffnenGesperrt', 'abgerechnete_mengen',
     'absenderadresse', 'anschriftgeber', 'beleg_duplizieren',
+    'kopieadresse', 'postausgang',
     'anlage_dateiname',
     'anlage_pdf',
     'anlagenquellen',
