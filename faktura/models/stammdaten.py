@@ -938,6 +938,13 @@ class Kontaktweg(ErhoehtElternversion):
                 message='Das ist keine gültige E-Mail-Adresse.')(self.wert)
 
 
+class Abzugsgrundlage(models.TextChoices):
+    """Bezugsgröße einer Umlage oder eines Sicherheitseinbehalts."""
+
+    NETTO = 'netto', 'Netto'
+    BRUTTO = 'brutto', 'Brutto'
+
+
 class Projekt(MitVersion):
     """Vorhaben, das Angebote, Aufträge und Rechnungen zusammenfasst.
 
@@ -978,6 +985,45 @@ class Projekt(MitVersion):
                   'nicht mehr zur Wahl. Ihre Belege bleiben unberührt.',
     )
     notiz = models.TextField('Notiz', blank=True, default='')
+
+    # Abzüge des Auftraggebers (R-189, R-190), am Projekt, weil Abschläge je
+    # Projekt gezählt und kumuliert werden und eine Rechnung Positionen
+    # mehrerer Aufträge enthalten kann.
+    umlage_bezeichnung = models.CharField(
+        'Bezeichnung', max_length=200, blank=True, default='',
+        help_text='Wortlaut auf der Rechnung',
+    )
+    umlage_prozent = models.DecimalField(
+        'Prozent', max_digits=5, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text='Leer: keine Umlage',
+    )
+    #: Die Auswahl nennt in der Maske die Lage zur Umsatzsteuer
+    #: (``ProjektAdmin.formfield_for_choice_field``).
+    umlage_grundlage = models.CharField(
+        'Basis', max_length=6, choices=Abzugsgrundlage,
+        default=Abzugsgrundlage.NETTO,
+    )
+    einbehalt_prozent = models.DecimalField(
+        'Prozent je Abschlag', max_digits=5, decimal_places=2,
+        null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text='Leer: kein Einbehalt',
+    )
+    #: Abgezogen wird immer nach der Umsatzsteuer (R-190).
+    einbehalt_grundlage = models.CharField(
+        'Basis', max_length=6, choices=Abzugsgrundlage,
+        default=Abzugsgrundlage.NETTO,
+    )
+    #: Auftragssumme: festgeschriebene Aufträge des Projekts einschließlich
+    #: Nachträgen (``services.auftragssumme``).
+    einbehalt_grenze = models.DecimalField(
+        'Obergrenze in %', max_digits=5,
+        decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text='Anteil an der Auftragssumme mit Nachträgen. Leer: ohne '
+                  'Obergrenze',
+    )
 
     class Meta:
         verbose_name = 'Projekt'

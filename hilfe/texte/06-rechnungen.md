@@ -170,6 +170,57 @@ Danach hat der Abschlag nichts mehr offen, und die Zahlung steht auf
 „abgerechnet“; was vom Abschlag nicht bezahlt war, fordert die
 Schlussrechnung.
 
+## Umlage und Sicherheitseinbehalt {#einbehalt}
+
+Manche Auftraggeber ziehen von jeder Rechnung eine **Umlage** ab, etwa
+einen Anteil an ihrer Versicherung, und behalten von jedem Abschlag einen
+**Sicherheitseinbehalt** ein. Beides steht in der Maske des Projekts in
+je einem Kasten und gilt für alle Rechnungen des Projekts.
+
+**Umlage**: Bezeichnung, wie sie auf der Rechnung steht, Prozent und
+Basis.
+
+- **Netto**: Die Umlage ist eine Zeile der Rechnung, ein Zuschlag mit
+  negativem Satz auf alle Leistungen, etwa „Anteil Versicherung -1,1 % auf
+  5.589,90“. Sie steht vor der Umsatzsteuer und mindert sie. Die Zeile
+  entsteht mit „Erbrachte Leistungen hinzufügen“ und in der
+  Schlussrechnung. Fehlt sie im Entwurf, steht oben in der Maske
+  „Zeile … fehlt“; dann legen Sie sie als Zuschlag an.
+- **Brutto**: Der Satz wird vom Bruttobetrag gerechnet und nach der
+  Umsatzsteuer abgezogen.
+
+**Sicherheitseinbehalt**: auf Wunsch eine Obergrenze in Prozent der
+Auftragssumme, Prozent je Abschlag und Basis netto oder brutto. Die
+Auftragssumme ist die Summe der festgeschriebenen Aufträge des Projekts
+einschließlich Nachträgen. Der Einbehalt gilt nur für Abschläge und wird
+immer nach der Umsatzsteuer abgezogen. Grundlage netto ist der Betrag vor
+einer Umlage vom Netto.
+
+Gerechnet wird über alle festgeschriebenen Abschläge des Projekts:
+Satz mal Summe aller Abschläge bis einschließlich diesem, höchstens die
+Obergrenze, abzüglich dessen, was frühere Abschläge schon einbehalten
+haben. Ist die Obergrenze erreicht, behält der Abschlag nur den Rest ein,
+danach 0,00. Ein neuer Nachtrag hebt die Obergrenze.
+
+Beispiel mit 10 % vom Netto bis 5 % von 10.000,00 Auftragssumme, drei
+Abschläge über je 3.000,00: 300,00, dann 200,00, dann 0,00.
+
+**PDF und Maske** zeigen unter dem Bruttobetrag je Abzug eine Zeile mit
+Rechenweg, etwa „abzgl. Sicherheitseinbehalt 10 % aus 5.589,90 netto“,
+und darunter den Zahlbetrag. Die Beträge werden im Entwurf bei jedem
+Sichern neu gerechnet und mit dem Festschreiben fest. Offene Posten,
+Mahnung und Versandtext rechnen mit dem Zahlbetrag. In der E-Rechnung
+bleibt der Rechnungsbetrag das Brutto; Abzüge und Zahlbetrag stehen in
+den Zahlungsbedingungen.
+
+**In der Schlussrechnung** wird nichts einbehalten. Abgesetzt wird von
+jedem Abschlag nur, was bezahlt ist (siehe
+[Schlussrechnungen](#schlussrechnung)). Der Einbehalt und eine Umlage vom
+Brutto sind nicht bezahlt und erscheinen deshalb in der Zeile des
+Abschlags als „gestellt …, bezahlt …“; die Schlussrechnung fordert sie mit
+Umsatzsteuer zurück. Eine Umlage vom Brutto zieht die Schlussrechnung auf
+die volle Leistung ab.
+
 ## Schlussrechnungen {#schlussrechnung}
 
 Die Schlussrechnung führt die volle Leistung auf und setzt die gestellten

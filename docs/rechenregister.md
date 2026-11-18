@@ -15,7 +15,7 @@ und reine Sortierungen. Für sie gelten die übrigen Tests.
 | `~` | Nur mittelbar geprüft: Ein Test durchläuft die Funktion, prüft aber etwas anderes. |
 | `-` | Kein Test nennt diese Funktion. |
 
-Derzeit tragen 157 Einträge `+`, 23 `~` und keiner `-`. Die mittelbar
+Derzeit tragen 160 Einträge `+`, 23 `~` und keiner `-`. Die mittelbar
 geprüften sind fast alle abgeleitete Aussagen wie `ist_klumpen`, `ist_knapp`
 oder `traegt`: ein Vergleich auf einer Zahl, die selbst geprüft ist.
 
@@ -258,7 +258,7 @@ der Bruttobetrag wird.
 | R-144 | Ausgleich einer Zuordnung | Betrag plus Skonto plus Kürzung (R-175): was die Rechnung abnimmt, nicht was floss | `Zahlungszuordnung.ausgleich` | `+` |
 | R-145 | Auf eine Rechnung gezahlt | Summe der `betrag` ihrer Zuordnungen: die Frage des Kontoabgleichs | `Beleg.bezahlt` | `+` |
 | R-146 | Auf eine Rechnung ausgeglichen | Summe der R-144 ihrer Zuordnungen: die Frage des Mahnlaufs | `Beleg.ausgeglichen` | `+` |
-| R-147 | Offener Betrag | Bruttobetrag (R-005) minus R-146 minus R-182, **nie negativ**. Null bei allem, was keine festgeschriebene Rechnung ist: Entwurf, Angebot, Storno. **Beim Abschlag:** null, sobald jede seiner Positionen in einer festgeschriebenen (Teil-)Schlussrechnung abgesetzt ist (die Forderung ist erloschen, R-174); vorher abzüglich der Restzeilen festgeschriebener Teilschlussrechnungen | `services.offener_betrag`, `Beleg.offener_betrag` | `+` |
+| R-147 | Offener Betrag | Zahlbetrag (R-191) minus R-146 minus R-182, **nie negativ**. Null bei allem, was keine festgeschriebene Rechnung ist: Entwurf, Angebot, Storno. **Beim Abschlag:** null, sobald jede seiner Positionen in einer festgeschriebenen (Teil-)Schlussrechnung abgesetzt ist (die Forderung ist erloschen, R-174); vorher abzüglich der Restzeilen festgeschriebener Teilschlussrechnungen | `services.offener_betrag`, `Beleg.offener_betrag` | `+` |
 | R-148 | Rechnung ist bezahlt | R-147 gleich null, und nur an einer festgeschriebenen Rechnung | `Beleg.ist_bezahlt` | `+` |
 | R-149 | Offene Posten | Je festgeschriebener Rechnung R-005, R-145 und R-147; wer null offen hat, fällt heraus. Stornierte bleiben draußen, eine festgeschriebene Rechnungskorrektur mindert (R-182), ein abgerechneter Abschlag fällt heraus (`ganz_abgerechnete`) | `services.offene_posten` | `+` |
 | R-150 | Tage überfällig | Stichtag minus `faellig_am`; **negativ heißt: noch Zeit**. Ohne Fälligkeit `None`. Dieselbe Regel für einen einzelnen Beleg, wie die Spalte „Fällig“ sie zeigt („+39 T“) | `OffenerPosten.tage_ueberfaellig`, `services.tage_ueber_frist` | `+` |
@@ -371,6 +371,23 @@ Abschnitts und von J rechnen weiter mit den Positionen. Implementiert in
 Geprüft in `faktura/tests/test_kumulierter_abschlag.py` (Gruppierung,
 Rundung je Position, zwei Steuersätze, drei Abschläge, Storno und Entwurf
 als Vorgänger, Teilabnahme, PDF, XML, Maske).
+
+**Umlage und Sicherheitseinbehalt (R-189 bis R-191).** Abzüge des
+Auftraggebers, eingestellt am Projekt. Die Umlage vom Netto ist ein Zuschlag
+mit negativem Satz (R-180) und braucht keine eigene Regel. Umlage vom Brutto
+und Einbehalt werden nach der Steuer abgezogen, im Entwurf berechnet und mit
+dem Festschreiben am Beleg gespeichert. Netto, Steuer und Brutto (R-002 bis
+R-005) bleiben unverändert. Implementiert in `faktura/services/abzuege.py`.
+
+| Nr | Größe | Rechenregel | Implementierung | Test |
+| --- | --- | --- | --- | --- |
+| R-189 | Umlage nach Steuer | Nur mit Grundlage brutto am Projekt: Satz × Brutto der Positionen ohne Abzugs- und Restzeilen (R-005; bei der Schlussrechnung die volle Leistung), auf den Cent. Jede Rechnungsart. Den Anteil eines Abschlags fordert die Schlussrechnung über die Restzeile zurück (R-174) und zieht die Umlage auf die volle Leistung ab | `abzuege._umlage_nach_steuer` | `+` |
+| R-190 | Sicherheitseinbehalt | Nur Abschläge. Grundlage je Abschlag: Netto **vor** der Umlage vom Netto oder Brutto (R-005). Einbehalt = min(Satz × Summe der Grundlagen der Vorgänger (R-183) und dieses Abschlags, Grenze × Auftragssumme) − Einbehalte der Vorgänger, **nie negativ**; Grenze nur, wenn eingestellt und Auftragssumme > 0. Auftragssumme = R-005 bzw. R-002 der festgeschriebenen Aufträge des Projekts einschließlich Nachträgen (gleiche Grundlage wie der Einbehalt). Schlussrechnung ohne Einbehalt; der nicht vereinnahmte Betrag kommt über die Restzeile zurück (R-174) | `abzuege._einbehalt`, `abzuege.einbehaltsgrundlage`, `abzuege.auftragssumme` | `+` |
+| R-191 | Zahlbetrag | Brutto (R-005) − R-189 − R-190. Gesamtbetrag in PDF und Maske, Grundlage von R-147, R-149 und der Forderungszeile der Mahnung. In der E-Rechnung bleibt BT-115 das Brutto (BR-CO-16); R-189 bis R-191 stehen in BT-20. Im Storno negativ gespiegelt | `abzuege.zahlbetrag` | `+` |
+
+Geprüft in `faktura/tests/test_umlage_einbehalt.py` (beide Grundlagen,
+Grenze mit Rest und Nachtrag, kumuliert, Entwurf als Vorgänger, Storno,
+offene Posten, Schlussrechnung mit Restzeile, PDF, XML, Maske).
 
 
 ## Regeln für Änderungen

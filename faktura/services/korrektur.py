@@ -292,11 +292,18 @@ def _forderungstext(rechnung: Beleg, offen: Decimal) -> str:
             f'{rechnung.belegdatum:%d.%m.%Y}')
     if rechnung.faellig_am:
         text += f', fällig seit {rechnung.faellig_am:%d.%m.%Y}'
+    from .abzuege import zahlbetrag
+
     brutto = belegsummen(rechnung).brutto
+    # Gefordert ist der Zahlbetrag (R-191); Umlage nach Steuer und Einbehalt
+    # sind nicht bezahlt, sondern vereinbart.
+    gefordert = zahlbetrag(rechnung, brutto)
     gemindert = nachlass(rechnung)
-    bezahlt = brutto - gemindert - offen
+    bezahlt = gefordert - gemindert - offen
     if offen < brutto:
         text += f', Rechnungsbetrag {formate.geld(brutto)} EUR'
+    if gefordert != brutto:
+        text += f', Zahlbetrag {formate.geld(gefordert)} EUR'
     if gemindert:
         text += f', Nachlass {formate.geld(gemindert)} EUR'
     if bezahlt > 0:

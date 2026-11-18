@@ -61,6 +61,10 @@ class SummenMixin:
             'netto': str(summen.netto),
             'steuer': str(summen.steuer),
             'brutto': str(summen.brutto),
+            # Abzüge nach der Steuer und Zahlbetrag (R-189 bis R-191).
+            'umlage_nach_steuer': str(beleg.umlage_nach_steuer),
+            'einbehalt': str(beleg.einbehalt),
+            'zahlbetrag': str(services.zahlbetrag(beleg, summen.brutto)),
             'nach_steuersatz': [
                 {
                     'satz': str(anteil.satz),

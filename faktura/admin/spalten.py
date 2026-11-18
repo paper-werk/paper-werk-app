@@ -162,12 +162,33 @@ class SpaltenMixin:
                 for a in summen.anteile
             ),
         )
+        abzuege = services.abzuege_nach_steuer(beleg)
+        if not abzuege:
+            return format_html(
+                # Abstand zwischen "Gesamt brutto" und Betrag.
+                '<table>{}<tr><td style="padding-right:2em"><b>Gesamt brutto'
+                '</b></td><td align="right"><b>{}</b></td></tr></table>',
+                zeilen,
+                formate.geld_mit_waehrung(summen.brutto),
+            )
+        # Umlage nach Steuer und Einbehalt mit Rechenweg, wie im PDF
+        # (R-189 bis R-191).
+        abzugszeilen = format_html_join(
+            '',
+            '<tr><td style="padding-right:2em">abzgl. {}</td>'
+            '<td align="right">-{} EUR</td></tr>',
+            ((text, formate.geld(betrag)) for text, betrag in abzuege),
+        )
         return format_html(
-            # Abstand zwischen "Gesamt brutto" und Betrag.
-            '<table>{}<tr><td style="padding-right:2em"><b>Gesamt brutto</b></td>'
+            '<table>{}<tr><td style="padding-right:2em">Gesamt brutto</td>'
+            '<td align="right">{}</td></tr>{}'
+            '<tr><td style="padding-right:2em"><b>Zahlbetrag</b></td>'
             '<td align="right"><b>{}</b></td></tr></table>',
             zeilen,
             formate.geld_mit_waehrung(summen.brutto),
+            abzugszeilen,
+            formate.geld_mit_waehrung(
+                services.zahlbetrag(beleg, summen.brutto)),
         )
 
     @admin.display(description='', ordering='status')

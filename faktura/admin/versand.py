@@ -276,9 +276,9 @@ class VersandMixin:
             # ergäbe.
             'beleg': self._versandbetreff(beleg),
             'empfaenger': beleg.empfaenger_kurz,
-            # Deutsches Zahlenformat, weil der Text an den Kunden geht.
-            'betrag': formate.geld_mit_waehrung(
-                services.belegsummen(beleg).brutto),
+            # Deutsches Zahlenformat, weil der Text an den Kunden geht. Der
+            # Zahlbetrag, ohne Umlage nach Steuer und Einbehalt (R-191).
+            'betrag': formate.geld_mit_waehrung(services.zahlbetrag(beleg)),
             'firma': firma.name if firma else '',
         }
 

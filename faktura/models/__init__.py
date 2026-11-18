@@ -45,6 +45,7 @@ from .stammdaten import (
     KUNDENNUMMER_KREIS,
     KUNDENNUMMER_START,
     PROJEKTNUMMER_KREIS,
+    Abzugsgrundlage,
     Adresse,
     Adressverwendung,
     Anrede,
@@ -66,7 +67,7 @@ from .zahlung import Zahlung, Zahlungsart, Zahlungszuordnung
 __all__ = [
     'KUNDENNUMMER_KREIS', 'KUNDENNUMMER_START', 'MAHNTEXT', 'MAIL_PLATZHALTER',
     'PROJEKTNUMMER_KREIS', 'STEUERFREI', 'Abnahme', 'Abnahmeart', 'Abnahmestand',
-    'Abschlagsrechnung', 'Adresse', 'Adressverwendung',
+    'Abschlagsrechnung', 'Abzugsgrundlage', 'Adresse', 'Adressverwendung',
     'Angebot', 'Anrede', 'Ansprechpartner', 'Auftrag', 'Beleg',
     'BelegNichtAenderbar', 'BelegStatus', 'BelegTyp', 'Belegfassung',
     'Belegposition', 'Firma', 'Katalogposition', 'Kontaktart', 'Kontaktweg',

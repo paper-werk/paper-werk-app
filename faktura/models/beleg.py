@@ -377,6 +377,33 @@ class Beleg(MitVersion):
         help_text='Wird bei der Festschreibung aus dem Zahlungsziel berechnet.',
     )
 
+    # --- Abzüge nach der Umsatzsteuer (R-189, R-190) ---
+    #: Im Entwurf aus den Einstellungen des Projekts berechnet
+    #: (``services.abzuege_nachrechnen``), mit dem Festschreiben fest. Der
+    #: Text ist der Rechenweg für PDF und Maske; gespeichert, weil er sich
+    #: auf Vorgänger und Projekteinstellungen zum Zeitpunkt bezieht.
+    #: Zahlbetrag = Brutto minus beide Beträge (R-191).
+    umlage_nach_steuer = models.DecimalField(
+        'Umlage nach Steuer', max_digits=12, decimal_places=2,
+        default=Decimal('0.00'), editable=False,
+        db_comment='Umlage vom Brutto, nach der Umsatzsteuer abgezogen. '
+                   'Positiv; im Storno negativ.',
+    )
+    umlage_text = models.CharField(
+        'Rechenweg der Umlage', max_length=300, blank=True, default='',
+        editable=False,
+    )
+    einbehalt = models.DecimalField(
+        'Sicherheitseinbehalt', max_digits=12, decimal_places=2,
+        default=Decimal('0.00'), editable=False,
+        db_comment='Sicherheitseinbehalt dieses Abschlags, nach der '
+                   'Umsatzsteuer abgezogen. Positiv; im Storno negativ.',
+    )
+    einbehalt_text = models.CharField(
+        'Rechenweg des Einbehalts', max_length=200, blank=True, default='',
+        editable=False,
+    )
+
     # --- E-Rechnung ---
     #: Aus dem Kunden vorbelegt, am Beleg maßgeblich, weil derselbe Kunde
     #: eine Beratung (Reverse Charge) und eine Warenlieferung erhalten kann.

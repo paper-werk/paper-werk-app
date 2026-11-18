@@ -294,7 +294,8 @@ def titel_ergaenzen(beleg: Beleg) -> list[Belegposition]:
 
 def zuschlaege_ergaenzen(beleg: Beleg) -> list[Belegposition]:
     """Legt die Zuschläge der Aufträge an („Nebenkosten 3 %“), die sich auf
-    eine Position des Belegs mit Auftragsbezug beziehen.
+    eine Position des Belegs mit Auftragsbezug beziehen, und die Umlage vom
+    Netto des Projekts (``umlage_ergaenzen``).
 
     Bezug wie bei ``zuschlagsbasis``: „Zuschlag auf“ leer oder Präfix der
     Positionsnummer. Übergangen werden optionale Zuschläge, die
@@ -303,12 +304,18 @@ def zuschlaege_ergaenzen(beleg: Beleg) -> list[Belegposition]:
     ``zuschlaege_nachrechnen`` auf die Positionen des Belegs neu. Die
     Positionsnummer des Auftrags bleibt, sofern frei.
     """
+    from .abzuege import umlage_ergaenzen
+
+    angelegt = []
+    umlage = umlage_ergaenzen(beleg)
+    if umlage is not None:
+        angelegt.append(umlage)
     positionen = list(beleg.positionen.select_related('auftragsposition'))
     bezogen = [p for p in positionen
                if p.auftragsposition_id and not p.ist_abzug]
     auftraege = {p.auftragsposition.beleg_id for p in bezogen}
     if not auftraege:
-        return []
+        return angelegt
 
     vergeben = {p.position for p in positionen}
     vorhanden = {p.bezeichnung.strip().casefold() for p in positionen
@@ -317,7 +324,6 @@ def zuschlaege_ergaenzen(beleg: Beleg) -> list[Belegposition]:
                   .filter(beleg_id__in=auftraege, zeilenart=Zeilenart.ZUSCHLAG,
                           optional=False)
                   .order_by('beleg_id', 'sortierung'))
-    angelegt = []
     for z in zuschlaege:
         name = z.bezeichnung.strip().casefold()
         if name in vorhanden:
@@ -592,6 +598,16 @@ def _beleg_kopieren(
         # Leer bei Angebot und Auftrag; dann setzt save() einen Wert.
         steuerliches_leistungsdatum=original.steuerliches_leistungsdatum,
     )
+    if typ == BelegTyp.STORNO:
+        # Das Storno spiegelt die Abzüge nach der Steuer, wie die Positionen;
+        # nachgerechnet wird es nicht. Jede andere Kopie rechnet sie im
+        # Entwurf neu (``zuschlaege_nachrechnen`` unten).
+        Beleg.objects.filter(pk=kopie.pk).update(
+            umlage_nach_steuer=original.umlage_nach_steuer * vorzeichen,
+            umlage_text=original.umlage_text,
+            einbehalt=original.einbehalt * vorzeichen,
+            einbehalt_text=original.einbehalt_text)
+        kopie.refresh_from_db()
 
     Belegposition.objects.bulk_create([
         Belegposition(

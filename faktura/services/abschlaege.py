@@ -488,6 +488,8 @@ def offene_abgesetzte_abschlaege(rechnung: Beleg) -> list[OffenerAbschlag]:
     """Abgesetzte, nicht voll bezahlte Abschläge, für den Hinweis vor dem
     Festschreiben. Angegeben ist der nicht vereinnahmte Teil (gekürzt oder
     offen), den die Rechnung mit der Restzeile nicht absetzt (R-174)."""
+    from .abzuege import zahlbetrag
+
     abschlaege = {
         p.abgesetzte_position.beleg
         for p in rechnung.positionen.filter(abgesetzte_position__isnull=False)
@@ -495,7 +497,9 @@ def offene_abgesetzte_abschlaege(rechnung: Beleg) -> list[OffenerAbschlag]:
     }
     befund = []
     for abschlag in sorted(abschlaege, key=lambda b: (b.belegdatum, b.pk)):
-        offen = belegsummen(abschlag).brutto - vereinnahmt(abschlag)
+        # Gegen den Zahlbetrag, weil der Einbehalt vereinbart ist und über
+        # die Restzeile ohnehin zurückkommt (R-190).
+        offen = zahlbetrag(abschlag) - vereinnahmt(abschlag)
         if offen > 0:
             befund.append(OffenerAbschlag(abschlag=abschlag, offen=offen))
     return befund

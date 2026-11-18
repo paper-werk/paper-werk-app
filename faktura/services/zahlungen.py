@@ -24,6 +24,7 @@ from ..models import (
     Zahlungszuordnung,
 )
 from .abschlaege import ganz_abgerechnete, uebernommener_rest
+from .abzuege import zahlbetrag
 from .anlegen import anschriftgeber
 from .fehler import FalscherStatus, UngueltigerBetrag
 from .summen import belegsummen, bruttosummen
@@ -89,6 +90,8 @@ def offener_betrag(beleg: Beleg, ausser: int | None = None) -> Decimal:
     Restzeile den offenen Betrag.
 
     Festgeschriebene Rechnungskorrekturen mindern die Forderung (R-182).
+    Gefordert ist der Zahlbetrag, ohne Umlage nach Steuer und Einbehalt
+    (R-191).
     """
     if beleg.typ != BelegTyp.RECHNUNG:
         return Decimal('0.00')
@@ -103,7 +106,7 @@ def offener_betrag(beleg: Beleg, ausser: int | None = None) -> Decimal:
         zuordnungen = zuordnungen.exclude(pk=ausser)
     ausgeglichen = sum((z.ausgleich for z in zuordnungen), Decimal('0.00'))
 
-    rest = belegsummen(beleg).brutto - ausgeglichen - nachlass(beleg)
+    rest = zahlbetrag(beleg) - ausgeglichen - nachlass(beleg)
     if ist_abschlag:
         rest -= uebernommener_rest(beleg)
     return rest if rest > 0 else Decimal('0.00')
@@ -222,6 +225,13 @@ def offene_posten(stichtag=None, *, belege=None) -> Postenstand:
         alle = alle.filter(pk__in=belege)
 
     brutto = bruttosummen(alle)
+    # Zahlbetrag (R-191): ohne Umlage nach Steuer und Einbehalt.
+    for pk, umlage, einbehalt in (alle.exclude(umlage_nach_steuer=0,
+                                               einbehalt=0)
+                                  .values_list('pk', 'umlage_nach_steuer',
+                                               'einbehalt')):
+        if pk in brutto:
+            brutto[pk] -= umlage + einbehalt
     ausgeglichen = dict(
         Zahlungszuordnung.objects
         .filter(beleg__in=alle)
@@ -253,7 +263,7 @@ def offene_posten(stichtag=None, *, belege=None) -> Postenstand:
         zuordnungen = list(rechnung.zahlungszuordnungen.all())
         bezahlt = sum((z.betrag for z in zuordnungen), Decimal('0.00'))
         ausgeglichen = sum((z.ausgleich for z in zuordnungen), Decimal('0.00'))
-        offen = brutto - ausgeglichen - gemindert.get(rechnung.pk,
+        offen = zahlbetrag(rechnung, brutto) - ausgeglichen - gemindert.get(rechnung.pk,
                                                       Decimal('0.00'))
         if rechnung.rechnungsart == Rechnungsart.ABSCHLAG:
             offen -= uebernommener_rest(rechnung)

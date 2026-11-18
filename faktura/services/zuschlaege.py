@@ -86,13 +86,22 @@ NACHZURECHNEN = (BelegTyp.ANGEBOT, BelegTyp.AUFTRAG, BelegTyp.RECHNUNG,
 
 
 def zuschlaege_nachrechnen(beleg: Beleg) -> list[Belegposition]:
-    """Setzt den Betrag jedes Zuschlags auf Basis mal Satz, nur im Entwurf.
-    Gibt die geänderten Zeilen zurück; idempotent.
+    """Setzt den Betrag jedes Zuschlags auf Basis mal Satz, nur im Entwurf,
+    danach Umlage nach Steuer und Einbehalt (``abzuege_nachrechnen``).
+    Gibt die geänderten Zuschlagszeilen zurück; idempotent.
 
     Aufgerufen beim Speichern des Formulars, beim Anlegen per Service, beim
     Kopieren und vor dem Festschreiben, weil jede Änderung einer Position
     den Zuschlag ändern kann.
     """
+    from .abzuege import abzuege_nachrechnen
+
+    geaendert = _zuschlaege_nachrechnen(beleg)
+    abzuege_nachrechnen(beleg)
+    return geaendert
+
+
+def _zuschlaege_nachrechnen(beleg: Beleg) -> list[Belegposition]:
     if beleg.status != BelegStatus.ENTWURF or beleg.typ not in NACHZURECHNEN:
         return []
     # Die meisten Belege haben keinen Zuschlag; dann genügt eine Abfrage,
