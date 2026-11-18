@@ -400,6 +400,14 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
     ordering = ['-nummer']
     fieldsets = [
         (None, {'fields': ['nummer', 'bezeichnung', 'kunde']}),
+        ('Abzüge des Auftraggebers', {
+            'fields': [('umlage_bezeichnung', 'umlage_prozent',
+                        'umlage_grundlage'),
+                       ('einbehalt_prozent', 'einbehalt_grundlage',
+                        'einbehalt_grenze')],
+            'description': 'Gilt für alle Rechnungen des Projekts. Der '
+                           'Sicherheitseinbehalt nur für Abschläge.',
+        }),
         ('Weiteres', {
             'fields': ['beschreibung', 'abgeschlossen', 'notiz'],
             'description': 'Beschreibung und Notiz für interne Zwecke.',

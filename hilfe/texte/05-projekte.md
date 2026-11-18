@@ -24,6 +24,10 @@ exportieren.
   „2026-014“. Sie ist frei überschreibbar, auch mit eigenen Nummern wie
   „BV-Halle-Nord“.
 - **Bezeichnung** und **Kunde**.
+- Unter „Abzüge des Auftraggebers“: **Umlage** und
+  **Sicherheitseinbehalt**, die der Auftraggeber von den Rechnungen
+  abzieht. Leer, wenn er nichts abzieht (siehe
+  [Umlage und Sicherheitseinbehalt](#einbehalt)).
 - Unter „Weiteres“: **Beschreibung** und **Notiz** für interne Zwecke und
   der Haken **Abgeschlossen**.
 

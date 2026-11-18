@@ -549,9 +549,16 @@ def xml_erzeugen(beleg) -> bytes:
         mittel.type_code = ZAHLUNGSART_OFFEN
         doc.trade.settlement.payment_means.add(mittel)
 
-    if beleg.faellig_am:
+    # BT-20: Umlage nach Steuer und Einbehalt (R-189 bis R-191). EN 16931
+    # kennt keinen Abzug nach der Steuer, BT-115 bleibt nach BR-CO-16 das
+    # Brutto abzüglich BT-113; der Zahlbetrag steht hier im Text wie im PDF.
+    hinweis = zahlungshinweis(beleg)
+    if beleg.faellig_am or hinweis:
         bedingung = PaymentTerms()
-        bedingung.due = beleg.faellig_am
+        if hinweis:
+            bedingung.description = hinweis
+        if beleg.faellig_am:
+            bedingung.due = beleg.faellig_am
         doc.trade.settlement.terms.add(bedingung)
 
     # --- Summen ---
@@ -565,11 +572,25 @@ def xml_erzeugen(beleg) -> bytes:
         # (BT-115 = BT-112 minus BT-113) auf den Cent stimmt; die Steuer wird
         # je Satz auf die Summe gerechnet.
         gesamt.prepaid_total = betrag(voll.brutto) - betrag(summen.brutto)
-    # BT-115: Zahlbetrag, derselbe wie im PDF und in den offenen Posten.
+    # BT-115: Zahlbetrag wie im PDF, ohne Abzüge nach der Steuer (BT-20).
     gesamt.due_amount = betrag(summen.brutto)
 
     # serialize() validiert gegen das XSD und wirft bei Verstößen.
     return doc.serialize(schema='FACTUR-X_EN16931')
+
+
+def zahlungshinweis(beleg) -> str:
+    """Text für BT-20 mit Umlage nach Steuer, Einbehalt und Zahlbetrag, leer
+    ohne solche Abzüge."""
+    from . import services
+    from .formate import geld
+
+    zeilen = services.abzuege_nach_steuer(beleg)
+    if not zeilen:
+        return ''
+    teile = [f'Abzüglich {text}: {geld(wert)} EUR' for text, wert in zeilen]
+    teile.append(f'Zahlbetrag {geld(services.zahlbetrag(beleg))} EUR')
+    return '. '.join(teile) + '.'
 
 
 def xml_und_metadaten(beleg) -> tuple["io.BytesIO", bytes]:

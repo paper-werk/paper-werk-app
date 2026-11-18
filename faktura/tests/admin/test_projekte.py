@@ -58,6 +58,9 @@ class TestProjektAdmin:
             'kunde': kunde.pk,
             'beschreibung': '',
             'notiz': '',
+            # Pflichtauswahl, im Browser mit "Netto" vorbelegt.
+            'umlage_grundlage': 'netto',
+            'einbehalt_grundlage': 'netto',
             # Das Projekt hat ein Inline (Fremdleistungen aus
             # erfassung/admin.py); ohne dessen Management Form verwirft
             # Django den POST ohne Fehlermeldung mit 200.

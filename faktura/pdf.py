@@ -65,7 +65,9 @@ logging.getLogger('fontTools').setLevel(logging.ERROR)
 #       die bereits berechneten Abschläge
 #   v12 Logo rechtsbündig; Rücksendeangabe aus Firma.absenderzeile in
 #       voller Breite des Anschriftfelds (85 mm)
-VORLAGENVERSION = 'v12'
+#   v13 Umlage nach Steuer und Sicherheitseinbehalt unter dem Brutto,
+#       Gesamt ist der Zahlbetrag
+VORLAGENVERSION = 'v13'
 
 #: Spalte "Pos.": bis vier Zeichen bestimmt die Überschrift die Breite
 #: (beleg.css). Darüber je Zeichen 1,6 mm plus 2,4 mm Padding, höchstens
@@ -140,6 +142,10 @@ def beleg_als_html(beleg, *, entwurf_kennzeichnen: bool = True) -> str:
         'abzuege': abzuege,
         'kumuliert': kumuliert is not None,
         'summen': summen,
+        # Umlage nach Steuer und Einbehalt unter dem Brutto (R-189 bis
+        # R-191).
+        'abzuege_nach_steuer': services.abzuege_nach_steuer(beleg),
+        'zahlbetrag': services.zahlbetrag(beleg, summen.brutto),
         'mit_preisen': beleg.ist_wertbeleg,
         'ist_entwurf': beleg.status == BelegStatus.ENTWURF,
         'wasserzeichen': (

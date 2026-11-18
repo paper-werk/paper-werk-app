@@ -201,9 +201,18 @@
             <td>{{ anteil.steuer|geld }} EUR</td>
           </tr>
         {% endfor %}
+        {% comment %} Abzüge des Auftraggebers nach der Steuer (R-189 bis
+           R-191): darunter mit Rechenweg, dann der Zahlbetrag als Gesamt.
+           {% endcomment %}
+        {% if abzuege_nach_steuer %}
+          <tr><th>Summe brutto</th><td>{{ summen.brutto|geld }} EUR</td></tr>
+          {% for text, betrag in abzuege_nach_steuer %}
+            <tr><th>abzgl. {{ text }}</th><td>-{{ betrag|geld }} EUR</td></tr>
+          {% endfor %}
+        {% endif %}
         <tr class="gesamt">
           <th>{% block gesamtbezeichnung %}Rechnungsbetrag{% endblock %}</th>
-          <td>{{ summen.brutto|geld }} EUR</td>
+          <td>{{ zahlbetrag|geld }} EUR</td>
         </tr>
       </table>
 

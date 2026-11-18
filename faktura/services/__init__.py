@@ -16,6 +16,7 @@ lückenlose Nummern, Unveränderlichkeit festgeschriebener Belege.
 ``auswertung``     Umsatzverlauf, Auftragseingang, Umsatz je Kunde
 ``zuschlaege``     Titelsummen und Zuschläge aus der Positionsnummer
 ``kumuliert``      kumulierte Darstellung der Abschlagsrechnung
+``abzuege``        Umlage und Sicherheitseinbehalt des Auftraggebers
 
 Importiert wird über ``faktura.services``.
 """
@@ -32,6 +33,15 @@ from .abschlaege import (
     anrechenbare_abschlagspositionen,
     offene_abgesetzte_abschlaege,
     veraltete_abschlagsreste,
+)
+from .abzuege import (
+    abzuege_nach_steuer,
+    abzuege_nachrechnen,
+    auftragssumme,
+    einbehaltsgrundlage,
+    fehlende_umlage,
+    umlage_ergaenzen,
+    zahlbetrag,
 )
 from .anlagen import (
     anlage_dateiname,
@@ -176,6 +186,8 @@ from .zuschlaege import (
 )
 
 __all__ = [
+    'abzuege_nach_steuer', 'abzuege_nachrechnen', 'auftragssumme',
+    'einbehaltsgrundlage', 'fehlende_umlage', 'umlage_ergaenzen', 'zahlbetrag',
     'Titelsumme', 'bezugsfehler', 'gehoert_zu', 'ohne_bezug',
     'optionale_zuschlaege', 'titelsummen',
     'zuschlaege_nachrechnen',

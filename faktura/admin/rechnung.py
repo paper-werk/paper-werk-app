@@ -86,7 +86,8 @@ class RechnungAdmin(BelegAdmin):
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """Im Entwurf ein Hinweis auf fehlende optionale Zuschläge des
         Auftrags, die wie jede Option nicht automatisch übernommen werden
-        (``services.optionale_zuschlaege``)."""
+        (``services.optionale_zuschlaege``), und auf eine fehlende Zeile der
+        Umlage vom Netto des Projekts (``services.fehlende_umlage``)."""
         beleg = self._beleg_oder_none(object_id)
         if (request.method == 'GET' and beleg is not None
                 and beleg.ist_entwurf and beleg.typ == BelegTyp.RECHNUNG):
@@ -101,6 +102,13 @@ class RechnungAdmin(BelegAdmin):
                     + '. Abgerechnet wird ein Zuschlag als eigene Zeile auf '
                       'die Position, für die er angefallen ist.'),
                     messages.INFO)
+            umlage = services.fehlende_umlage(beleg)
+            if umlage:
+                self.message_user(request, (
+                    f'Zeile „{umlage}“ fehlt. Das Projekt sieht diese '
+                    f'Umlage vom Netto vor; anlegen als Zuschlag mit '
+                    f'negativem Satz, „Zuschlag auf“ leer.'),
+                    messages.WARNING)
         return super().change_view(request, object_id, form_url,
                                    extra_context)
 
