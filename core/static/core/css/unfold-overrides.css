@@ -135,16 +135,33 @@ input[type="checkbox"].after\:bg-red-300::after {
 
 /* --- Projekt: Umlage und Sicherheitseinbehalt (faktura/admin/stammdaten.py) ---
  *
- * Zwei Kästen mit je einer Zeile aus drei Feldern. Feste Anteile statt
- * Unfolds gleich breiter Felder, damit Satz und Grundlage in beiden Kästen
- * untereinander stehen und die Bezeichnung Platz für längere Texte hat. */
+ * Zwei Kästen mit je einer Zeile aus drei Feldern, Beschriftung über dem
+ * Feld statt links daneben. Prozent und Basis haben feste Breiten, damit
+ * sie in beiden Kästen untereinander stehen; die erste Spalte nimmt den
+ * Rest, damit die Bezeichnung lange Texte zeigt. */
 @media (min-width: 64rem) {
     fieldset.pw-abzug .field-line {
-        flex: 1 1 0;
+        flex-direction: column;
+        align-items: stretch;
         min-width: 0;
+    }
+    fieldset.pw-abzug .field-line > div:first-child {
+        width: auto;
+        min-width: 0;
+        height: auto;
+        line-height: 1.5;
+        margin-bottom: 0.25rem;
     }
     fieldset.pw-abzug .field-line.field-umlage_bezeichnung,
     fieldset.pw-abzug .field-line.field-einbehalt_grenze {
-        flex: 2 1 0;
+        flex: 1 1 0;
+    }
+    fieldset.pw-abzug .field-line.field-umlage_prozent,
+    fieldset.pw-abzug .field-line.field-einbehalt_prozent {
+        flex: 0 0 11rem;
+    }
+    fieldset.pw-abzug .field-line.field-umlage_grundlage,
+    fieldset.pw-abzug .field-line.field-einbehalt_grundlage {
+        flex: 0 0 16rem;
     }
 }

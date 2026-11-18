@@ -34,6 +34,7 @@ from ..forms import (
     StandardZeileForm,
 )
 from ..models import (
+    Abzugsgrundlage,
     Adresse,
     Ansprechpartner,
     Firma,
@@ -421,6 +422,17 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
             'description': 'Beschreibung und Notiz für interne Zwecke.',
         }),
     ]
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        """Bei der Umlage nennt die Auswahl die Lage zur Umsatzsteuer, weil
+        die Basis darüber entscheidet (R-189). Der Einbehalt wird immer nach
+        der Steuer abgezogen und braucht den Zusatz nicht."""
+        if db_field.name == 'umlage_grundlage':
+            kwargs['choices'] = [
+                (Abzugsgrundlage.NETTO, 'Netto, vor Umsatzsteuer'),
+                (Abzugsgrundlage.BRUTTO, 'Brutto, nach Umsatzsteuer'),
+            ]
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
 
     def get_changeform_initial_data(self, request):
         """Nächste freie Projektnummer des Jahres als Vorbelegung, gelesen und

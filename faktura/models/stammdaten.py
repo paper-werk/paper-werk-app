@@ -991,37 +991,38 @@ class Projekt(MitVersion):
     # mehrerer Aufträge enthalten kann.
     umlage_bezeichnung = models.CharField(
         'Bezeichnung', max_length=200, blank=True, default='',
-        help_text='Steht so auf der Rechnung, z. B. „Anteil Versicherung '
-                  'des Auftraggebers“.',
+        help_text='Wortlaut auf der Rechnung',
     )
     umlage_prozent = models.DecimalField(
-        'Satz in %', max_digits=5, decimal_places=2, null=True, blank=True,
+        'Prozent', max_digits=5, decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Leer: keine Umlage.',
+        help_text='Leer: keine Umlage',
     )
+    #: Die Auswahl nennt in der Maske die Lage zur Umsatzsteuer
+    #: (``ProjektAdmin.formfield_for_choice_field``).
     umlage_grundlage = models.CharField(
-        'Berechnet vom', max_length=6, choices=Abzugsgrundlage,
+        'Basis', max_length=6, choices=Abzugsgrundlage,
         default=Abzugsgrundlage.NETTO,
-        help_text='Netto: Zeile vor der Umsatzsteuer. Brutto: Abzug nach '
-                  'der Umsatzsteuer.',
     )
     einbehalt_prozent = models.DecimalField(
-        'Satz in % je Abschlag', max_digits=5, decimal_places=2,
+        'Prozent je Abschlag', max_digits=5, decimal_places=2,
         null=True, blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Leer: kein Einbehalt.',
+        help_text='Leer: kein Einbehalt',
     )
+    #: Abgezogen wird immer nach der Umsatzsteuer (R-190).
     einbehalt_grundlage = models.CharField(
-        'Berechnet vom', max_length=6, choices=Abzugsgrundlage,
+        'Basis', max_length=6, choices=Abzugsgrundlage,
         default=Abzugsgrundlage.NETTO,
-        help_text='Abgezogen wird immer nach der Umsatzsteuer.',
     )
+    #: Auftragssumme: festgeschriebene Aufträge des Projekts einschließlich
+    #: Nachträgen (``services.auftragssumme``).
     einbehalt_grenze = models.DecimalField(
-        'Höchstens % der Auftragssumme', max_digits=5,
+        'Obergrenze in %', max_digits=5,
         decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Festgeschriebene Aufträge des Projekts einschließlich '
-                  'Nachträgen. Leer: ohne Obergrenze.',
+        help_text='Anteil an der Auftragssumme mit Nachträgen. Leer: ohne '
+                  'Obergrenze',
     )
 
     class Meta:
