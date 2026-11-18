@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import path, reverse
+from django.urls import NoReverseMatch, path, reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from import_export.admin import ImportExportModelAdmin
@@ -377,6 +377,38 @@ class AnsprechpartnerAdmin(Kopfleiste, VersionAdminMixin,
         return IS_POPUP_VAR in request.POST or IS_POPUP_VAR in request.GET
 
 
+#: Beschreibungen der Kästen in der Projektmaske, HTML.
+UMLAGE_TEXT = (
+    'Nur ausfüllen, wenn der Vertrag eine Umlage vorsieht. Wirkung auf die '
+    'Rechnungen dieses Projekts:<br>'
+    '<strong>Abschlagsrechnung:</strong> Netto: Zeile „Bezeichnung −x %“ auf '
+    'die Leistungen, Umsatzsteuer auf den geminderten Betrag. Brutto: x % des '
+    'Bruttobetrags, abgezogen nach der Umsatzsteuer.<br>'
+    '<strong>Schlussrechnung:</strong> x % auf die volle Leistung, die Umlage '
+    'aus den Abschlägen wird angerechnet.'
+)
+EINBEHALT_TEXT = (
+    'Nur ausfüllen, wenn der Vertrag einen Sicherheitseinbehalt vorsieht. '
+    'Wirkung auf die Rechnungen dieses Projekts:<br>'
+    '<strong>Abschlagsrechnung:</strong> x % der Basis, abgezogen nach der '
+    'Umsatzsteuer, kumuliert über alle Abschläge bis zur Obergrenze. Der '
+    'Zahlbetrag sinkt um den Einbehalt.<br>'
+    '<strong>Schlussrechnung:</strong> Die einbehaltenen Beträge sind Teil der '
+    'Restforderung.'
+)
+
+
+def _hilfelink(anker: str) -> str:
+    """Link auf einen Abschnitt der Hilfe; leer ohne die App ``hilfe``."""
+    try:
+        url = reverse('hilfe')
+    except NoReverseMatch:
+        return ''
+    return format_html(
+        '<br><a href="{}#{}" class="text-primary-600 dark:text-primary-500">'
+        'Mehr in der Hilfe</a>', url, anker)
+
+
 @admin.register(Projekt)
 class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
                    ImportExportModelAdmin,
@@ -407,21 +439,31 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
             'fields': [('umlage_bezeichnung', 'umlage_prozent',
                         'umlage_grundlage')],
             'classes': ['pw-abzug'],
-            'description': 'Abzug des Auftraggebers von jeder Rechnung des '
-                           'Projekts, etwa ein Anteil an seiner Versicherung.',
         }),
         ('Sicherheitseinbehalt', {
             'fields': [('einbehalt_grenze', 'einbehalt_prozent',
                         'einbehalt_grundlage')],
             'classes': ['pw-abzug'],
-            'description': 'Einbehalt des Auftraggebers von jeder '
-                           'Abschlagsrechnung des Projekts.',
         }),
         ('Weiteres', {
             'fields': ['beschreibung', 'abgeschlossen', 'notiz'],
             'description': 'Beschreibung und Notiz für interne Zwecke.',
         }),
     ]
+
+    def get_fieldsets(self, request, obj=None):
+        """Beschreibung der Kästen Umlage und Sicherheitseinbehalt mit ihrer
+        Wirkung auf Abschlags- und Schlussrechnung (R-189, R-190), hier statt
+        im Klassenattribut, weil der Link auf die Hilfe erst zur Laufzeit
+        aufgelöst wird."""
+        beschreibung = {'Umlage': UMLAGE_TEXT,
+                        'Sicherheitseinbehalt': EINBEHALT_TEXT}
+        link = _hilfelink('einbehalt')
+        return [
+            (titel, {**optionen, 'description': beschreibung[titel] + link})
+            if titel in beschreibung else (titel, optionen)
+            for titel, optionen in super().get_fieldsets(request, obj)
+        ]
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         """Bei der Umlage nennt die Auswahl die Lage zur Umsatzsteuer, weil
