@@ -990,37 +990,38 @@ class Projekt(MitVersion):
     # Projekt gezählt und kumuliert werden und eine Rechnung Positionen
     # mehrerer Aufträge enthalten kann.
     umlage_bezeichnung = models.CharField(
-        'Bezeichnung der Umlage', max_length=100, blank=True, default='',
-        help_text='z. B. „Anteil Versicherung“. Steht so auf der Rechnung.',
+        'Bezeichnung', max_length=200, blank=True, default='',
+        help_text='Steht so auf der Rechnung, z. B. „Anteil Versicherung '
+                  'des Auftraggebers“.',
     )
     umlage_prozent = models.DecimalField(
-        'Umlage in %', max_digits=5, decimal_places=2, null=True, blank=True,
+        'Satz in %', max_digits=5, decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Leer, wenn der Auftraggeber keine Umlage abzieht.',
+        help_text='Leer: keine Umlage.',
     )
     umlage_grundlage = models.CharField(
-        'Umlage berechnet vom', max_length=6, choices=Abzugsgrundlage,
+        'Berechnet vom', max_length=6, choices=Abzugsgrundlage,
         default=Abzugsgrundlage.NETTO,
-        help_text='Netto: als Zeile mit negativem Satz vor der Umsatzsteuer. '
-                  'Brutto: nach der Umsatzsteuer vom Bruttobetrag.',
+        help_text='Netto: Zeile vor der Umsatzsteuer. Brutto: Abzug nach '
+                  'der Umsatzsteuer.',
     )
     einbehalt_prozent = models.DecimalField(
-        'Sicherheitseinbehalt in %', max_digits=5, decimal_places=2,
+        'Satz in % je Abschlag', max_digits=5, decimal_places=2,
         null=True, blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Je Abschlagsrechnung. Leer, wenn nichts einbehalten wird.',
+        help_text='Leer: kein Einbehalt.',
     )
     einbehalt_grundlage = models.CharField(
-        'Einbehalt berechnet vom', max_length=6, choices=Abzugsgrundlage,
+        'Berechnet vom', max_length=6, choices=Abzugsgrundlage,
         default=Abzugsgrundlage.NETTO,
         help_text='Abgezogen wird immer nach der Umsatzsteuer.',
     )
     einbehalt_grenze = models.DecimalField(
-        'Einbehalt bis höchstens % der Auftragssumme', max_digits=5,
+        'Höchstens % der Auftragssumme', max_digits=5,
         decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text='Auftragssumme: festgeschriebene Aufträge des Projekts '
-                  'einschließlich Nachträgen. Leer: ohne Obergrenze.',
+        help_text='Festgeschriebene Aufträge des Projekts einschließlich '
+                  'Nachträgen. Leer: ohne Obergrenze.',
     )
 
     class Meta:

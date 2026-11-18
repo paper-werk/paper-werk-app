@@ -132,3 +132,19 @@ html.dark input[type="checkbox"].checked\:bg-green-500:checked {
 input[type="checkbox"].after\:bg-red-300::after {
     background-color: var(--color-white, #fff) !important;
 }
+
+/* --- Projekt: Umlage und Sicherheitseinbehalt (faktura/admin/stammdaten.py) ---
+ *
+ * Zwei Kästen mit je einer Zeile aus drei Feldern. Feste Anteile statt
+ * Unfolds gleich breiter Felder, damit Satz und Grundlage in beiden Kästen
+ * untereinander stehen und die Bezeichnung Platz für längere Texte hat. */
+@media (min-width: 64rem) {
+    fieldset.pw-abzug .field-line {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    fieldset.pw-abzug .field-line.field-umlage_bezeichnung,
+    fieldset.pw-abzug .field-line.field-einbehalt_grenze {
+        flex: 2 1 0;
+    }
+}

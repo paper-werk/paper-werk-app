@@ -390,7 +390,7 @@ class Beleg(MitVersion):
                    'Positiv; im Storno negativ.',
     )
     umlage_text = models.CharField(
-        'Rechenweg der Umlage', max_length=200, blank=True, default='',
+        'Rechenweg der Umlage', max_length=300, blank=True, default='',
         editable=False,
     )
     einbehalt = models.DecimalField(

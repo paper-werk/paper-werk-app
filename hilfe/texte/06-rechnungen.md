@@ -174,11 +174,11 @@ Schlussrechnung.
 
 Manche Auftraggeber ziehen von jeder Rechnung eine **Umlage** ab, etwa
 einen Anteil an ihrer Versicherung, und behalten von jedem Abschlag einen
-**Sicherheitseinbehalt** ein. Beides steht in der Maske des Projekts unter
-„Abzüge des Auftraggebers“ und gilt für alle Rechnungen des Projekts.
+**Sicherheitseinbehalt** ein. Beides steht in der Maske des Projekts in
+je einem Kasten und gilt für alle Rechnungen des Projekts.
 
 **Umlage**: Bezeichnung, wie sie auf der Rechnung steht, Satz in Prozent
-und die Grundlage.
+und „Berechnet vom“.
 
 - **Netto**: Die Umlage ist eine Zeile der Rechnung, ein Zuschlag mit
   negativem Satz auf alle Leistungen, etwa „Anteil Versicherung -1,1 % auf
@@ -189,8 +189,9 @@ und die Grundlage.
 - **Brutto**: Der Satz wird vom Bruttobetrag gerechnet und nach der
   Umsatzsteuer abgezogen.
 
-**Sicherheitseinbehalt**: Satz je Abschlag, Grundlage netto oder brutto
-und auf Wunsch eine Obergrenze in Prozent der Auftragssumme. Die
+**Sicherheitseinbehalt**: auf Wunsch eine Obergrenze in Prozent der
+Auftragssumme, der Satz je Abschlag und „Berechnet vom“ netto oder
+brutto. Die
 Auftragssumme ist die Summe der festgeschriebenen Aufträge des Projekts
 einschließlich Nachträgen. Der Einbehalt gilt nur für Abschläge und wird
 immer nach der Umsatzsteuer abgezogen. Grundlage netto ist der Betrag vor

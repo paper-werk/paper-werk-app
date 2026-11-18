@@ -400,13 +400,21 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
     ordering = ['-nummer']
     fieldsets = [
         (None, {'fields': ['nummer', 'bezeichnung', 'kunde']}),
-        ('Abzüge des Auftraggebers', {
+        # Zwei Kästen mit gleicher Spaltenfolge: Text, Satz, Grundlage.
+        # Spaltenbreiten in unfold-overrides.css (.pw-abzug).
+        ('Umlage', {
             'fields': [('umlage_bezeichnung', 'umlage_prozent',
-                        'umlage_grundlage'),
-                       ('einbehalt_prozent', 'einbehalt_grundlage',
-                        'einbehalt_grenze')],
-            'description': 'Gilt für alle Rechnungen des Projekts. Der '
-                           'Sicherheitseinbehalt nur für Abschläge.',
+                        'umlage_grundlage')],
+            'classes': ['pw-abzug'],
+            'description': 'Abzug des Auftraggebers von jeder Rechnung des '
+                           'Projekts, etwa ein Anteil an seiner Versicherung.',
+        }),
+        ('Sicherheitseinbehalt', {
+            'fields': [('einbehalt_grenze', 'einbehalt_prozent',
+                        'einbehalt_grundlage')],
+            'classes': ['pw-abzug'],
+            'description': 'Einbehalt des Auftraggebers von jeder '
+                           'Abschlagsrechnung des Projekts.',
         }),
         ('Weiteres', {
             'fields': ['beschreibung', 'abgeschlossen', 'notiz'],
