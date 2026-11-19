@@ -107,6 +107,11 @@ class MengeWidget(UnfoldAdminDecimalFieldWidget):
         return super().format_value(value)
 
 
+class ProzentWidget(MengeWidget):
+    """Prozentsatz (``ProzentFeld``) ohne nachlaufende Nullen im Feld,
+    damit ``3`` nicht als ``3.000000`` erscheint."""
+
+
 class BetragWidget(UnfoldAdminDecimalFieldWidget):
     """Geldbetrag in einem Formular mit ``localize=True``.
 
@@ -361,6 +366,7 @@ class BelegpositionForm(forms.ModelForm):
             }),
             # Spinner mit Schrittweite 1.
             'menge': MengeWidget(attrs={'step': '1'}),
+            'zuschlag_prozent': ProzentWidget,
         }
 
     def __init__(self, *args, **kwargs):

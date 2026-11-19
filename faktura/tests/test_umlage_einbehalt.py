@@ -267,3 +267,32 @@ class TestSchlussrechnung:
         assert services.zahlbetrag(schluss) == D('1289.97')
         assert D('6019.82') + services.zahlbetrag(schluss) == D('7309.79')
         assert services.offener_betrag(abschlag) == D('0.00')
+
+
+class TestSechsNachkommastellen:
+    """Sätze mit sechs Nachkommastellen (``ProzentFeld``) gehen ungerundet in
+    die Rechnung ein; gerundet wird erst der Betrag."""
+
+    @pytest.fixture
+    def abschlag(self, kunde):
+        projekt = _projekt(
+            kunde, umlage_bezeichnung='Anteil Versicherung',
+            umlage_prozent=D('1.234567'), einbehalt_prozent=D('2.345678'))
+        projekt.refresh_from_db()
+        assert projekt.umlage_prozent == D('1.234567')
+        return _abschlag(projekt, '1', '10000.00')
+
+    def test_umlage(self, abschlag):
+        umlage = abschlag.positionen.get(zeilenart=Zeilenart.ZUSCHLAG)
+        assert umlage.zuschlag_prozent == D('-1.234567')
+        assert umlage.einzelpreis == D('-123.46')
+
+    def test_einbehalt(self, abschlag):
+        assert abschlag.einbehalt == D('234.57')
+        assert abschlag.einbehalt_text == (
+            'Sicherheitseinbehalt 2,345678 % aus 10.000,00 netto')
+
+    def test_feld_ohne_nachlaufende_nullen(self):
+        from faktura.forms import ProzentWidget
+        html = ProzentWidget().render('umlage_prozent', D('3.000000'))
+        assert 'value="3"' in html

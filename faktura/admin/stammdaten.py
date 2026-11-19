@@ -24,6 +24,7 @@ from unfold.decorators import action as unfold_action
 
 from core import erweiterungen
 from core.adminhilfen import Kopfleiste, weitere
+from core.felder import ProzentFeld
 from core.optimistic_locking import VersionAdminMixin
 
 from .. import formate
@@ -31,6 +32,7 @@ from ..forms import (
     AdresseFormSet,
     KatalogpositionForm,
     KontaktwegFormSet,
+    ProzentWidget,
     StandardZeileForm,
 )
 from ..models import (
@@ -191,6 +193,7 @@ class KontaktAdmin(Kopfleiste, VersionAdminMixin, ImportExportModelAdmin,
     resource_classes = [KontaktResource]
     import_form_class = ImportForm
     export_form_class = SelectableFieldsExportForm
+    formfield_overrides = {ProzentFeld: {'widget': ProzentWidget}}
 
     inlines = [AdresseInline, KundenkontaktInline, AnsprechpartnerInline]
 
@@ -421,6 +424,7 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
     export_form_class = SelectableFieldsExportForm
 
     actions_detail = ['detail_akte', weitere()]
+    formfield_overrides = {ProzentFeld: {'widget': ProzentWidget}}
     list_display = ['akte', 'nummer', 'bezeichnung', 'kunde', 'anzahl_belege',
                     'archiv']
     list_display_links = ['nummer', 'bezeichnung']
