@@ -348,3 +348,56 @@ def test_auch_nach_dem_festschreiben(als_abrechner, rechnung):
     assert antwort.content.startswith(b'%PDF')
     assert f'Leistungsnachweis_{rechnung.nummer}.pdf' in antwort[
         'Content-Disposition']
+
+
+# ── Rechnung korrigieren ─────────────────────────────────────────────────
+
+
+def _korrigieren(beleg):
+    original = faktura_services.beleg_festschreiben(beleg_id=beleg.pk)
+    _, entwurf = faktura_services.rechnung_korrigieren(beleg_id=original.pk)
+    original.refresh_from_db()
+    return original, entwurf
+
+
+def test_der_korrekturentwurf_uebernimmt_die_leistungen(rechnung):
+    original, entwurf = _korrigieren(rechnung)
+
+    a = services.nachweis_zur_rechnung(entwurf)
+
+    assert [z.beschreibung for z in a.zeilen] == ['Probenahme vor Ort']
+    assert [f.bezeichnung for f in a.fremdleistungen] == [
+        'Asbest, Probe BK 1']
+    assert {p.abgerechnet_in.beleg for p in (*a.zeilen, *a.fremdleistungen)
+            } == {entwurf}
+    assert not services.hat_nachweis(original)
+
+
+def test_auch_am_abschlag(projekt, zeitleistung, kollege):
+    services.zeile_erfassen(
+        projekt=projekt, leistung=zeitleistung, benutzer=kollege,
+        beschreibung='Probenahme vor Ort', datum=date(2026, 10, 6),
+        von=time(8, 0), bis=time(9, 0))
+    abschlag, _ = services.in_rechnung_uebernehmen(
+        zeilen=services.offene_leistungen(projekt)[0].zeilen,
+        rechnungsart=Rechnungsart.ABSCHLAG)
+    abschlag.leistungsdatum = abschlag.leistungsdatum_bis = date(2026, 10, 7)
+    abschlag.save()
+
+    _, entwurf = _korrigieren(abschlag)
+
+    assert entwurf.rechnungsart == Rechnungsart.ABSCHLAG
+    a = services.nachweis_zur_rechnung(entwurf)
+    assert [z.abgerechnet_in.beleg for z in a.zeilen] == [entwurf]
+
+
+def test_der_verworfene_entwurf_gibt_die_leistungen_frei(rechnung):
+    _, entwurf = _korrigieren(rechnung)
+
+    entwurf.delete()
+
+    from erfassung.models import Erfassungszeile
+    assert not Erfassungszeile.objects.filter(
+        abgerechnet_in__isnull=False).exists()
+    assert not Fremdleistung.objects.filter(
+        abgerechnet_in__isnull=False).exists()

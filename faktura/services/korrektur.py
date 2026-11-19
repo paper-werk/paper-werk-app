@@ -110,11 +110,32 @@ def rechnung_korrigieren(*, beleg_id: int, benutzer=None) -> tuple[Beleg, Beleg]
     if original.abnahme_id:
         neuer_entwurf.abnahme_id = original.abnahme_id
         neuer_entwurf.save(update_fields=['abnahme'])
+    _leistungen_umhaengen(original, neuer_entwurf)
 
     original.status = BelegStatus.STORNIERT
     original.save()
 
     return storno, neuer_entwurf
+
+
+def _leistungen_umhaengen(original: Beleg, entwurf: Beleg) -> None:
+    """Setzt ``abgerechnet_in`` von Erfassungszeilen und Fremdleistungen
+    von den Positionen des Originals auf die gleichnamigen Positionen des
+    Korrekturentwurfs; ``position`` ist je Beleg eindeutig.
+
+    Sonst blieben sie auf der stornierten Rechnung gesperrt, und dem
+    Entwurf fehlte der Leistungsnachweis. Der Nachweis der stornierten
+    Rechnung ist danach leer; er wird nicht gespeichert, sondern aus
+    ``abgerechnet_in`` erzeugt. Wird der Entwurf verworfen, sind die
+    Leistungen über ``SET_NULL`` wieder offen.
+    """
+    kopien = {p.position: p for p in entwurf.positionen.all()}
+    for alt in original.positionen.all():
+        neu = kopien.get(alt.position)
+        if neu is None:
+            continue
+        alt.erfassung.update(abgerechnet_in=neu)
+        alt.fremdleistungen.update(abgerechnet_in=neu)
 
 
 @transaction.atomic
