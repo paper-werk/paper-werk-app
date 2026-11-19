@@ -23,10 +23,6 @@ class Steueranteil:
     netto: Decimal
     steuer: Decimal
 
-    @property
-    def brutto(self) -> Decimal:
-        return self.netto + self.steuer
-
 
 @dataclass(frozen=True)
 class Belegsummen:
