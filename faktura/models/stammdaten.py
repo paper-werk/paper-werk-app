@@ -14,6 +14,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from sequences import get_next_value
 
+from core.felder import ProzentFeld
 from core.optimistic_locking import ErhoehtElternversion, MitVersion
 
 from ..steuerfall import Steuerfall
@@ -341,8 +342,8 @@ class Kontakt(MitVersion):
 
     #: Skonto in zwei Feldern, die nur zusammen gelten. Keine automatische
     #: Berechnung; Skonto wird bei der Zuordnung einer Zahlung erfasst.
-    skonto_prozent = models.DecimalField(
-        'Skonto (%)', max_digits=4, decimal_places=2, default=Decimal('0.00'),
+    skonto_prozent = ProzentFeld(
+        'Skonto (%)', default=Decimal('0'),
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text='0 heißt: kein Skonto vereinbart.',
     )
@@ -993,9 +994,9 @@ class Projekt(MitVersion):
         'Bezeichnung', max_length=200, blank=True, default='',
         help_text='Wortlaut auf der Rechnung',
     )
-    umlage_prozent = models.DecimalField(
-        'Prozent', max_digits=5, decimal_places=2, null=True, blank=True,
-        validators=[MinValueValidator(Decimal('0.01'))],
+    umlage_prozent = ProzentFeld(
+        'Prozent', null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.000001'))],
         help_text='Leer: keine Umlage',
     )
     #: Die Auswahl nennt in der Maske die Lage zur Umsatzsteuer
@@ -1004,10 +1005,9 @@ class Projekt(MitVersion):
         'Basis', max_length=6, choices=Abzugsgrundlage,
         default=Abzugsgrundlage.NETTO,
     )
-    einbehalt_prozent = models.DecimalField(
-        'Prozent je Abschlag', max_digits=5, decimal_places=2,
-        null=True, blank=True,
-        validators=[MinValueValidator(Decimal('0.01'))],
+    einbehalt_prozent = ProzentFeld(
+        'Prozent je Abschlag', null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.000001'))],
         help_text='Leer: kein Einbehalt',
     )
     #: Abgezogen wird immer nach der Umsatzsteuer (R-190).
@@ -1017,10 +1017,9 @@ class Projekt(MitVersion):
     )
     #: Auftragssumme: festgeschriebene Aufträge des Projekts einschließlich
     #: Nachträgen (``services.auftragssumme``).
-    einbehalt_grenze = models.DecimalField(
-        'Obergrenze in %', max_digits=5,
-        decimal_places=2, null=True, blank=True,
-        validators=[MinValueValidator(Decimal('0.01'))],
+    einbehalt_grenze = ProzentFeld(
+        'Obergrenze in %', null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0.000001'))],
         help_text='Anteil an der Auftragssumme mit Nachträgen. Leer: ohne '
                   'Obergrenze',
     )

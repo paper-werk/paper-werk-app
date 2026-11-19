@@ -61,6 +61,7 @@ _LESEFORMAT = {
     'menge': formate.menge,
     'einzelpreis': formate.geld,
     'steuersatz': formate.prozent,
+    'zuschlag_prozent': formate.menge,
 }
 
 

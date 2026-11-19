@@ -24,7 +24,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 from core.exceptions import FachlicherFehler
-from core.felder import MengenFeld
+from core.felder import MengenFeld, ProzentFeld
 from core.optimistic_locking import ErhoehtElternversion, MitVersion
 
 from .. import steuerfall as steuerfall_modul
@@ -1114,8 +1114,8 @@ class Belegposition(ErhoehtElternversion):
                   'Positionen darüber.',
     )
     #: Nur am Zuschlag: Prozentsatz ...
-    zuschlag_prozent = models.DecimalField(
-        'Zuschlag %', max_digits=6, decimal_places=2, null=True, blank=True,
+    zuschlag_prozent = ProzentFeld(
+        'Zuschlag %', null=True, blank=True,
         help_text='Nur bei einem Zuschlag: der Satz in Prozent, z. B. 3 für '
                   'Nebenkosten 3 %.',
     )
