@@ -47,7 +47,7 @@ def _zeile(beleg, nummer, text, menge='1', preis='0.00', *,
            satz=VOLL):
     return services.position_hinzufuegen(
         beleg=beleg, position=nummer, bezeichnung=text,
-        menge=Decimal(menge), einheit='Stk', einzelpreis=Decimal(preis),
+        menge=Decimal(menge), einheit='C62', einzelpreis=Decimal(preis),
         steuersatz=satz, zeilenart=art,
         zuschlag_prozent=Decimal(prozent) if prozent else None,
         zuschlag_auf=auf, optional=optional)
@@ -301,7 +301,7 @@ class TestSchlussrechnung:
         _zeile(beleg, '01', 'Analytik', art=Zeilenart.TITEL)
         services.position_hinzufuegen(
             beleg=beleg, position='01.0010', bezeichnung='Probe',
-            menge=Decimal(menge), einheit='Stk',
+            menge=Decimal(menge), einheit='C62',
             einzelpreis=Decimal('100.00'), steuersatz=VOLL,
             auftragsposition=ap)
         _zeile(beleg, '02', 'Nebenkosten', art=Zeilenart.ZUSCHLAG,
@@ -395,7 +395,7 @@ class TestMaske:
                 f'positionen-{i}-position': nummer,
                 f'positionen-{i}-bezeichnung': text,
                 f'positionen-{i}-menge': menge,
-                f'positionen-{i}-einheit': 'Stk',
+                f'positionen-{i}-einheit': 'C62',
                 f'positionen-{i}-einzelpreis': preis,
                 f'positionen-{i}-steuersatz': VOLL,
                 f'positionen-{i}-zeilenart': art,
@@ -451,7 +451,7 @@ class TestMaske:
                    if name.endswith('-position')}
         daten[f'{nummern["01"]}-steuersatz'] = '7.00'
         daten[f'{nummern["01"]}-menge'] = '4'
-        daten[f'{nummern["03"]}-einheit'] = 'Stk'
+        daten[f'{nummern["03"]}-einheit'] = 'C62'
         daten[f'{nummern["02.0010"]}-menge'] = '5'
 
         antwort = buero.post(adresse, daten)

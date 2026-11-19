@@ -29,7 +29,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
     Rechnungsart,
 )
@@ -54,11 +53,11 @@ def auftrag(projekt):
     beleg = Beleg.objects.create(typ=BelegTyp.AUFTRAG, projekt=projekt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Planung', menge=Decimal('100'),
-        einheit='Std', einzelpreis=Decimal('95.00'), art=Leistungsart.ZEIT)
+        einheit='HUR', einzelpreis=Decimal('95.00'))
     Belegposition.objects.create(
         beleg=beleg, position=20, bezeichnung='Laboranalysen',
-        menge=Decimal('40'), einheit='Stk', einzelpreis=Decimal('145.00'),
-        art=Leistungsart.MENGE)
+        menge=Decimal('40'), einheit='C62', einzelpreis=Decimal('145.00'),
+        )
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = 'AU-2026-0061'
     beleg.belegdatum = date(2026, 7, 1)
@@ -92,8 +91,8 @@ def ben(db):
 def regie(db):
     """Arbeit ohne Auftrag über den Katalog, 68 EUR je Stunde."""
     return Katalogposition.objects.create(
-        bezeichnung='Regiestunde', einheit='Std', einzelpreis=Decimal('68.00'),
-        art=Leistungsart.ZEIT, kontierbar=True)
+        bezeichnung='Regiestunde', einheit='HUR', einzelpreis=Decimal('68.00'),
+         kontierbar=True)
 
 
 def _zeit(projekt, person, *, stunden, position=None, leistung=None,
@@ -118,7 +117,7 @@ def _fremd(lieferant, projekt, *, menge, einkauf, position=None,
         defaults={'datum': date(2026, 8, 12), 'betrag_netto': Decimal('0')})
     return Fremdleistung.objects.create(
         rechnung=rechnung, projekt=projekt, bezeichnung='Analyse',
-        einheit='Stk', menge=Decimal(menge), einkaufspreis=Decimal(einkauf),
+        einheit='C62', menge=Decimal(menge), einkaufspreis=Decimal(einkauf),
         auftragsposition=position, weiterberechenbar=weiterberechenbar)
 
 
@@ -240,19 +239,24 @@ class TestMengenerfassungen:
 
     @pytest.fixture
     def ohne_art(self, auftrag):
-        """Auftragsposition in Std ohne Leistungsart; die Erfassung ist dann
-        eine Menge."""
+        """Auftragsposition in Std, die Stunde mit der Erfassungsart Menge;
+        die Erfassung ist dann eine Menge."""
+        from faktura.models import Einheit
+        from faktura.models import einheit as einheit_tabelle
+
+        Einheit.objects.filter(pk='HUR').update(erfassungsart='menge')
+        einheit_tabelle.zwischenspeicher_leeren()
         return Belegposition.objects.bulk_create([Belegposition(
             beleg=auftrag, position=30, bezeichnung='Projektleitung',
-            menge=Decimal('120'), einheit='Std', einzelpreis=Decimal('95.00'),
-            art='')])[0]
+            menge=Decimal('120'), einheit='HUR', einzelpreis=Decimal('95.00'),
+            )])[0]
 
     @pytest.fixture
     def material(self, auftrag):
         return Belegposition.objects.bulk_create([Belegposition(
             beleg=auftrag, position=40, bezeichnung='Kabel',
-            menge=Decimal('500'), einheit='m', einzelpreis=Decimal('2.50'),
-            art=Leistungsart.MENGE)])[0]
+            menge=Decimal('500'), einheit='MTR', einzelpreis=Decimal('2.50'),
+            )])[0]
 
     def test_eine_menge_in_stunden_wird_zur_zeit(self, projekt, ohne_art,
                                                  anna):
@@ -388,7 +392,7 @@ class TestWasAbgerechnetIst:
         rechnung = Beleg.objects.create(typ=BelegTyp.RECHNUNG, projekt=projekt)
         Belegposition.objects.create(
             beleg=rechnung, position=10, bezeichnung='Planung',
-            menge=Decimal('6'), einheit='Std', einzelpreis=Decimal('95.00'),
+            menge=Decimal('6'), einheit='HUR', einzelpreis=Decimal('95.00'),
             auftragsposition=planung)
         _festschreiben(rechnung, 'RE-2026-0102')
 
@@ -405,7 +409,7 @@ class TestWasAbgerechnetIst:
             rechnungsart=Rechnungsart.ABSCHLAG)
         Belegposition.objects.create(
             beleg=abschlag, position=10, bezeichnung='Planung',
-            menge=Decimal('6'), einheit='Std', einzelpreis=Decimal('95.00'),
+            menge=Decimal('6'), einheit='HUR', einzelpreis=Decimal('95.00'),
             auftragsposition=planung)
         _festschreiben(abschlag, 'RE-2026-0103')
 
@@ -418,7 +422,7 @@ class TestWasAbgerechnetIst:
         rechnung = Beleg.objects.create(typ=BelegTyp.RECHNUNG, projekt=projekt)
         Belegposition.objects.create(
             beleg=rechnung, position=10, bezeichnung='Analysen',
-            menge=Decimal('42'), einheit='Stk', einzelpreis=Decimal('145.00'),
+            menge=Decimal('42'), einheit='C62', einzelpreis=Decimal('145.00'),
             auftragsposition=labor)
         _festschreiben(rechnung, 'RE-2026-0104')
 
@@ -441,7 +445,7 @@ class TestDieRechnung:
             fremdleistungen=fremd)
         faktura_services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Fahrtkosten pauschal',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('50.00'), steuersatz='19.00')
         return beleg
 

@@ -183,7 +183,7 @@ class TestDieMengenregel:
             projekt=projekt, typ=BelegTyp.AUFTRAG, betreff='Hauptauftrag')
         position = services.position_hinzufuegen(
             beleg=auftrag, bezeichnung='Planung', menge=Decimal('10'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00')
         services.beleg_festschreiben(beleg_id=auftrag.pk)
         position.refresh_from_db()
@@ -201,7 +201,7 @@ class TestDieMengenregel:
             leistungsdatum_bis=timezone.localdate())
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Planung', menge=Decimal(menge),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00', auftragsposition=auftragsposition)
         return beleg
 
@@ -302,7 +302,7 @@ class TestDieMengenregel:
             leistungsdatum=timezone.localdate())
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Regie', menge=Decimal('99'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00')
 
         services.beleg_festschreiben(beleg_id=beleg.pk)
@@ -368,7 +368,7 @@ class TestDieMengenregel:
         beleg = self._rechnung(projekt, auftragsposition, '6')
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Planung, Rest', menge=Decimal('5'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00', auftragsposition=auftragsposition)
 
         [ueberschreitung] = services.mengenueberschreitungen(beleg)

@@ -36,6 +36,7 @@ from core.exceptions import FachlicherFehler
 from . import services
 from . import steuerfall as steuerfall_modul
 from .models import STEUERFREI, BelegStatus, BelegTyp, Firma, Zeilenart
+from .models.einheit import OHNE_EINHEIT
 
 #: Dateiname des Anhangs, von Factur-X vorgeschrieben; daran erkennen
 #: Leseprogramme das XML.
@@ -150,26 +151,6 @@ def mit_bt(beschriftung: str, feldname: str, tabelle: dict) -> str:
     return f'{beschriftung} ({nummer})' if nummer else beschriftung
 
 
-#: Einheiten nach UN/ECE Recommendation 20, weil Freitext wie "Stk" im XML
-#: unzulässig ist.
-EINHEIT_CODE = {
-    'stk': 'C62',    # Stück
-    'stck': 'C62',
-    'st': 'C62',
-    'std': 'HUR',    # Stunde
-    'h': 'HUR',
-    'tag': 'DAY',
-    'tage': 'DAY',
-    'km': 'KMT',
-    'm': 'MTR',
-    'm2': 'MTK',
-    'm3': 'MTQ',
-    'kg': 'KGM',
-    'l': 'LTR',
-    'pauschal': 'C62',
-}
-EINHEIT_STANDARD = 'C62'
-
 #: Steuerkategorien nach UNTDID 5305.
 KATEGORIE_STANDARD = 'S'      # Regelbesteuerung
 KATEGORIE_BEFREIT = 'E'       # steuerbefreit, Grund ist anzugeben
@@ -280,7 +261,10 @@ def zustellweg_warnung(beleg) -> str:
 
 
 def einheit_code(einheit: str) -> str:
-    return EINHEIT_CODE.get((einheit or '').strip().lower(), EINHEIT_STANDARD)
+    """BT-130 zur Position: der gespeicherte UN/ECE-Code
+    (``models/einheit.py``), ``OHNE_EINHEIT`` bei Zeilen ohne Einheit
+    (Zuschlag)."""
+    return einheit or OHNE_EINHEIT
 
 
 def _anschrift_zerlegen(empfaenger: str) -> tuple[str, str, str, str]:

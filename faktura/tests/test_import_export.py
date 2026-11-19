@@ -28,10 +28,14 @@ from faktura.ressourcen import (
 
 pytestmark = pytest.mark.django_db
 
-#: Ohne ``fremdschluessel``, damit die Tests auch Dateien aus der Zeit vor
-#: dieser Spalte abdecken.
+#: Ohne ``fremdschluessel`` und mit ``art``, damit die Tests auch Dateien
+#: aus der Zeit vor dieser Spalte und vor der Einheitentabelle abdecken.
 SPALTEN = ['nummer', 'bezeichnung', 'langtext', 'einheit', 'einzelpreis',
            'steuersatz', 'art', 'kontierbar']
+
+#: Spalten des Exports.
+EXPORT = ['nummer', 'bezeichnung', 'langtext', 'einheit', 'einzelpreis',
+          'steuersatz', 'kontierbar', 'fremdschluessel']
 
 
 def _tabelle(*zeilen) -> tablib.Dataset:
@@ -54,7 +58,8 @@ class TestWasAusEinerDateiHereinkommt:
         assert position.nummer == '2.10'
         assert position.einzelpreis == Decimal('85.00')
         assert position.steuersatz == '19.00'
-        assert position.art == Leistungsart.ZEIT
+        assert position.einheit == 'HUR'
+        assert position.erfassungsart == Leistungsart.ZEIT
         assert position.kontierbar is True
 
     def test_der_fremdschluessel_kommt_mit(self):
@@ -109,18 +114,33 @@ class TestWasAusEinerDateiHereinkommt:
         assert Katalogposition.objects.get().steuersatz == erwartet
 
     @pytest.mark.parametrize('geschrieben, erwartet', [
-        ('Stunde', Leistungsart.ZEIT),
-        ('zeit', Leistungsart.ZEIT),
-        ('Stück', Leistungsart.MENGE),
-        ('Pauschale', Leistungsart.PAUSCHALE),
+        ('Std', 'HUR'),
+        ('Stunden', 'HUR'),
+        ('HUR', 'HUR'),
+        ('Stück', 'C62'),
+        ('Stk.', 'C62'),
+        ('psch', 'LS'),
+        ('pauschal', 'LS'),
+        ('m²', 'MTK'),
     ])
-    def test_und_die_art_auch(self, geschrieben, erwartet):
-        daten = _tabelle(['1', 'Etwas', '', 'Std', '10,00', '19', geschrieben,
-                          'ja'])
+    def test_die_einheit_darf_als_text_dastehen(self, geschrieben, erwartet):
+        """Die Spalte ``art`` älterer Dateien zählt nicht; die Erfassungsart
+        folgt aus der Einheit."""
+        daten = _tabelle(['1', 'Etwas', '', geschrieben, '10,00', '19',
+                          'zeit', 'ja'])
 
         KatalogpositionResource().import_data(daten, dry_run=False)
 
-        assert Katalogposition.objects.get().art == erwartet
+        assert Katalogposition.objects.get().einheit == erwartet
+
+    def test_eine_unbekannte_einheit_wird_gemeldet(self):
+        daten = _tabelle(['1', 'Etwas', '', 'Eimer', '10,00', '19', 'menge',
+                          'ja'])
+
+        ergebnis = KatalogpositionResource().import_data(daten, dry_run=True)
+
+        assert ergebnis.has_validation_errors()
+        assert not Katalogposition.objects.exists()
 
     def test_ja_und_nein_statt_true_und_false(self):
         daten = _tabelle(
@@ -201,13 +221,14 @@ class TestWasHinausgeht:
     def test_der_export_traegt_die_spalten_des_katalogs(self, db):
         Katalogposition.objects.create(
             nummer='2.10', bezeichnung='Probenahme vor Ort',
-            langtext='Nach DIN ISO 10381-1', einheit='Std',
-            einzelpreis=Decimal('85.00'), art=Leistungsart.ZEIT)
+            langtext='Nach DIN ISO 10381-1', einheit='HUR',
+            einzelpreis=Decimal('85.00'))
 
         daten = KatalogpositionResource().export()
 
-        assert daten.headers == [*SPALTEN, 'fremdschluessel']
+        assert daten.headers == EXPORT
         assert daten[0][0] == '2.10'
+        assert daten[0][3] == 'Std', 'Der Anzeigetext, nicht der Code'
         assert 'DIN ISO 10381-1' in daten[0][2]
 
     @pytest.mark.parametrize('format_klasse', [base_formats.CSV, base_formats.XLSX])
@@ -230,8 +251,8 @@ class TestWasHinausgeht:
     def test_ein_negativer_betrag_bleibt_im_export_erhalten(self, db):
         """Nur "=" wird entfernt; ein führendes Minus gehört zum Betrag."""
         Katalogposition.objects.create(
-            nummer='9.10', bezeichnung='Nachlass', einheit='psch',
-            einzelpreis=Decimal('-50.00'), art=Leistungsart.ZEIT)
+            nummer='9.10', bezeichnung='Nachlass', einheit='LS',
+            einzelpreis=Decimal('-50.00'))
 
         datei = base_formats.CSV().export_data(KatalogpositionResource().export())
 
@@ -241,8 +262,8 @@ class TestWasHinausgeht:
     def test_und_er_laesst_sich_wieder_einlesen(self, db):
         """Ein Export lässt sich nach Änderung wieder importieren."""
         Katalogposition.objects.create(
-            nummer='2.10', bezeichnung='Probenahme', einheit='Std',
-            einzelpreis=Decimal('85.00'), art=Leistungsart.ZEIT)
+            nummer='2.10', bezeichnung='Probenahme', einheit='HUR',
+            einzelpreis=Decimal('85.00'))
         hinaus = KatalogpositionResource().export()
         Katalogposition.objects.all().delete()
 
@@ -251,6 +272,7 @@ class TestWasHinausgeht:
         assert not ergebnis.has_errors()
         wieder = Katalogposition.objects.get()
         assert wieder.nummer == '2.10'
+        assert wieder.einheit == 'HUR'
         assert wieder.einzelpreis == Decimal('85.00')
 
 

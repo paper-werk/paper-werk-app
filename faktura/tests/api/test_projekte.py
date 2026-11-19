@@ -26,7 +26,7 @@ def _beleg(projekt, typ, betrag, *, festschreiben=True):
     beleg = services.beleg_anlegen(typ=typ, projekt=projekt, **felder)
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Leistung', menge=Decimal('1.000'),
-        einheit='Pausch', einzelpreis=Decimal(betrag), steuersatz='19.00',
+        einheit='LS', einzelpreis=Decimal(betrag), steuersatz='19.00',
     )
     if festschreiben:
         return services.beleg_festschreiben(beleg_id=beleg.pk)
@@ -285,7 +285,7 @@ class TestProjektakte:
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=anderer, bezeichnung='Sonst', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('999.00'), steuersatz='19.00')
+            einheit='C62', einzelpreis=Decimal('999.00'), steuersatz='19.00')
         services.beleg_festschreiben(beleg_id=anderer.pk)
 
         akte = client.get('/api/v1/projekte/2026-042/akte/').json()

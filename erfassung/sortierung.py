@@ -9,9 +9,10 @@ neue Sortierung ist eine Zeile in diesem Modul.
 """
 
 from django.db import models
-from django.db.models import Case, F, IntegerField, Value, When
+from django.db.models import Case, F, IntegerField, Q, Value, When
 
 from faktura.models import Leistungsart
+from faktura.models import einheit as einheit_tabelle
 
 
 class Sortierung(models.TextChoices):
@@ -32,10 +33,17 @@ def _artrang():
 
     Als ``Case``, weil die Reihenfolge zur Darstellung gehört. Verworfen:
     eine Rangspalte am Katalog, die bei jeder neuen Art zu pflegen wäre.
+    Die Art ist die Erfassungsart der Einheit der Grundlage, wie
+    ``Erfassungszeile.leistungsart``.
     """
+    def von_art(art):
+        codes = einheit_tabelle.codes_der_art(art)
+        return (Q(auftragsposition__einheit__in=codes)
+                | Q(auftragsposition__isnull=True, leistung__einheit__in=codes))
+
     return Case(
-        When(leistung__art=Leistungsart.PAUSCHALE, then=Value(0)),
-        When(leistung__art=Leistungsart.MENGE, then=Value(1)),
+        When(von_art(Leistungsart.PAUSCHALE), then=Value(0)),
+        When(von_art(Leistungsart.MENGE), then=Value(1)),
         default=Value(2),
         output_field=IntegerField(),
     )

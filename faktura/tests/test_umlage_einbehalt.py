@@ -64,7 +64,7 @@ def _auftrag(projekt, betrag, nachtrag_zu=None):
     else:
         beleg = services.nachtrag_anlegen(beleg_id=nachtrag_zu.pk)
     services.position_hinzufuegen(
-        beleg=beleg, bezeichnung='Planung', menge=D('1'), einheit='pausch',
+        beleg=beleg, bezeichnung='Planung', menge=D('1'), einheit='LS',
         einzelpreis=D(betrag), steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -76,7 +76,7 @@ def _abschlag(projekt, menge, preis, festschreiben=True):
         leistungsdatum=date(2026, 1, 1), leistungsdatum_bis=date(2026, 6, 30))
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Restleistungen Schadstoffplanung',
-        menge=D(menge), einheit='pausch', einzelpreis=D(preis),
+        menge=D(menge), einheit='LS', einzelpreis=D(preis),
         steuersatz='19.00')
     services.zuschlaege_ergaenzen(beleg)
     if festschreiben:
@@ -256,7 +256,7 @@ class TestSchlussrechnung:
         schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Planung LPH 3', menge=D('1'),
-            einheit='pausch', einzelpreis=D('6211.00'), steuersatz='19.00')
+            einheit='LS', einzelpreis=D('6211.00'), steuersatz='19.00')
         services.abschlaege_absetzen(beleg_id=schluss.pk)
         schluss = services.beleg_festschreiben(beleg_id=schluss.pk)
 

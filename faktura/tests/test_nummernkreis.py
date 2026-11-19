@@ -49,7 +49,7 @@ def _entwurf(kunde, betrag='100.00'):
         leistungsdatum=date(2026, 8, 1))
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Gesellenstunde', menge=Decimal('1'),
-        einheit='Std', einzelpreis=Decimal(betrag),
+        einheit='HUR', einzelpreis=Decimal(betrag),
         steuersatz='19.00')
     return beleg
 
@@ -161,7 +161,7 @@ class TestDieKreiseSindGetrennt:
             leistungsdatum=date(2026, 8, 1))
         Belegposition.objects.create(
             beleg=angebot, position=10, bezeichnung='Pauschal',
-            menge=Decimal('1'), einheit='psch', einzelpreis=Decimal('500.00'))
+            menge=Decimal('1'), einheit='LS', einzelpreis=Decimal('500.00'))
 
         rechnung = services.beleg_festschreiben(beleg_id=_entwurf(kunde).pk)
         angebot = services.beleg_festschreiben(beleg_id=angebot.pk)

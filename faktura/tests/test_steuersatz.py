@@ -160,7 +160,7 @@ class TestInDerMaske:
             'positionen-MIN_NUM_FORMS': '0', 'positionen-MAX_NUM_FORMS': '1000',
             'positionen-0-katalog': '', 'positionen-0-position': '',
             'positionen-0-bezeichnung': 'Messung',
-            'positionen-0-menge': '2', 'positionen-0-einheit': 'Std',
+            'positionen-0-menge': '2', 'positionen-0-einheit': 'HUR',
             'positionen-0-einzelpreis': '85.00',
             'positionen-0-steuersatz': satz,
         }

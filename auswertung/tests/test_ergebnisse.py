@@ -20,7 +20,6 @@ from faktura.models import (
     BelegStatus,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 
@@ -42,8 +41,8 @@ def projekt(kunde):
 @pytest.fixture
 def ingenieurstunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('95.00'), kontierbar=True, art=Leistungsart.ZEIT)
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('95.00'), kontierbar=True)
 
 
 @pytest.fixture
@@ -75,7 +74,7 @@ def _laborkosten(labor, projekt, *, einkauf, menge=Decimal('1'),
         datum=date(2026, 8, 12), betrag_netto=einkauf * menge)
     return Fremdleistung.objects.create(
         rechnung=rechnung, projekt=projekt, bezeichnung='Analysenpaket',
-        einheit='Stk', menge=menge, einkaufspreis=einkauf,
+        einheit='C62', menge=menge, einkaufspreis=einkauf,
         auftragsposition=auftragsposition)
 
 
@@ -85,7 +84,7 @@ def _laborauftrag(projekt):
     beleg = Beleg.objects.create(typ=BelegTyp.AUFTRAG, projekt=projekt)
     position = Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Analysenpaket LAGA',
-        menge=Decimal('4'), einheit='Stk', einzelpreis=Decimal('145.00'))
+        menge=Decimal('4'), einheit='C62', einzelpreis=Decimal('145.00'))
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = f'AB-{projekt.nummer}-L'
     beleg.belegdatum = date(2026, 7, 1)
@@ -106,7 +105,7 @@ def _auftrag(projekt, betrag):
         typ=BelegTyp.AUFTRAG, projekt=projekt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Pauschalhonorar',
-        menge=Decimal('1'), einheit='pausch', einzelpreis=betrag)
+        menge=Decimal('1'), einheit='LS', einzelpreis=betrag)
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = f'AB-{projekt.nummer}'
     beleg.belegdatum = date(2026, 7, 1)
@@ -127,7 +126,7 @@ def _rechnung(projekt, betrag, *, art, nummer):
         rechnungsart=art or Rechnungsart.NORMAL)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Teilleistung',
-        menge=Decimal('1'), einheit='pausch', einzelpreis=betrag)
+        menge=Decimal('1'), einheit='LS', einzelpreis=betrag)
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = nummer
     beleg.belegdatum = date(2026, 8, 1)
@@ -253,7 +252,7 @@ def _schlussrechnung(projekt, betrag, *, art, absetzen):
                                  rechnungsart=art)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Leistung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=betrag)
+        einheit='LS', einzelpreis=betrag)
     quelle = absetzen.positionen.get()
     Belegposition.objects.create(
         beleg=beleg, position=20, bezeichnung=f'Abschlag {absetzen.nummer}',
@@ -489,7 +488,7 @@ class TestDieEigenleistung:
                                      projekt=mit_stunden)
         position = Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Probenahme mit Analytik',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('1000.00'))
         Erfassungszeile.objects.update(abgerechnet_in=position)
         Fremdleistung.objects.filter(pk=fremd.pk).update(
@@ -512,7 +511,7 @@ class TestDieEigenleistung:
                                      projekt=mit_stunden)
         position = Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Analytik',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('400.00'))
         Fremdleistung.objects.filter(pk=fremd.pk).update(
             abgerechnet_in=position)

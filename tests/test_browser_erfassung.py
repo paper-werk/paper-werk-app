@@ -12,7 +12,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 from tests.browserhilfen import _anmelden, _auftrag_mit_position
@@ -27,9 +26,9 @@ class TestStundenInDieRechnung:
         projekt = Projekt.objects.create(nummer='2026-042', bezeichnung='Halle',
                                          kunde=kunde)
         leistung = Katalogposition.objects.create(
-            bezeichnung='Gesellenstunde', einheit='Std',
+            bezeichnung='Gesellenstunde', einheit='HUR',
             einzelpreis=Decimal('62.00'), kontierbar=True,
-            art=Leistungsart.ZEIT)
+            )
         zeile = erfassung_services.zeile_erfassen(
             projekt=projekt, leistung=leistung, benutzer=chefin,
             von=time(7, 0), bis=time(9, 0), beschreibung='Verteiler setzen')

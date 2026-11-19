@@ -127,7 +127,7 @@
           <td class="pos">{{ f.rechnungsposition }}</td>
           <td class="datum">{{ f.leistungsdatum|date:"d.m.Y" }}</td>
           <td class="bezeichnung">{{ f.bezeichnung }}</td>
-          <td class="umfang">{{ f.menge|menge }} {{ f.einheit }}</td>
+          <td class="umfang">{{ f.menge|menge }} {{ f.einheit_anzeige }}</td>
         </tr>
       {% endfor %}
     </tbody>

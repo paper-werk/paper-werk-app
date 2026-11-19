@@ -54,7 +54,7 @@ def _beleg(*, kunde=None, projekt=None, positionen, nummer,
     for nr, (menge, preis, satz) in enumerate(positionen, start=1):
         Belegposition.objects.create(
             beleg=beleg, position=nr * 10, bezeichnung=f'Position {nr}',
-            menge=Decimal(menge), einheit='Std',
+            menge=Decimal(menge), einheit='HUR',
             einzelpreis=Decimal(preis), steuersatz=satz)
     if status == BelegStatus.ENTWURF:
         # Festgeschrieben mit Nummer und Datum, wie der Constraint

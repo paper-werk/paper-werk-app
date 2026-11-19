@@ -39,16 +39,19 @@ from ..models import (
     Abzugsgrundlage,
     Adresse,
     Ansprechpartner,
+    Einheit,
     Firma,
     Katalogposition,
     Kontakt,
     Kontaktweg,
+    Leistungsart,
     Projekt,
     Steuersatz,
     Textbaustein,
     kundennummer_vorschlag,
     projektnummer_vorschlag,
 )
+from ..models import einheit as einheit_tabelle
 from ..ressourcen import (
     KatalogpositionResource,
     KontaktResource,
@@ -587,6 +590,47 @@ class SteuersatzAdmin(Kopfleiste, unfold_admin.ModelAdmin):
         return False
 
 
+class ErfassungsartFilter(admin.SimpleListFilter):
+    """Filter nach der Erfassungsart der Einheit (``models/einheit.py``)."""
+
+    title = 'Erfassungsart'
+    parameter_name = 'erfassungsart'
+
+    def lookups(self, request, model_admin):
+        return Leistungsart.choices
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(
+                einheit__in=einheit_tabelle.codes_der_art(self.value()))
+        return queryset
+
+
+@admin.register(Einheit)
+class EinheitAdmin(Kopfleiste, unfold_admin.ModelAdmin):
+    """Einheiten nach UN/ECE (``models/einheit.py``).
+
+    Ohne Anlegen und Löschen, weil die Tabelle der Codeliste folgt. Der
+    Code ist fest, weil Positionen ihn als Wert speichern; die
+    Erfassungsart ist fest, sobald Positionen die Einheit tragen
+    (``Einheit.clean``).
+    """
+
+    list_display = ['code', 'anzeige', 'bezeichnung', 'erfassungsart',
+                    'zur_auswahl']
+    list_display_links = ['code', 'anzeige']
+    list_filter = ['zur_auswahl', 'erfassungsart']
+    search_fields = ['code', 'anzeige', 'bezeichnung']
+    fields = ['code', 'bezeichnung', 'anzeige', 'erfassungsart', 'zur_auswahl']
+    readonly_fields = ['code', 'bezeichnung']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Katalogposition)
 class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
                            unfold_admin.ModelAdmin):
@@ -605,12 +649,16 @@ class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
     # werden kann.
     export_form_class = SelectableFieldsExportForm
 
-    list_display = ['nummer', 'bezeichnung', 'fremdschluessel', 'einheit',
+    list_display = ['nummer', 'bezeichnung', 'fremdschluessel', 'einheit_text',
                     'preis', 'satz']
     list_display_links = ['nummer', 'bezeichnung']
-    list_filter = [SteuersatzFilter, 'art', 'kontierbar']
+    list_filter = [SteuersatzFilter, ErfassungsartFilter, 'kontierbar']
     search_fields = ['nummer', 'bezeichnung', 'langtext', 'fremdschluessel']
     ordering = ['nummer', 'bezeichnung']
+
+    @admin.display(description='Einheit', ordering='einheit')
+    def einheit_text(self, position):
+        return position.einheit_anzeige
 
     @admin.display(description='Einzelpreis netto', ordering='einzelpreis')
     def preis(self, position):
@@ -683,6 +731,7 @@ class KatalogpositionAdmin(Kopfleiste, ImportExportModelAdmin,
             'bezeichnung': position.bezeichnung,
             'langtext': position.langtext,
             'einheit': position.einheit,
+            'einheit_anzeige': position.einheit_anzeige,
             'einzelpreis': str(position.einzelpreis),
             'steuersatz': position.steuersatz,
             'fremdschluessel': position.fremdschluessel,

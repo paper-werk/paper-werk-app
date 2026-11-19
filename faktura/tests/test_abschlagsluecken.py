@@ -52,7 +52,7 @@ def auftrag(projekt):
                                    betreff='Planung Pumpwerk')
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Planung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal('40000.00'),
+        einheit='LS', einzelpreis=Decimal('40000.00'),
         steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -66,7 +66,7 @@ def _abschlag(projekt, *zeilen, festschreiben=True):
     for betrag, satz in zeilen:
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung=f'Abschlag {satz}', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal(betrag), steuersatz=satz)
+            einheit='LS', einzelpreis=Decimal(betrag), steuersatz=satz)
     if festschreiben:
         return services.beleg_festschreiben(beleg_id=beleg.pk)
     return beleg
@@ -81,7 +81,7 @@ def _schluss(auftrag, leistung='40000.00'):
     schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
     services.position_hinzufuegen(
         beleg=schluss, bezeichnung='Planung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal(leistung),
+        einheit='LS', einzelpreis=Decimal(leistung),
         steuersatz='19.00')
     return schluss
 
@@ -223,7 +223,7 @@ class TestEntgeltDerTeilleistung:
         for bezeichnung in ('Prüfung A', 'Prüfung B'):
             services.position_hinzufuegen(
                 beleg=stunden, bezeichnung=bezeichnung, menge=Decimal('0.125'),
-                einheit='Std', einzelpreis=Decimal('100.02'),
+                einheit='HUR', einzelpreis=Decimal('100.02'),
                 steuersatz='19.00')
         stunden = services.beleg_festschreiben(beleg_id=stunden.pk)
         teil = Abnahme.objects.create(

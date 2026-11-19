@@ -97,7 +97,7 @@ def rechnung(kunde):
     beleg.save()
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Beratung', menge=Decimal('10'),
-        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='Std',
+        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='HUR',
     )
     return beleg
 
@@ -109,7 +109,7 @@ def angebot(kunde):
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Planung', menge=Decimal('8'),
-        einzelpreis=Decimal('95.00'), steuersatz='19.00', einheit='Std',
+        einzelpreis=Decimal('95.00'), steuersatz='19.00', einheit='HUR',
     )
     return beleg
 

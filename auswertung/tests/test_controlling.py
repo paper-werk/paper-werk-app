@@ -20,7 +20,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 
@@ -41,7 +40,7 @@ def beleg_festschreiben(typ, *, projekt=None, kunde=None, betrag,
                                  empfaenger=empfaenger)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Leistung',
-        menge=Decimal('1'), einheit='pausch', einzelpreis=Decimal(betrag))
+        menge=Decimal('1'), einheit='LS', einzelpreis=Decimal(betrag))
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = nummer
     beleg.belegdatum = HEUTE
@@ -212,8 +211,8 @@ def projekt(kunde):
 @pytest.fixture
 def stunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('100.00'), art=Leistungsart.ZEIT,
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('100.00'),
         steuersatz='19.00',
     )
 
@@ -509,7 +508,7 @@ class TestDieLage:
             betrag_netto=Decimal('800.00'))
         Fremdleistung.objects.create(
             rechnung=rechnung, projekt=projekt, bezeichnung='Analyse',
-            einheit='Stk', menge=Decimal('8'),
+            einheit='C62', menge=Decimal('8'),
             einkaufspreis=Decimal('100.00'))
         return projekt
 

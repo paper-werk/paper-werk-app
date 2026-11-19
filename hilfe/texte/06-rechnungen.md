@@ -124,7 +124,7 @@ abgerechnet, was auf dieser Rechnung und was noch offen ist.
 Ein Abschlag ist eine Anzahlung auf eine noch nicht vollendete Leistung.
 
 **Anlegen:** unter Abschlagsrechnungen „+“, Projekt wählen. Die Position
-ist meist ein Betrag, etwa „Abschlagszahlung“, 1 pausch, 3.000,00.
+ist meist ein Betrag, etwa „Abschlagszahlung“, 1 psch, 3.000,00.
 Abschläge auf bestimmte Leistungen entstehen mit „Erbrachte Leistungen
 hinzufügen“. Statt Leistungsdatum und Zeitraum hat der Abschlag die Felder
 **Leistungsstand ab** und **Stichtag**: den Zeitraum, auf den er sich

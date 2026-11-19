@@ -48,6 +48,16 @@ django.jQuery(function ($) {
                         if (!feld || !(name in daten)) {
                             return;
                         }
+                        /* Eine abgewählte Einheit des Katalogs fehlt in der
+                         * Auswahl (einheit_auswahl_eingrenzen); sonst
+                         * bliebe das Feld leer. */
+                        if (name === 'einheit' && feld.tagName === 'SELECT'
+                                && daten.einheit
+                                && !feld.querySelector('option[value="'
+                                    + CSS.escape(daten.einheit) + '"]')) {
+                            feld.add(new Option(daten.einheit_anzeige,
+                                daten.einheit));
+                        }
                         feld.value = daten[name];
                         /* Ein gesetzter Wert löst kein Event aus; die Summe netto
                          * (zeilensumme.js) wartet auf 'input'. */

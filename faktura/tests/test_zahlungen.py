@@ -50,7 +50,7 @@ def _rechnung(kunde, *, netto='1000.00', betreff='Leistungen'):
     beleg.save()
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Beratung', menge=Decimal('1'),
-        einzelpreis=Decimal(netto), steuersatz='19.00', einheit='psch')
+        einzelpreis=Decimal(netto), steuersatz='19.00', einheit='LS')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
 

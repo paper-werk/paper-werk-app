@@ -13,7 +13,6 @@ from faktura.models import (
     Beleg,
     BelegTyp,
     Katalogposition,
-    Leistungsart,
     Projekt,
 )
 from tests.browserhilfen import _anmelden, _beleg_mit_fuenf_positionen, _entwurf, _katalog_waehlen
@@ -36,16 +35,16 @@ class TestPositionLoeschen:
         projekt = Projekt.objects.create(nummer='2026-081', bezeichnung='Halle',
                                          kunde=kunde)
         leistung = Katalogposition.objects.create(
-            bezeichnung='Gesellenstunde', einheit='Std',
+            bezeichnung='Gesellenstunde', einheit='HUR',
             einzelpreis=Decimal('62.00'), kontierbar=True,
-            art=Leistungsart.ZEIT)
+            )
         zeile = erfassung_services.zeile_erfassen(
             projekt=projekt, leistung=leistung, benutzer=chefin,
             von=time(7, 0), bis=time(9, 0), beschreibung='Verteiler setzen')
         beleg, _ = erfassung_services.in_rechnung_uebernehmen(zeilen=[zeile])
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Anfahrt', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('45.00'),
+            einheit='LS', einzelpreis=Decimal('45.00'),
             steuersatz='19.00')
         beleg.leistungsdatum = date(2026, 9, 1)
         beleg.save()
@@ -451,7 +450,7 @@ class TestKatalogsucheNurAnNeuenZeilen:
         return Katalogposition.objects.create(
             nummer='E-210', bezeichnung='Unterverteilung setzen',
             langtext='Aufputz, bis 24 Module, inkl. Hutschiene',
-            einheit='Stk', einzelpreis=Decimal('340.00'))
+            einheit='C62', einzelpreis=Decimal('340.00'))
 
     @staticmethod
     def _suche(page, nummer):
@@ -572,7 +571,7 @@ class TestWerteInDerMaske:
                 ('Kleinteile', '0.125', '1450.00')):
             services.position_hinzufuegen(
                 beleg=beleg, bezeichnung=bezeichnung, menge=Decimal(menge),
-                einheit='Stk', einzelpreis=Decimal(preis),
+                einheit='C62', einzelpreis=Decimal(preis),
                 steuersatz='19.00')
         return beleg
 
@@ -634,7 +633,7 @@ class TestDieOptik:
         beleg = _entwurf(kunde, typ=BelegTyp.RECHNUNG)
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Material', menge=Decimal('1'),
-            einheit='psch', einzelpreis=Decimal('9920.00'),
+            einheit='LS', einzelpreis=Decimal('9920.00'),
             steuersatz='19.00')
         return services.beleg_festschreiben(beleg_id=beleg.pk)
 

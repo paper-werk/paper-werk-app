@@ -3,8 +3,9 @@ Spätere Änderungen wirken nicht auf bestehende Belege."""
 
 from django.db import models
 
+from . import einheit as einheit_tabelle
 from . import steuersatz as steuersatz_tabelle
-from .beleg import BelegTyp, Leistungsart
+from .beleg import BelegTyp
 
 
 class TextbausteinVerwendung(models.TextChoices):
@@ -118,7 +119,13 @@ class Katalogposition(models.Model):
         help_text='Ausführliche Leistungsbeschreibung. Erscheint im Beleg '
                   'unter der Bezeichnung und lässt sich dort noch ändern.',
     )
-    einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')
+    #: UN/ECE-Code (``einheit.py``); bestimmt auch die Erfassungsart.
+    einheit = models.CharField(
+        'Einheit', max_length=3, default=einheit_tabelle.VORGABE,
+        validators=[einheit_tabelle.pruefen],
+        db_comment='UN/ECE-Code (Recommendation 20/21), Anzeigetext und '
+                   'Erfassungsart in faktura_einheit.',
+    )
     einzelpreis = models.DecimalField('Einzelpreis netto', max_digits=12, decimal_places=2)
     steuersatz = models.CharField(
         'Steuersatz', max_length=5, default=steuersatz_tabelle.vorgabe,
@@ -136,13 +143,6 @@ class Katalogposition(models.Model):
         db_comment='Erscheint diese Leistung in der Leistungserfassung? '
                    'Vorgabe an; abgewählt wird bei reinen Angebotszeilen.',
     )
-    art = models.CharField(
-        'Art der Erfassung', max_length=10, choices=Leistungsart,
-        default=Leistungsart.MENGE,
-        help_text='Bestimmt, WIE erfasst wird: Zeit über von/bis, Menge '
-                  'über eine Zahl, Pauschale gar nicht (Menge 1).',
-    )
-
     class Meta:
         verbose_name = 'Katalogposition'
         verbose_name_plural = 'Leistungskatalog'
@@ -151,3 +151,12 @@ class Katalogposition(models.Model):
     def __str__(self) -> str:
         return f'{self.nummer} {self.bezeichnung}' if self.nummer \
             else self.bezeichnung
+
+    @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
+
+    @property
+    def erfassungsart(self) -> str:
+        """Erfassungsart der Einheit (``Einheit.erfassungsart``)."""
+        return einheit_tabelle.erfassungsart(self.einheit)

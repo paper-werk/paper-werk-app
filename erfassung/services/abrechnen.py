@@ -30,6 +30,7 @@ from faktura.models import (
     Rechnungsart,
     Zeilenart,
 )
+from faktura.models import einheit as einheit_tabelle
 
 from ..formate import dauer_zeigen, personenname
 from ..models import Erfassungszeile, Fremdleistung, Zustand
@@ -87,6 +88,10 @@ class Abrechnungsposition:
         return self.grundlage.einheit
 
     @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
+
+    @property
     def einzelpreis(self) -> Decimal:
         return self.grundlage.einzelpreis
 
@@ -129,10 +134,13 @@ class Fremdposition:
     menge: Decimal
     zeilen: list
     auftragsposition: Belegposition | None = None
-    art: str = ''
     #: Preis aus der Auftragsposition; sonst der Einkaufspreis, den eine
     #: Rechnung ``gegen_auftrag`` nicht aufnimmt.
     zum_auftragspreis: bool = False
+
+    @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
 
     @property
     def summe(self) -> Decimal:
@@ -189,6 +197,10 @@ class Grundlagengruppe:
     @property
     def einheit(self) -> str:
         return self.grundlage.einheit
+
+    @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
 
     @property
     def einzelpreis(self) -> Decimal:
@@ -449,8 +461,8 @@ def nicht_uebernehmbare_fremdleistungen(projekt) -> list[Ausschluss]:
         detail = ''
         if grund == GRUND_EINHEIT_ABWEICHEND:
             auftrag = position.auftragsposition
-            detail = (f'{position.einheit}, Pos. {auftrag.position} hat '
-                      f'{auftrag.einheit}')
+            detail = (f'{position.einheit_anzeige}, Pos. {auftrag.position} '
+                      f'hat {auftrag.einheit_anzeige}')
         schluessel = (grund, position.fremdschluessel or position.bezeichnung,
                       detail)
         gruppen.setdefault(schluessel, []).append(position.bezeichnung)
@@ -592,16 +604,9 @@ def _als_liste(werte) -> list:
     return list(werte)
 
 
-#: Einheit, wenn Menge mal Preis den Einkaufsbetrag nicht auf den Cent
-#: ergibt.
-EINHEIT_PAUSCHAL = 'pausch'
-
-
 def _einheit_passt(auftragsposition, fremdleistung) -> bool:
-    """Vergleicht Einheiten ohne Groß- und Kleinschreibung und Leerraum:
-    "Stk" und "stk " sind gleich, "Stk" und "pausch" nicht."""
-    return (auftragsposition.einheit.strip().casefold()
-            == fremdleistung.einheit.strip().casefold())
+    """Gleicher UN/ECE-Code."""
+    return auftragsposition.einheit == fremdleistung.einheit
 
 
 def _fremdpositionen(positionen) -> list:
@@ -650,7 +655,6 @@ def _fremdpositionen(positionen) -> list:
                 menge=menge,
                 zeilen=gruppe,
                 auftragsposition=auftrag,
-                art=auftrag.art,
                 zum_auftragspreis=True,
             ))
             continue
@@ -661,8 +665,8 @@ def _fremdpositionen(positionen) -> list:
             bezeichnung, einheit = erste.bezeichnung, erste.einheit
         else:
             bezeichnung = (f'{erste.bezeichnung} ({menge.normalize():f} '
-                           f'{erste.einheit})'.replace(' )', ')'))
-            menge, einheit, preis = Decimal('1'), EINHEIT_PAUSCHAL, einkauf
+                           f'{erste.einheit_anzeige})'.replace(' )', ')'))
+            menge, einheit, preis = Decimal('1'), einheit_tabelle.PAUSCHAL, einkauf
         ergebnis.append(Fremdposition(
             bezeichnung=bezeichnung,
             einheit=einheit,
@@ -822,7 +826,6 @@ def in_rechnung_uebernehmen(*, zeilen, fremdleistungen=None,
             einheit=position.einheit,
             einzelpreis=position.einzelpreis,
             steuersatz=position.steuersatz,
-            art=position.art,
             auftragsposition=position.auftragsposition,
             leistung_von=min(tage, default=None),
             leistung_bis=max(tage, default=None),

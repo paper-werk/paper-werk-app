@@ -29,6 +29,7 @@ from drafthorse.models.document import Document
 
 from core import rechnen
 from core.exceptions import FachlicherFehler
+from faktura.models import einheit as einheit_tabelle
 
 #: Rechnung nach UN/EDIFACT 1001, der einzige unterstützte Typ.
 #
@@ -59,23 +60,6 @@ _SYNTAX_UBL_GUTSCHRIFT = (
 #: Nachkommastellen eines Einkaufspreises, wie ``Fremdleistung.einkaufspreis``.
 VIER_STELLEN = Decimal('0.0001')
 
-#: Einheitencodes nach UN/ECE Recommendation 20 und ihre Schreibweise.
-#
-# Eigene Tabelle, weil in ``facturx.EINHEIT_CODE`` mehrere Schreibweisen auf
-# denselben Code zeigen ('stk', 'stck', 'st' und 'pauschal' auf C62); eine
-# Umkehrung hinge von der Reihenfolge des Dicts ab. Hier steht je Code die
-# Schreibweise dieser Anwendung.
-EINHEIT_KLARTEXT = {
-    'C62': 'Stk',
-    'HUR': 'Std',
-    'DAY': 'Tag',
-    'KMT': 'km',
-    'MTR': 'm',
-    'MTK': 'm2',
-    'MTQ': 'm3',
-    'KGM': 'kg',
-    'LTR': 'l',
-}
 
 
 class ERechnungFehler(FachlicherFehler):
@@ -436,11 +420,15 @@ def _positionen(doc: Document) -> list[GelesenePosition]:
             preis = Decimal(preis) / Decimal(basis)
         einzelpreis = rechnen.auf_stufe(preis, VIER_STELLEN)
         betrag = _zahl(zeile.settlement.monetary_summation.total_amount)
-        code = getattr(zeile.delivery.billed_quantity, '_unit_code', '') or ''
+        # BT-130 ist ein UN/ECE-Code wie ``Fremdleistung.einheit``; ein Code
+        # außerhalb der Codeliste bleibt leer. Gegen die Datei, nicht die
+        # Tabelle, damit das Lesen ohne Datenbank auskommt.
+        code = (getattr(zeile.delivery.billed_quantity, '_unit_code', '')
+                or '').strip().upper()
         gelesen.append(GelesenePosition(
             bezeichnung=_text(zeile.product.name) or 'Ohne Bezeichnung',
             menge=menge,
-            einheit=EINHEIT_KLARTEXT.get(code.upper(), code),
+            einheit=code if code in einheit_tabelle.codes() else '',
             einzelpreis=einzelpreis,
             betrag=(rechnen.auf_cent(betrag) if betrag is not None
                     else rechnen.auf_cent(menge * einzelpreis)),

@@ -113,7 +113,7 @@ class TestDieRechnungsarten:
             rechnungsart=Rechnungsart.SCHLUSS, betreff='Schlussrechnung')
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Planung', menge=Decimal('100'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00')
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='1. Abschlagsrechnung',
@@ -135,7 +135,7 @@ class TestDieRechnungsarten:
             rechnungsart=Rechnungsart.SCHLUSS, betreff='Schlussrechnung')
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Planung', menge=Decimal('100'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00')
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Geleisteter Abschlag',

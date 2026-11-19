@@ -54,11 +54,11 @@ def auftrag(projekt):
                                    betreff='Planung Kläranlage')
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Leistungsphasen 1-4', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal('18000.00'),
+        einheit='LS', einzelpreis=Decimal('18000.00'),
         steuersatz='19.00')
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Leistungsphasen 5-8', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal('24000.00'),
+        einheit='LS', einzelpreis=Decimal('24000.00'),
         steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -342,7 +342,7 @@ def abschlag(projekt, betrag, auftragsposition=None, tag=date(2025, 11, 3),
         leistungsdatum=TEIL_BEGINN, leistungsdatum_bis=tag)
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Abschlag Planung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal(betrag),
+        einheit='LS', einzelpreis=Decimal(betrag),
         steuersatz='19.00', auftragsposition=auftragsposition)
     beleg = services.beleg_festschreiben(beleg_id=beleg.pk)
     if bezahlt:
@@ -408,7 +408,7 @@ class TestAbschlaegeAbsetzen:
         schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Planung', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('1000.01'),
+            einheit='LS', einzelpreis=Decimal('1000.01'),
             steuersatz='19.00')
         schluss = services.beleg_festschreiben(beleg_id=schluss.pk)
 
@@ -447,7 +447,7 @@ class TestAbschlaegeAbsetzen:
         schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Planung', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('42000.00'),
+            einheit='LS', einzelpreis=Decimal('42000.00'),
             steuersatz='19.00')
         schluss = services.beleg_festschreiben(beleg_id=schluss.pk)
 
@@ -492,7 +492,7 @@ class TestNichtsDoppelt:
             steuerliches_leistungsdatum=TEIL_ABNAHME)
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Leistungsphasen 1-4',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('18000.00'), steuersatz='19.00',
             auftragsposition=lph_1_4)
         return services.beleg_festschreiben(beleg_id=beleg.pk)
@@ -529,7 +529,7 @@ class TestNichtsDoppelt:
             steuerliches_leistungsdatum=REST_ABNAHME)
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Planung', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('1000.00'),
+            einheit='LS', einzelpreis=Decimal('1000.00'),
             steuersatz='19.00')
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung=f'1. Abschlagsrechnung {alt.nummer}',

@@ -47,8 +47,8 @@ def planung(projekt):
         Belegposition(
             beleg=auftrag, position='01.0020',
             bezeichnung='Ausführungsplanung', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('8500.00'),
-            art=Leistungsart.PAUSCHALE)
+            einheit='LS', einzelpreis=Decimal('8500.00'),
+            )
     ])[0]
 
 
@@ -117,16 +117,16 @@ class TestControlling:
 
     def test_stunden_auf_der_pauschale_zaehlen_als_zeit(self):
         umfang = Umfang.aus(art=Leistungsart.PAUSCHALE, minuten=600,
-                            menge=None, einheit='pausch', zeilen=2)
+                            menge=None, einheit='LS', zeilen=2)
 
         assert umfang.minuten == 600
         assert umfang.mengen == ()
 
     def test_alter_bestand_ohne_menge_je_zeile_eine_pauschale(self):
         umfang = Umfang.aus(art=Leistungsart.PAUSCHALE, minuten=0,
-                            menge=None, einheit='pausch', zeilen=2)
+                            menge=None, einheit='LS', zeilen=2)
 
-        assert umfang.mengen == (('pausch', Decimal('2')),)
+        assert umfang.mengen == (('LS', Decimal('2')),)
 
 
 @pytest.mark.django_db

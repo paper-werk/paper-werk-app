@@ -52,7 +52,7 @@
                            class="text-primary-600 hover:underline dark:text-primary-500">{{ position.beleg.nummer|default:"Auftrag" }}</a>
                         &middot;
                       {% endif %}
-                      {{ position.menge|menge }} {{ position.einheit }} beauftragt
+                      {{ position.menge|menge }} {{ position.einheit_anzeige }} beauftragt
                     </div>
                   {% endwith %}
                 {% endif %}
@@ -103,7 +103,7 @@
                   <span class="text-font-subtle-light dark:text-font-subtle-dark">&ndash;</span>
                 {% else %}
                   <span class="{% if zeile.ist_ueberzogen %}font-medium text-red-600 dark:text-red-500{% endif %}">
-                    {{ zeile.abgerechnete_menge|menge }} von {{ zeile.auftragsposition.menge|menge }} {{ zeile.auftragsposition.einheit }}
+                    {{ zeile.abgerechnete_menge|menge }} von {{ zeile.auftragsposition.menge|menge }} {{ zeile.auftragsposition.einheit_anzeige }}
                   </span>
                   {% comment %} Rechnungen zur Position, je ein Link auf die Akte.
                      Nur festgeschriebene, wie bei der gezählten Menge.

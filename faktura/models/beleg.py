@@ -30,7 +30,9 @@ from core.optimistic_locking import ErhoehtElternversion, MitVersion
 from .. import steuerfall as steuerfall_modul
 from ..positionsnummer import sortierschluessel
 from ..steuerfall import Steuerfall
+from . import einheit as einheit_tabelle
 from . import steuersatz as steuersatz_tabelle
+from .einheit import Leistungsart  # noqa: F401  (Import aus faktura.models)
 from .stammdaten import Ansprechpartner, Kontakt, Projekt
 
 #: Bezeichnung je Mahnstufe auf dem Beleg, im Admin und in Meldungen. Die
@@ -151,15 +153,6 @@ class BelegStatus(models.TextChoices):
     ENTWURF = 'entwurf', 'Entwurf'
     FESTGESCHRIEBEN = 'festgeschrieben', 'Festgeschrieben'
     STORNIERT = 'storniert', 'Storniert'
-
-
-class Leistungsart(models.TextChoices):
-    """Ermittlung der Menge einer Leistung; bestimmt die Erfassungsmaske:
-    zwei Uhrzeiten, eine Zahl oder immer 1."""
-
-    ZEIT = 'zeit', 'Zeit (von/bis)'
-    MENGE = 'menge', 'Menge'
-    PAUSCHALE = 'pauschale', 'Pauschale'
 
 
 class Zeilenart(models.TextChoices):
@@ -1047,8 +1040,8 @@ class Belegfassung(models.Model):
 
 
 class Belegposition(ErhoehtElternversion):
-    """Zeile eines Belegs. Bezeichnung, Langtext, Preis, Einheit,
-    Steuersatz und Art sind Kopien aus dem Katalog."""
+    """Zeile eines Belegs. Bezeichnung, Langtext, Preis, Einheit und
+    Steuersatz sind Kopien aus dem Katalog."""
 
     #: Inline-Änderungen inkrementieren die Version des Elternobjekts.
     version_eltern = ('beleg',)
@@ -1076,7 +1069,16 @@ class Belegposition(ErhoehtElternversion):
         'Menge', default=Decimal('1.000'),
         validators=[MinValueValidator(Decimal('0'))],
     )
-    einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')
+    #: UN/ECE-Code (``einheit.py``), Kopie aus dem Katalog. Bestimmt die
+    #: Erfassungsart bei Kontierung auf diese Auftragsposition. Leer bei
+    #: Titel, Text und Zuschlag, sonst Pflicht (``clean``).
+    einheit = models.CharField(
+        'Einheit', max_length=3, blank=True, default=einheit_tabelle.VORGABE,
+        validators=[einheit_tabelle.pruefen],
+        db_comment='UN/ECE-Code (Recommendation 20/21), Anzeigetext und '
+                   'Erfassungsart in faktura_einheit. Leer bei Titel, Text '
+                   'und Zuschlag.',
+    )
     einzelpreis = models.DecimalField('Einzelpreis netto', max_digits=12, decimal_places=2)
     #: Wertkopie aus der Tabelle ``Steuersatz`` (``models/steuersatz.py``).
     #: Ohne ``choices``, weil Djangos System-Check Callable-``choices`` beim
@@ -1129,14 +1131,6 @@ class Belegposition(ErhoehtElternversion):
                   'diese Position.',
     )
 
-    #: Bestimmt die Maske der Leistungserfassung (Uhrzeiten oder Menge) bei
-    #: Kontierung auf diese Auftragsposition. Leer bei frei eingegebenen
-    #: Positionen; die Erfassung behandelt das wie MENGE.
-    art = models.CharField(
-        'Art', max_length=20, choices=Leistungsart, blank=True, default='',
-        help_text='Kommt aus dem Katalog. Leer bei frei eingetragenen '
-                  'Positionen.',
-    )
     #: Kopie aus dem Katalog wie Preis und Einheit, danach frei änderbar.
     #: Grundlage der Zuordnung von Fremdleistungen
     #: (``erfassung.services.zuordnung``); in der Maske nur an Angebot und
@@ -1335,7 +1329,7 @@ class Belegposition(ErhoehtElternversion):
             return ''
         abgerechnet = self.abgerechnete_menge
         stand = (f'{abgerechnet.normalize():f} von '
-                 f'{self.menge.normalize():f} {self.einheit} abgerechnet'
+                 f'{self.menge.normalize():f} {self.einheit_anzeige} abgerechnet'
                  ).replace('  ', ' ')
         # Überschreitung möglich, weil die Mengenprüfung nur warnt; deshalb
         # eigens ausgewiesen. Nicht an einer Option, bei der der Preis
@@ -1344,6 +1338,15 @@ class Belegposition(ErhoehtElternversion):
             stand += (f', {(abgerechnet - self.menge).normalize():f} mehr '
                       f'als beauftragt')
         return stand
+
+    @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
+
+    @property
+    def erfassungsart(self) -> str:
+        """Erfassungsart der Einheit (``Einheit.erfassungsart``)."""
+        return einheit_tabelle.erfassungsart(self.einheit)
 
     @property
     def steuersatz_dezimal(self) -> Decimal:

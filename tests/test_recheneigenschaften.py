@@ -473,7 +473,7 @@ def test_die_vorschau_rundet_wie_die_rechnung(menge, preis, erwartet):
     """
     position = Abrechnungsposition(
         grundlage=SimpleNamespace(einzelpreis=preis, bezeichnung='Leistung',
-                                  einheit='Std', steuersatz='19'),
+                                  einheit='HUR', steuersatz='19'),
         zeilen=[], menge=menge, minuten=0)
 
     assert position.summe == erwartet

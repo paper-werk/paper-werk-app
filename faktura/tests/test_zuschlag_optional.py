@@ -39,7 +39,7 @@ def _zuschlag(beleg, nummer, text, prozent, auf, optional=True):
 def _mit_messungen(beleg):
     services.position_hinzufuegen(
         beleg=beleg, position='3.1', bezeichnung='Raumluftmessung',
-        menge=Decimal('10'), einheit='Stk', einzelpreis=Decimal('300.00'),
+        menge=Decimal('10'), einheit='C62', einzelpreis=Decimal('300.00'),
         steuersatz=VOLL)
     _zuschlag(beleg, '3.2', 'Samstagszuschlag', '50', '3.1')
     _zuschlag(beleg, '3.3', 'Sonn- und Feiertagszuschlag', '100', '3.1')

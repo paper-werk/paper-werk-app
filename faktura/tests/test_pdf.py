@@ -45,12 +45,12 @@ def rechnung(kunde):
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Konzeption und Beratung',
-        menge=Decimal('12.5'), einheit='Std',
+        menge=Decimal('12.5'), einheit='HUR',
         einzelpreis=Decimal('120.00'), steuersatz='19.00',
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Handbuch (gedruckt)',
-        menge=Decimal('3'), einheit='Stk',
+        menge=Decimal('3'), einheit='C62',
         einzelpreis=Decimal('45.00'), steuersatz='7.00',
     )
     return beleg
@@ -113,7 +113,7 @@ class TestPflichtangaben:
         beleg = services.beleg_anlegen(kunde=kunde, typ=BelegTyp.LIEFERSCHEIN)
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Handbuch', menge=Decimal('3'),
-            einheit='Stk', einzelpreis=Decimal('45.00'),
+            einheit='C62', einzelpreis=Decimal('45.00'),
             steuersatz='19.00',
         )
         text = text_aus(pdf.beleg_als_pdf(beleg))
@@ -416,7 +416,7 @@ class TestFacturX:
         bleibt der Zeilenbetrag."""
         services.position_hinzufuegen(
             beleg=rechnung, bezeichnung='Nachlass', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('-50.00'),
+            einheit='LS', einzelpreis=Decimal('-50.00'),
             steuersatz='19.00',
         )
         beleg = services.beleg_festschreiben(beleg_id=rechnung.pk)
@@ -485,12 +485,12 @@ def xrechnung(behoerde):
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Bauwerksprüfung', menge=Decimal('12.5'),
-        einheit='Std', einzelpreis=Decimal('120.00'),
+        einheit='HUR', einzelpreis=Decimal('120.00'),
         steuersatz='19.00',
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Prüfbericht (gedruckt)', menge=Decimal('3'),
-        einheit='Stk', einzelpreis=Decimal('45.00'),
+        einheit='C62', einzelpreis=Decimal('45.00'),
         steuersatz='7.00',
     )
     return beleg
@@ -718,7 +718,7 @@ class TestLeistungsdaten:
             betreff='Gutachten', leistungsdatum=von, leistungsdatum_bis=bis)
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Gutachten', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('900.00'),
+            einheit='LS', einzelpreis=Decimal('900.00'),
             steuersatz='19.00')
         return beleg
 
@@ -814,11 +814,11 @@ def steuerfall_beleg(kunde, steuerfall=None, satz='0.00'):
         beleg.refresh_from_db()
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Softwareentwicklung', menge=Decimal('12.5'),
-        einheit='Std', einzelpreis=Decimal('120.00'), steuersatz=satz,
+        einheit='HUR', einzelpreis=Decimal('120.00'), steuersatz=satz,
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Dokumentation', menge=Decimal('3'),
-        einheit='Stk', einzelpreis=Decimal('45.00'), steuersatz=satz,
+        einheit='C62', einzelpreis=Decimal('45.00'), steuersatz=satz,
     )
     return beleg
 
@@ -1386,7 +1386,7 @@ class TestDieBetraegeAufDemBlatt:
         ]:
             services.position_hinzufuegen(
                 beleg=beleg, bezeichnung=bezeichnung, menge=menge,
-                einheit='Std', einzelpreis=preis, steuersatz=satz)
+                einheit='HUR', einzelpreis=preis, steuersatz=satz)
 
         festgeschrieben = services.beleg_festschreiben(beleg_id=beleg.pk)
         summen = services.belegsummen(festgeschrieben)

@@ -275,15 +275,15 @@ class TestLesen:
         assert gelesen.betrag_netto == Decimal('650.00')
         assert gelesen.positionssumme == Decimal('672.50')
 
-    def test_die_positionen_kommen_mit_uebersetzter_einheit(self):
+    def test_die_positionen_kommen_mit_dem_einheitencode(self):
         gelesen = erechnung.lesen(cii())
 
         erste, zweite = gelesen.positionen
         assert erste.bezeichnung == 'Paket B: Schwermetalle nach LAGA'
         assert erste.menge == Decimal('8')
-        assert erste.einheit == 'Stk', 'C62 muss zu unserer Schreibweise werden'
+        assert erste.einheit == 'C62'
         assert erste.einzelpreis == Decimal('42.50')
-        assert zweite.einheit == 'Std', 'HUR ist die Stunde'
+        assert zweite.einheit == 'HUR'
         assert zweite.menge == Decimal('3.5')
 
     def test_was_kein_feld_hat_steht_in_sonstiges(self):
@@ -334,7 +334,7 @@ class TestZeilenbetragUndPreisbasis:
         [position] = gelesen.positionen
         assert position.einzelpreis == Decimal('0.0085')
         assert position.betrag == Decimal('2.13')
-        assert position.einheit == 'm'
+        assert position.einheit == 'MTR'
 
     def test_ohne_zeilenbetrag_gilt_menge_mal_preis(self):
         """Ohne BT-131, das manche Erzeuger trotz Pflicht weglassen, gilt
@@ -685,7 +685,7 @@ class TestBeispieldateien:
         assert gelesen.nummer == 'BLI-2026-4711'
         assert gelesen.lieferant == 'Bodenlabor Isartal GmbH'
         assert gelesen.betrag_netto == Decimal('672.50')
-        assert [p.einheit for p in gelesen.positionen] == ['Stk', 'Std']
+        assert [p.einheit for p in gelesen.positionen] == ['C62', 'HUR']
         assert gelesen.positionssumme == gelesen.betrag_netto, \
             'Der Regelfall geht auf; sonst zeigt er nicht, was er soll'
 
@@ -716,8 +716,8 @@ class TestBeispieldateien:
 
     def test_der_sammelbeleg_des_grosshaendlers(self):
         """Sammelbeleg eines Großhändlers mit vielen Kleinteilen und drei
-        Einheiten. MTR wird zu "m"; der Meter kommt in den Laborrechnungen
-        nicht vor."""
+        Einheiten. Mit MTR, weil der Meter in den Laborrechnungen nicht
+        vorkommt."""
         gelesen = erechnung.lesen(
             (BEISPIELE / 'wittmann-880366-material.xml').read_bytes())
 
@@ -725,7 +725,7 @@ class TestBeispieldateien:
         assert gelesen.lieferant == 'Elektro-Großhandel Wittmann KG'
         assert gelesen.betrag_netto == Decimal('1524.00')
         assert [p.einheit for p in gelesen.positionen] == \
-            ['m', 'Stk', 'Stk', 'Stk']
+            ['MTR', 'C62', 'C62', 'C62']
         assert gelesen.positionssumme == gelesen.betrag_netto, \
             'Der Sammelbeleg geht auf; sonst zeigt er nicht, was er soll'
 

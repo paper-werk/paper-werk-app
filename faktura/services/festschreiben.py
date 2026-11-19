@@ -155,7 +155,7 @@ class Mengenueberschreitung:
         return (
             f'{position.beleg.nummer or "Auftrag"}, Position '
             f'{position.position} "{position.bezeichnung}": beauftragt sind '
-            f'{position.menge.normalize():f} {position.einheit}, davon '
+            f'{position.menge.normalize():f} {position.einheit_anzeige}, davon '
             f'bereits {self.vorher.normalize():f} abgerechnet. Diese Rechnung '
             f'fordert weitere {self.hier.normalize():f}; das sind '
             f'{self.zu_viel.normalize():f} zu viel.'

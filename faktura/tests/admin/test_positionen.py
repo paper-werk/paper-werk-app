@@ -98,7 +98,7 @@ class TestPositionsnummern:
                 f'positionen-{i}-position': position,
                 f'positionen-{i}-bezeichnung': bezeichnung,
                 f'positionen-{i}-menge': '1',
-                f'positionen-{i}-einheit': 'Stk',
+                f'positionen-{i}-einheit': 'C62',
                 f'positionen-{i}-einzelpreis': '10.00',
                 f'positionen-{i}-steuersatz': '19.00',
             })
@@ -169,7 +169,7 @@ class TestPositionsnummern:
             f'positionen-{i}-position': position,
             f'positionen-{i}-bezeichnung': bezeichnung,
             f'positionen-{i}-menge': '1',
-            f'positionen-{i}-einheit': 'Stk',
+            f'positionen-{i}-einheit': 'C62',
             f'positionen-{i}-einzelpreis': '10.00' if bezeichnung else '',
             f'positionen-{i}-steuersatz': '19.00',
         }

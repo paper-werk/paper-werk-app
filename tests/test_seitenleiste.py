@@ -59,6 +59,7 @@ ERWARTET = [
          'admin:faktura_katalogposition_changelist'),
         ('Textbausteine', 'notes', 'admin:faktura_textbaustein_changelist'),
         ('Kostensätze', 'payments', 'admin:erfassung_kostensatz_changelist'),
+        ('Einheiten', 'straighten', 'admin:faktura_einheit_changelist'),
         ('Steuersätze', 'percent', 'admin:faktura_steuersatz_changelist'),
         ('Eigene Firma', 'apartment', 'admin:faktura_firma_changelist'),
     ]),

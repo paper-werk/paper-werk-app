@@ -81,7 +81,7 @@
                      Viertelstunde bei kurzen Einsätzen bis zu 50 % ausmacht.
                      {% endcomment %}
                   {% if stelle.ist_zeit %}{{ stelle.dauer }} &rarr; {% endif %}
-                  {{ stelle.menge|menge }} {{ stelle.einheit }}
+                  {{ stelle.menge|menge }} {{ stelle.einheit_anzeige }}
                   &nbsp;&middot;&nbsp; {{ stelle.summe|geld }} EUR
                 </span>
               </label>
@@ -143,7 +143,7 @@
                        class="border-base-300 rounded-sm dark:border-base-600">
                 <span>{{ position.bezeichnung }}</span>
                 <span class="ml-auto">
-                  {{ position.menge|menge }}&nbsp;{{ position.einheit }}
+                  {{ position.menge|menge }}&nbsp;{{ position.einheit_anzeige }}
                   &nbsp;&middot;&nbsp; {{ position.einkauf_netto|geld }}&nbsp;&euro; Einkauf
                   {% if position.auftragsposition %}
                     &nbsp;&middot;&nbsp; zu {{ position.auftragsposition.beleg.nummer }} Pos. {{ position.auftragsposition.position }}

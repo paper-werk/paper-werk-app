@@ -26,7 +26,7 @@ ASBEST = 'P-4711'
 @pytest.fixture
 def analyse(db):
     return Katalogposition.objects.create(
-        bezeichnung='Asbestanalyse', einheit='Stk',
+        bezeichnung='Asbestanalyse', einheit='C62',
         einzelpreis=Decimal('174.00'), fremdschluessel=ASBEST)
 
 

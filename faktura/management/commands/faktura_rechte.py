@@ -66,8 +66,12 @@ VOLL = [
 #
 # Steuersätze: anlegen und ändern, nicht löschen. Positionen speichern den
 # Satz als Wert; abgelöst wird über "wählbar", siehe models/steuersatz.py.
+#
+# Einheiten: nur ändern, weil die Tabelle der UN/ECE-Codeliste folgt, siehe
+# models/einheit.py.
 EINGESCHRAENKT = {'firma': ['view', 'change'], 'belegfassung': ['view'],
-                  'steuersatz': ['view', 'add', 'change']}
+                  'steuersatz': ['view', 'add', 'change'],
+                  'einheit': ['view', 'change']}
 
 #: Ausgenommen von den Rechten der Lesegruppe.
 #

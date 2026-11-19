@@ -51,6 +51,7 @@ from ..models import (
     Rechnungsart,
     Zeilenart,
 )
+from ..models import einheit as einheit_tabelle
 from ..positionsnummer import sortierschluessel
 from .abschlaege import Abzugszeile
 from .summen import positionssumme
@@ -58,7 +59,7 @@ from .zuschlaege import gehoert_zu
 
 #: Einheit einer Zeile, deren Betrag nicht Menge mal Preis ist, und der
 #: Vorgängerzeilen im XML.
-PAUSCHAL = 'pausch'
+PAUSCHAL = einheit_tabelle.PAUSCHAL
 
 
 @dataclass(frozen=True)
@@ -168,7 +169,7 @@ def _netto_je_satz(positionen) -> dict[str, Decimal]:
 
 def _schluessel(p: Belegposition) -> tuple:
     """Gruppe einer Position in der kumulierten Sicht: je Auftragsposition
-    und Satz, sonst nach Bezeichnung, Einheit, Satz und Art; ein Zuschlag
+    und Satz, sonst nach Bezeichnung, Einheit und Satz; ein Zuschlag
     nach Bezeichnung, Prozentsatz, Bezug und Satz.
 
     Anders als R-179 ohne den Preis, damit "Nebenkosten 3 %" aus zwei
@@ -178,7 +179,7 @@ def _schluessel(p: Belegposition) -> tuple:
                 p.zuschlag_auf, p.steuersatz)
     if p.auftragsposition_id:
         return ('auftrag', p.auftragsposition_id, p.steuersatz)
-    return ('frei', p.bezeichnung, p.einheit, p.steuersatz, p.art)
+    return ('frei', p.bezeichnung, p.einheit, p.steuersatz)
 
 
 def _kumulieren(beleg: Beleg, quellen, titel) -> list[Belegposition]:
@@ -267,7 +268,6 @@ def _zeile(beleg: Beleg, art: str, gruppe, titel) -> Belegposition | None:
         langtext=quelle.langtext,
         menge=menge, einheit=einheit, einzelpreis=preis,
         steuersatz=vorlage.steuersatz,
-        art=vorlage.art,
         auftragsposition=vertrag,
         leistung_von=min(von, default=None),
         leistung_bis=max(bis, default=None),

@@ -51,7 +51,7 @@ def entwurf(kunde):
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Beratung', menge=Decimal('10'),
         einzelpreis=Decimal('100.00'), steuersatz='19.00',
-        einheit='Std')
+        einheit='HUR')
     return beleg
 
 
@@ -202,7 +202,7 @@ def angebot(kunde):
                                    betreff='Angebot Beratung')
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Beratung', menge=Decimal('10'),
-        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='Std')
+        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='HUR')
     return beleg
 
 
@@ -870,7 +870,7 @@ class TestDieERechnungImVersand:
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Prüfung', menge=Decimal('2'),
             einzelpreis=Decimal('100.00'), steuersatz='19.00',
-            einheit='Std')
+            einheit='HUR')
         return beleg
 
     # --- Service -----------------------------------------------------------
@@ -1103,7 +1103,7 @@ class TestMehrAlsBeauftragt:
                                          typ=BelegTyp.AUFTRAG)
         position = services.position_hinzufuegen(
             beleg=auftrag, bezeichnung='Planung', menge=Decimal('10'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00')
         services.beleg_festschreiben(beleg_id=auftrag.pk)
 
@@ -1112,7 +1112,7 @@ class TestMehrAlsBeauftragt:
             leistungsdatum=timezone.localdate())
         services.position_hinzufuegen(
             beleg=rechnung, bezeichnung='Planung', menge=Decimal('12'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00', auftragsposition=position)
         return rechnung
 

@@ -18,10 +18,10 @@ from .models import (
     STEUERFREI,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
     Steuersatz,
 )
+from .models import einheit as einheit_tabelle
 from .models import steuersatz as steuersatz_tabelle
 
 
@@ -80,13 +80,15 @@ class KatalogpositionResource(resources.ModelResource):
         model = Katalogposition
         import_id_fields = ('nummer', 'bezeichnung')
         fields = ('nummer', 'bezeichnung', 'langtext', 'einheit',
-                  'einzelpreis', 'steuersatz', 'art', 'kontierbar',
+                  'einzelpreis', 'steuersatz', 'kontierbar',
                   'fremdschluessel')
         export_order = fields
         # Zeigt bei Preisänderungen die Zahl geänderter und unveränderter
         # Zeilen.
         skip_unchanged = True
         report_skipped = True
+        # Prüft die Einheit gegen die Tabelle (`einheit.pruefen`).
+        clean_model_instances = True
 
     nummer = fields.Field(
         column_name='nummer',
@@ -100,13 +102,21 @@ class KatalogpositionResource(resources.ModelResource):
         widget=KommaDezimalWidget(),
     )
 
+    def dehydrate_einheit(self, position) -> str:
+        """Der Anzeigetext, weil die Tabelle von Menschen gelesen wird; der
+        Import erkennt ihn wieder (``einheit.code_zum_text``)."""
+        return position.einheit_anzeige
+
     def before_import_row(self, row, **kwargs):
-        """Parst Steuersatz und Art auch als Text ("19 %", "Stunde") und
-        "kontierbar" als Ja/Nein."""
+        """Parst Steuersatz und Einheit auch als Text ("19 %", "Std") und
+        "kontierbar" als Ja/Nein. Eine Spalte ``art`` älterer Exporte wird
+        ignoriert, weil die Erfassungsart an der Einheit hängt."""
         if 'steuersatz' in row:
             row['steuersatz'] = self._steuersatz(row['steuersatz'])
-        if 'art' in row:
-            row['art'] = self._art(row['art'])
+        if 'einheit' in row:
+            # Nicht Erkanntes bleibt und schlägt bei der Validierung fehl.
+            row['einheit'] = (einheit_tabelle.code_zum_text(str(row['einheit'] or ''))
+                              or row['einheit'])
         if 'kontierbar' in row:
             row['kontierbar'] = self._wahrheit(row['kontierbar'])
 
@@ -128,19 +138,6 @@ class KatalogpositionResource(resources.ModelResource):
             pass
         treffer = Steuersatz.objects.filter(bezeichnung__iexact=text).first()
         return treffer.wert if treffer else wert
-
-    @staticmethod
-    def _art(wert) -> str:
-        text = str(wert or '').strip().lower()
-        bekannt = {
-            'zeit': Leistungsart.ZEIT, 'stunde': Leistungsart.ZEIT,
-            'stunden': Leistungsart.ZEIT, 'std': Leistungsart.ZEIT,
-            'menge': Leistungsart.MENGE, 'stück': Leistungsart.MENGE,
-            'stueck': Leistungsart.MENGE,
-            'pauschale': Leistungsart.PAUSCHALE,
-            'pauschal': Leistungsart.PAUSCHALE,
-        }
-        return bekannt.get(text, wert or Leistungsart.MENGE)
 
     @staticmethod
     def _wahrheit(wert) -> bool:

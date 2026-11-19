@@ -20,6 +20,7 @@ from ..models import (
     Rechnungsart,
     Textbaustein,
 )
+from ..models import einheit as einheit_tabelle
 from ..models import steuersatz as steuersatz_tabelle
 from ..positionsnummer import naechste_nummern
 from ..standardtexte import MAHNEINLEITUNG
@@ -260,7 +261,7 @@ def rechnungskorrektur_erstellen(
         position=10,
         bezeichnung=grund,
         menge=Decimal('1'),
-        einheit='pausch',
+        einheit=einheit_tabelle.PAUSCHAL,
         einzelpreis=-betrag_netto,
         steuersatz=steuersatz or steuersatz_tabelle.vorgabe(),
     )

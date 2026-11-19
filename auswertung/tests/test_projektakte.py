@@ -23,7 +23,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 
@@ -47,8 +46,8 @@ def projekt(kunde):
 @pytest.fixture
 def stunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('95.00'), kontierbar=True, art=Leistungsart.ZEIT)
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('95.00'), kontierbar=True)
 
 
 @pytest.fixture
@@ -81,7 +80,7 @@ def akte_gefuellt(projekt, stunde, ingenieurin):
                                  projekt=projekt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Pauschalhonorar',
-        menge=Decimal('1'), einheit='pausch', einzelpreis=Decimal('5000.00'))
+        menge=Decimal('1'), einheit='LS', einzelpreis=Decimal('5000.00'))
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = 'AB-2026-0001'
     beleg.belegdatum = date(2026, 7, 1)
@@ -249,7 +248,7 @@ class TestDieBelegtabelle:
                                      projekt=projekt)
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Bodenproben',
-            menge=Decimal('12'), einheit='Stk', einzelpreis=Decimal('0.00'))
+            menge=Decimal('12'), einheit='C62', einzelpreis=Decimal('0.00'))
         beleg.status = BelegStatus.FESTGESCHRIEBEN
         beleg.nummer = 'LS-2026-0001'
         beleg.save()
@@ -286,7 +285,7 @@ class TestUeberschreitung:
                                      projekt=projekt)
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Pauschale',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('100.00'))
         beleg.status = BelegStatus.FESTGESCHRIEBEN
         beleg.nummer = 'AB-klein'
@@ -401,7 +400,7 @@ class TestWieWeitDasVorhabenIst:
                                      projekt=projekt)
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Pauschale',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('100.00'))
         beleg.status = BelegStatus.FESTGESCHRIEBEN
         beleg.nummer = 'AB-klein'
@@ -486,7 +485,7 @@ class TestAuftragUndNachtraege:
             nachtrag_zu=haupt)
         Belegposition.objects.create(
             beleg=nachtrag, position=10, bezeichnung='Mehrleistung',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('2500.00'))
         nachtrag.status = BelegStatus.FESTGESCHRIEBEN
         nachtrag.nummer = 'AB-2026-0002'

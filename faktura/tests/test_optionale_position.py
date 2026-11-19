@@ -203,7 +203,7 @@ class TestInDerMaske:
             'positionen-MIN_NUM_FORMS': '0', 'positionen-MAX_NUM_FORMS': '1000',
             'positionen-0-katalog': '', 'positionen-0-position': '01.0010',
             'positionen-0-bezeichnung': 'Wandschlitz Zulage',
-            'positionen-0-menge': menge, 'positionen-0-einheit': 'm',
+            'positionen-0-menge': menge, 'positionen-0-einheit': 'MTR',
             'positionen-0-einzelpreis': '18.50',
             'positionen-0-steuersatz': '19.00',
         }

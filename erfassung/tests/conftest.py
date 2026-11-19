@@ -17,7 +17,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 
@@ -52,8 +51,8 @@ def abgeschlossenes_projekt(kunde):
 def zeitleistung(db):
     """Leistung, die über Uhrzeiten erfasst wird."""
     return Katalogposition.objects.create(
-        bezeichnung='Montage', einheit='Std', einzelpreis=Decimal('68.00'),
-        kontierbar=True, art=Leistungsart.ZEIT,
+        bezeichnung='Montage', einheit='HUR', einzelpreis=Decimal('68.00'),
+        kontierbar=True,
     )
 
 
@@ -61,8 +60,8 @@ def zeitleistung(db):
 def mengenleistung(db):
     """Leistung mit Menge: Anfahrt in Kilometern."""
     return Katalogposition.objects.create(
-        bezeichnung='Anfahrt', einheit='km', einzelpreis=Decimal('0.90'),
-        kontierbar=True, art=Leistungsart.MENGE,
+        bezeichnung='Anfahrt', einheit='KMT', einzelpreis=Decimal('0.90'),
+        kontierbar=True,
     )
 
 
@@ -70,9 +69,9 @@ def mengenleistung(db):
 def pauschalleistung(db):
     """Pauschale, Menge immer eins."""
     return Katalogposition.objects.create(
-        bezeichnung='Kleinmaterial', einheit='pausch',
+        bezeichnung='Kleinmaterial', einheit='LS',
         einzelpreis=Decimal('35.00'), kontierbar=True,
-        art=Leistungsart.PAUSCHALE,
+        
     )
 
 
@@ -81,7 +80,7 @@ def nur_fuer_angebote(db):
     """Katalogposition, die nicht kontierbar ist, etwa
     "Baustelleneinrichtung pauschal" aus Angeboten."""
     return Katalogposition.objects.create(
-        bezeichnung='Baustelleneinrichtung', einheit='pausch',
+        bezeichnung='Baustelleneinrichtung', einheit='LS',
         einzelpreis=Decimal('450.00'), kontierbar=False,
     )
 
@@ -141,8 +140,8 @@ def auftragsposition(projekt, zeitleistung):
     return Belegposition.objects.bulk_create([
         Belegposition(
             beleg=auftrag, position=10, bezeichnung='Planung Lph 1-4',
-            menge=Decimal('100'), einheit='Std',
-            einzelpreis=Decimal('95.00'), art=zeitleistung.art,
+            menge=Decimal('100'), einheit='HUR',
+            einzelpreis=Decimal('95.00'),
         )
     ])[0]
 

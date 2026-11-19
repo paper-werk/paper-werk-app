@@ -34,7 +34,7 @@ def rechnung(kunde, art=Rechnungsart.NORMAL, **felder):
         betreff='Gutachten', **felder)
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Gutachten', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal('900.00'),
+        einheit='LS', einzelpreis=Decimal('900.00'),
         steuersatz='19.00')
     return beleg
 

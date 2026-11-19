@@ -50,7 +50,7 @@ def _rechnung(projekt, positionen, *, nummer, tage_zurueck=0):
     for nr, (menge, preis, satz) in enumerate(positionen, start=1):
         Belegposition.objects.create(
             beleg=beleg, position=nr * 10, bezeichnung=f'Position {nr}',
-            menge=Decimal(menge), einheit='Std',
+            menge=Decimal(menge), einheit='HUR',
             einzelpreis=Decimal(preis), steuersatz=satz)
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = nummer
@@ -115,7 +115,7 @@ class TestDieSummeStimmt:
                                       projekt=projekt)
         Belegposition.objects.create(
             beleg=schein, position=10, bezeichnung='Geliefert',
-            menge=Decimal('5'), einheit='Stk', einzelpreis=Decimal('0.00'))
+            menge=Decimal('5'), einheit='C62', einzelpreis=Decimal('0.00'))
 
         summe = services.summe_ueber(Beleg.objects.all())
 
@@ -150,7 +150,7 @@ class TestDieSummeStimmt:
         beleg = Beleg.objects.create(typ=BelegTyp.RECHNUNG, projekt=projekt)
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Noch Entwurf',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('500.00'), steuersatz='19.00')
 
         summe = services.summe_ueber(Beleg.objects.all())
@@ -199,7 +199,7 @@ class TestDieSummeInDerListe:
         beleg = Beleg.objects.create(typ=BelegTyp.ANGEBOT, projekt=projekt)
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Angebot',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('9999.00'), steuersatz='19.00')
         beleg.status = BelegStatus.FESTGESCHRIEBEN
         beleg.nummer = 'AN-1'

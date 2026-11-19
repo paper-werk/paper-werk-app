@@ -75,7 +75,7 @@ def abnahme(projekt):
                                      betreff='Planung')
     services.position_hinzufuegen(
         beleg=auftrag, bezeichnung='Planung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal('1000.00'),
+        einheit='LS', einzelpreis=Decimal('1000.00'),
         steuersatz='19.00')
     auftrag = services.beleg_festschreiben(beleg_id=auftrag.pk)
     return Abnahme.objects.create(auftrag=auftrag, art=Abnahmeart.GESAMT,

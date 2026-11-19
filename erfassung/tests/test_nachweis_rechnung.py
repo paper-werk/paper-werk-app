@@ -28,7 +28,6 @@ from faktura.models import (
     Firma,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Rechnungsart,
 )
 
@@ -122,8 +121,8 @@ def test_stueckleistung_zeigt_den_umfang_nicht_die_stunden(projekt, kollege):
     1 Stk; der Nachweis zeigt keine Dauer dazu und zählt sie nicht in der
     Stundensumme."""
     probe = Katalogposition.objects.create(
-        bezeichnung='Asbest Einzelprobe', einheit='Stk',
-        einzelpreis=Decimal('45.00'), kontierbar=True, art=Leistungsart.MENGE)
+        bezeichnung='Asbest Einzelprobe', einheit='C62',
+        einzelpreis=Decimal('45.00'), kontierbar=True)
     zeile = services.zeile_erfassen(
         projekt=projekt, leistung=probe, benutzer=kollege, menge=1,
         beschreibung='Probe vor Ort', datum=date(2026, 9, 23),
@@ -153,13 +152,13 @@ def lv(projekt):
         nummer='AU-2026-0011', projekt=projekt)
     return Belegposition.objects.bulk_create([
         Belegposition(beleg=auftrag, position='2.1', bezeichnung='Planung',
-                      menge=Decimal('100'), einheit='Std',
+                      menge=Decimal('100'), einheit='HUR',
                       einzelpreis=Decimal('95.00'), steuersatz='19.00',
-                      art=Leistungsart.ZEIT),
+                      ),
         Belegposition(beleg=auftrag, position='2.2',
                       bezeichnung='Bodenprobe', menge=Decimal('40'),
-                      einheit='Stk', einzelpreis=Decimal('145.00'),
-                      steuersatz='19.00', art=Leistungsart.MENGE),
+                      einheit='C62', einzelpreis=Decimal('145.00'),
+                      steuersatz='19.00'),
     ])
 
 

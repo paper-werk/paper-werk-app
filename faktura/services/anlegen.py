@@ -24,6 +24,7 @@ from ..models import (
     Rechnungsart,
     Zeilenart,
 )
+from ..models import einheit as einheit_tabelle
 from ..positionsnummer import naechste_nummern
 from .fehler import FalscherStatus, UngueltigerBetrag
 from .zuschlaege import gehoert_zu, zuschlaege_nachrechnen
@@ -195,8 +196,9 @@ def empfaenger_abweichungen(beleg: Beleg) -> list[str]:
 
 def position_hinzufuegen(
     *, beleg: Beleg, bezeichnung: str, menge: Decimal, einzelpreis: Decimal,
-    steuersatz: str, einheit: str = 'Stk', position: str | int | None = None,
-    langtext: str = '', art: str = '', auftragsposition=None,
+    steuersatz: str, einheit: str = einheit_tabelle.VORGABE,
+    position: str | int | None = None,
+    langtext: str = '', auftragsposition=None,
     ist_abzug: bool = False, leistung_von=None, leistung_bis=None,
     abgesetzte_position=None, ist_abschlagsrest: bool = False,
     optional: bool = False, zeilenart: str = Zeilenart.LEISTUNG,
@@ -235,7 +237,6 @@ def position_hinzufuegen(
         einheit=einheit,
         einzelpreis=einzelpreis,
         steuersatz=steuersatz,
-        art=art,
         fremdschluessel=fremdschluessel,
         auftragsposition=auftragsposition,
         ist_abzug=ist_abzug,
@@ -624,11 +625,8 @@ def _beleg_kopieren(
             # aufhebt.
             einzelpreis=p.einzelpreis * vorzeichen,
             steuersatz=p.steuersatz,
-            # Mit Art, damit auf eine aus einem Angebot entstandene
-            # Auftragsposition kontiert werden kann.
-            art=p.art,
-            # Ebenso der Fremdschlüssel, für die Zuordnung von
-            # Fremdleistungen zur Auftragsposition.
+            # Der Fremdschlüssel für die Zuordnung von Fremdleistungen zur
+            # Auftragsposition.
             fremdschluessel=p.fremdschluessel,
             ist_abzug=p.ist_abzug,
             # Auch im Storno, wo die Restzeile die der Rechnung aufhebt;

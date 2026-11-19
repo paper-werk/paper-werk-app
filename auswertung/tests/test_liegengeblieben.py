@@ -20,7 +20,6 @@ from faktura.models import (
     BelegStatus,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 
@@ -38,8 +37,8 @@ def kunde(db):
 @pytest.fixture
 def stunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('95.00'), kontierbar=True, art=Leistungsart.ZEIT)
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('95.00'), kontierbar=True)
 
 
 @pytest.fixture

@@ -67,7 +67,7 @@ def rechnung(kunde):
     beleg.save()
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Beratung', menge=Decimal('10'),
-        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='Std',
+        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='HUR',
     )
     return beleg
 
@@ -207,7 +207,7 @@ class TestHochladen:
         beleg.save()
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Planung', menge=Decimal('4'),
-            einzelpreis=Decimal('150.00'), steuersatz='19.00', einheit='Std')
+            einzelpreis=Decimal('150.00'), steuersatz='19.00', einheit='HUR')
         beleg = services.beleg_festschreiben(beleg_id=beleg.pk)
         beleg.pdf.save('probe.pdf', ContentFile(b'%PDF-Test'), save=False)
         Beleg.objects.filter(pk=beleg.pk).update(pdf=beleg.pdf.name)
@@ -236,7 +236,7 @@ class TestHochladen:
             kunde=kunde, typ=BelegTyp.LIEFERSCHEIN, betreff='Lieferung')
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Kabel', menge=Decimal('5'),
-            einzelpreis=Decimal('12.00'), steuersatz='19.00', einheit='m')
+            einzelpreis=Decimal('12.00'), steuersatz='19.00', einheit='MTR')
         beleg = services.beleg_festschreiben(beleg_id=beleg.pk)
         beleg.pdf.save('probe.pdf', ContentFile(b'%PDF-Test'), save=False)
         Beleg.objects.filter(pk=beleg.pk).update(pdf=beleg.pdf.name)

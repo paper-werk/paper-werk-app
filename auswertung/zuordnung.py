@@ -33,7 +33,13 @@ from erfassung.formate import dauer_zeigen, personenname
 from erfassung.models import Erfassungszeile, Fremdleistung
 from faktura import formate
 from faktura import services as faktura_services
-from faktura.models import Belegposition, BelegStatus, BelegTyp, Leistungsart
+from faktura.models import (
+    Belegposition,
+    BelegStatus,
+    BelegTyp,
+    Leistungsart,
+)
+from faktura.models import einheit as einheit_tabelle
 from faktura.services.festschreiben import AUF_DEN_AUFTRAG_BERECHNET
 
 NULL = Decimal('0.00')
@@ -57,23 +63,17 @@ def _zustand(abrechenbar: bool, belegstatus: str | None) -> str:
     return ABGERECHNET
 
 
-#: Einheiten, in denen eine Menge eine Zeit ist; sie wird in Minuten
-#: umgerechnet.
-STUNDEN = {'std', 'h', 'stunde', 'stunden'}
-
-
 @dataclass(frozen=True)
 class Umfang:
     """Erfasster Umfang: Minuten und Mengen je Einheit.
 
-    Eine Zeile auf eine Auftragsposition ohne Leistungsart ist eine
-    Mengenzeile; "2 Std" stehen dann als Menge mit null Minuten. Mengen in
-    Stunden werden deshalb in Minuten umgerechnet, andere Einheiten (Stk,
-    km, pausch) bleiben getrennt. Über Einheiten hinweg wird nichts addiert.
+    Eine Menge in Stunden (Einheit ``HUR`` mit der Erfassungsart Menge) wird
+    in Minuten umgerechnet, andere Einheiten (Stk, km, psch) bleiben
+    getrennt. Über Einheiten hinweg wird nichts addiert.
     """
 
     minuten: int = 0
-    #: Paare (Einheit, Menge), sortiert; ein Tupel, damit der Umfang
+    #: Paare (UN/ECE-Code, Menge), sortiert; ein Tupel, damit der Umfang
     #: immutable ist und ``+`` ein neues Objekt liefert.
     mengen: tuple = ()
 
@@ -90,11 +90,11 @@ class Umfang:
         if art == Leistungsart.PAUSCHALE and not menge and not minuten:
             menge = Decimal(zeilen)
         menge = Decimal(menge or 0)
-        if einheit.strip().casefold() in STUNDEN:
+        if einheit == einheit_tabelle.STUNDE:
             return zeit + cls(minuten=int(menge * 60))
         if not menge:
             return zeit
-        return zeit + cls(mengen=((einheit.strip() or 'Stk', menge),))
+        return zeit + cls(mengen=((einheit or einheit_tabelle.VORGABE, menge),))
 
     def __add__(self, anderer: 'Umfang') -> 'Umfang':
         mengen = dict(self.mengen)
@@ -109,7 +109,8 @@ class Umfang:
     def __str__(self) -> str:
         """Etwa '4:30 Std · 13 Stk', leer ohne Umfang."""
         teile = [f'{dauer_zeigen(self.minuten)} Std'] if self.minuten else []
-        teile += [f'{formate.menge(m)} {e}' for e, m in self.mengen]
+        teile += [f'{formate.menge(m)} {einheit_tabelle.anzeige(e)}'
+                  for e, m in self.mengen]
         return ' · '.join(teile)
 
 
@@ -393,14 +394,12 @@ def _zeiten_eintragen(zeiten, zeile_zu, alle) -> None:
     Abfrage; die Personen werden gesammelt und am Ende sortiert."""
     from django.contrib.auth import get_user_model
 
-    # Art und Einheit gehören zur Gruppierung, weil sie bestimmen, ob eine
-    # Zeile Minuten oder eine Menge enthält. Eine Auftragsposition ohne Art
-    # zählt als Menge (wie LeistungsartFilter).
+    # Die Einheit gehört zur Gruppierung, weil ihre Erfassungsart bestimmt,
+    # ob eine Zeile Minuten oder eine Menge enthält.
     gruppen = list(
         zeiten.values('auftragsposition_id', 'benutzer_id', 'abrechenbar',
                       'abgerechnet_in__beleg__status',
-                      'auftragsposition__art', 'auftragsposition__einheit',
-                      'leistung__art', 'leistung__einheit')
+                      'auftragsposition__einheit', 'leistung__einheit')
         .annotate(minuten=Sum('dauer_minuten'), menge=Sum('menge'),
                   anzahl=Count('pk'))
     )
@@ -415,11 +414,10 @@ def _zeiten_eintragen(zeiten, zeile_zu, alle) -> None:
         if zeile is None:
             continue
         if gruppe['auftragsposition_id']:
-            art = gruppe['auftragsposition__art'] or Leistungsart.MENGE
             einheit = gruppe['auftragsposition__einheit'] or ''
         else:
-            art = gruppe['leistung__art'] or Leistungsart.MENGE
             einheit = gruppe['leistung__einheit'] or ''
+        art = einheit_tabelle.erfassungsart(einheit)
         umfang = Umfang.aus(art=art, minuten=gruppe['minuten'],
                             menge=gruppe['menge'], einheit=einheit,
                             zeilen=gruppe['anzahl'])
