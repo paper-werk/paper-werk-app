@@ -130,16 +130,16 @@ class TestDieSummeStimmt:
         beleg = Beleg.objects.create(typ=BelegTyp.RECHNUNG, projekt=projekt)
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Leistung',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('1000.00'), steuersatz='19.00')
         Belegposition.objects.create(
             beleg=beleg, position=20, bezeichnung='Abschlag abgesetzt',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('-400.00'), steuersatz='19.00',
             ist_abzug=True)
         Belegposition.objects.create(
             beleg=beleg, position=30, bezeichnung='davon nicht bezahlt',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('150.00'), steuersatz='19.00',
             ist_abzug=True, ist_abschlagsrest=True)
 
