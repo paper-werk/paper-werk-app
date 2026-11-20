@@ -192,7 +192,8 @@ class TestDieSicherheitsrichtlinie:
         richtlinie = client.get(LOGIN)['Content-Security-Policy']
 
         assert "default-src 'self'" in richtlinie
-        assert "frame-ancestors 'none'" in richtlinie
+        # 'self' für die Dialoge von Unfold, siehe settings/base.py.
+        assert "frame-ancestors 'self'" in richtlinie
         assert "object-src 'none'" in richtlinie
 
 

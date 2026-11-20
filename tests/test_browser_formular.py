@@ -51,6 +51,21 @@ class TestStammdatenImFormular:
 
         expect(page.locator('#id_kunde')).to_have_value('')
 
+    def test_kunde_aendern_oeffnet_die_maske_im_dialog(
+            self, live_server, page, chefin, kunde):
+        """Unfold öffnet das verknüpfte Objekt in einem ``<iframe>``; mit
+        ``frame-ancestors 'none'`` blieb der Dialog leer."""
+        _anmelden(page, live_server.url)
+        page.goto(f'{live_server.url}/admin/faktura/angebot/add/')
+        _kunde_waehlen(page, 'Wohnbau')
+
+        page.click('[x-ref=relatedWidgetWrapperkunde]')
+        page.click('#change_id_kunde')
+
+        dialog = page.frame_locator('iframe')
+        expect(dialog.locator('#id_name')).to_have_value(
+            re.compile('Wohnbau Isartal'))
+
     def test_beim_oeffnen_wird_nichts_uebernommen(self, live_server, page,
                                                  chefin, kunde):
         """Die Übernahme läuft nur nach einer Auswahl durch den Benutzer, nicht
