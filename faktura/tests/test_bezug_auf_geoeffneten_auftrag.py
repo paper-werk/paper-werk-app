@@ -31,7 +31,7 @@ def auftragsposition(projekt):
     auftrag = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG)
     position = services.position_hinzufuegen(
         beleg=auftrag, position='2.20', bezeichnung='Bodenprobe',
-        menge=Decimal('40'), einheit='Stk', einzelpreis=Decimal('145.00'),
+        menge=Decimal('40'), einheit='C62', einzelpreis=Decimal('145.00'),
         steuersatz='19.00')
     services.beleg_festschreiben(beleg_id=auftrag.pk)
     return Belegposition.objects.get(pk=position.pk)
@@ -42,7 +42,7 @@ def rechnung(projekt, auftragsposition):
     beleg = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.RECHNUNG)
     services.position_hinzufuegen(
         beleg=beleg, position='2.20', bezeichnung='Bodenprobe',
-        menge=Decimal('3'), einheit='Stk', einzelpreis=Decimal('145.00'),
+        menge=Decimal('3'), einheit='C62', einzelpreis=Decimal('145.00'),
         steuersatz='19.00', auftragsposition=auftragsposition)
     return beleg
 
@@ -60,7 +60,7 @@ def test_neuer_bezug_auf_einen_entwurf_wird_abgewiesen(
     services.beleg_wiedereroeffnen(beleg_id=auftragsposition.beleg_id)
     neu = Belegposition(
         beleg=rechnung, position='2.30', bezeichnung='Bodenprobe',
-        menge=Decimal('1'), einheit='Stk', einzelpreis=Decimal('145.00'),
+        menge=Decimal('1'), einheit='C62', einzelpreis=Decimal('145.00'),
         steuersatz='19.00', auftragsposition=auftragsposition)
 
     with pytest.raises(ValidationError, match='noch ein Entwurf'):

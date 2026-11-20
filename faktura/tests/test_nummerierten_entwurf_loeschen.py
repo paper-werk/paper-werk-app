@@ -21,7 +21,7 @@ def geoeffneter_auftrag(kunde):
     auftrag = services.beleg_anlegen(kunde=kunde, typ=BelegTyp.AUFTRAG)
     services.position_hinzufuegen(
         beleg=auftrag, bezeichnung='Probe', menge=Decimal('1'),
-        einheit='Stk', einzelpreis=Decimal('10.00'), steuersatz='19.00')
+        einheit='C62', einzelpreis=Decimal('10.00'), steuersatz='19.00')
     services.beleg_festschreiben(beleg_id=auftrag.pk)
     services.beleg_wiedereroeffnen(beleg_id=auftrag.pk)
     auftrag.refresh_from_db()

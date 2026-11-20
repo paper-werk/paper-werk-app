@@ -50,7 +50,7 @@ def _auftrag(projekt, betrag, *, tag=date(2026, 6, 19), haupt=None,
         nachtrag_zu=haupt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Leistung',
-        menge=Decimal('1'), einheit='pausch', einzelpreis=Decimal(betrag))
+        menge=Decimal('1'), einheit='LS', einzelpreis=Decimal(betrag))
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = nummer or f'AB-{beleg.pk}'
     beleg.belegdatum = tag
@@ -168,7 +168,7 @@ class TestWasDerNachtragMitDerSummeMacht:
                                         projekt=projekt)
         Belegposition.objects.create(
             beleg=rechnung, position=10, bezeichnung='Leistung',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('16000.00'))
         rechnung.status = BelegStatus.FESTGESCHRIEBEN
         rechnung.nummer = 'RE-1'

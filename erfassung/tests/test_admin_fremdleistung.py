@@ -425,7 +425,7 @@ class TestEineAbgerechnetePositionBlockiertDieRechnungNicht:
             'positionen-1-projekt': str(position.projekt_id),
             'positionen-1-auftragsposition': '',
             'positionen-1-bezeichnung': 'Paket 8802',
-            'positionen-1-einheit': 'Stk',
+            'positionen-1-einheit': 'C62',
             'positionen-1-menge': '1',
             'positionen-1-einkaufspreis': '168.00',
             'positionen-1-einkauf_netto': '',
@@ -479,7 +479,7 @@ class TestNurDerEinkauf:
             nummer='AU-2026-0031', projekt=projekt)
         return Belegposition.objects.bulk_create([Belegposition(
             beleg=auftrag, position=10, bezeichnung='Bodenprobe LAGA-Paket',
-            menge=Decimal('40'), einheit='Stk',
+            menge=Decimal('40'), einheit='C62',
             einzelpreis=Decimal('145.00'))])[0]
 
     def test_die_maske_fragt_nur_den_einkauf(self, als_leitung, bestand,
@@ -524,7 +524,7 @@ class TestNurDerEinkauf:
                 'positionen-0-projekt': str(projekt.pk),
                 'positionen-0-auftragsposition': str(auftragszeile.pk),
                 'positionen-0-bezeichnung': 'Paket 4711',
-                'positionen-0-einheit': 'Stk',
+                'positionen-0-einheit': 'C62',
                 'positionen-0-menge': '5',
                 'positionen-0-einkaufspreis': '100.00',
                 # Rabatt auf der Zeile: 500 laut Preis, 450 berechnet.

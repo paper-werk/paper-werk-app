@@ -102,9 +102,9 @@ def _formular(projekt, leistung, **abweichend):
         'menge': '',
         'beschreibung': 'Arbeit',
     }
-    if leistung.art == Leistungsart.ZEIT:
+    if leistung.erfassungsart == Leistungsart.ZEIT:
         daten['von'], daten['bis'] = '08:00', '10:00'
-    elif leistung.art == Leistungsart.MENGE:
+    elif leistung.erfassungsart == Leistungsart.MENGE:
         daten['menge'] = '12'
     daten.update(abweichend)
     return daten
@@ -453,7 +453,7 @@ class TestDieMaskeIstAufgeraeumt:
         """
         from faktura.models import Katalogposition
         neu = Katalogposition.objects.create(
-            bezeichnung='Gerüstbau', einheit='Std', einzelpreis=Decimal('55.00'),
+            bezeichnung='Gerüstbau', einheit='HUR', einzelpreis=Decimal('55.00'),
         )
 
         als_mitarbeiter.post(reverse(ANLEGEN), _formular(projekt, neu))
@@ -988,8 +988,8 @@ class TestEinOffenerAuftragIstNichtBebuchbar:
         Belegposition.objects.bulk_create([
             Belegposition(
                 beleg=auftrag, position=10, bezeichnung='Rohbau begleiten',
-                menge=Decimal('50'), einheit='Std',
-                einzelpreis=Decimal('95.00'), art=zeitleistung.art)])
+                menge=Decimal('50'), einheit='HUR',
+                einzelpreis=Decimal('95.00'))])
         return auftrag
 
     def _auswahl(self, client):

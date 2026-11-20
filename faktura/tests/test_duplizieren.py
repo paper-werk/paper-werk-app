@@ -39,7 +39,7 @@ class TestAngebotDuplizieren:
         beleg.save()
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Montage', langtext='inkl. Anfahrt',
-            menge=Decimal('10'), einheit='Std',
+            menge=Decimal('10'), einheit='HUR',
             einzelpreis=Decimal('89.50'), steuersatz='19.00',
         )
         services.position_hinzufuegen(
@@ -51,7 +51,7 @@ class TestAngebotDuplizieren:
     def _positionen(self, beleg):
         return list(beleg.positionen.values_list(
             'position', 'bezeichnung', 'langtext', 'menge', 'einheit',
-            'einzelpreis', 'steuersatz', 'art', 'ist_abzug'))
+            'einzelpreis', 'steuersatz', 'ist_abzug'))
 
     def test_aus_dem_entwurf(self, angebot):
         kopie = services.beleg_duplizieren(beleg_id=angebot.pk).beleg
@@ -146,7 +146,7 @@ class TestRechnungDuplizieren:
                                        betreff='Halle')
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Montage', menge=Decimal('10'),
-            einheit='Std', einzelpreis=Decimal('89.50'),
+            einheit='HUR', einzelpreis=Decimal('89.50'),
             steuersatz='19.00')
         return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -243,11 +243,11 @@ class TestRechnungDuplizieren:
         from django.contrib.auth import get_user_model
 
         from erfassung import services as erfassung_services
-        from faktura.models import Katalogposition, Leistungsart
+        from faktura.models import Katalogposition
         rechnung = self._rechnung(auftrag)
         leistung = Katalogposition.objects.create(
-            bezeichnung='Montage', einheit='Std',
-            einzelpreis=Decimal('89.50'), art=Leistungsart.ZEIT)
+            bezeichnung='Montage', einheit='HUR',
+            einzelpreis=Decimal('89.50'))
         person = get_user_model().objects.create_user(username='monteur')
         zeile = erfassung_services.zeile_erfassen(
             projekt=projekt, leistung=leistung, benutzer=person,

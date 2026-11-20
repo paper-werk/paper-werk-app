@@ -19,6 +19,22 @@ Rechenregeln selbst stehen im [Rechenregister](rechenregister.md) (`R-xxx`).
   Preis, Steuersatz, Texte. Fremdschlüssel dienen nur der Navigation, damit
   ein festgeschriebener Beleg sich nicht mit den Stammdaten ändert
   (`faktura/models/beleg.py`).
+- **Einheiten sind UN/ECE-Codes** (Recommendation 20 und 21), gespeichert
+  als Text an Katalog-, Beleg- und Fremdleistungsposition wie der
+  Steuersatz (`faktura/models/einheit.py`). Die Tabelle `Einheit` enthält
+  die vollständige Codeliste der KoSIT und liefert Anzeigetext,
+  Erfassungsart und den Schalter „Zur Auswahl“. Der Code geht unverändert
+  in BT-130 der E-Rechnung und kommt so aus eingelesenen E-Rechnungen; ein
+  Vergleich von Einheiten ist ein Vergleich von Codes. Die Erfassungsart
+  hängt an der Einheit, damit sie sichtbar ist und für jede Position mit
+  derselben Einheit gleich gilt. Verworfen: Einheit als Freitext mit
+  Erkennung über Schreibweisen, weil jede Auswertung eine eigene Tabelle
+  von Schreibweisen brauchte und Unbekanntes still als Stück in die
+  E-Rechnung ging; ein Feld `art` an der Position, weil es nur bei Auswahl
+  aus dem Katalog gesetzt und in keiner Maske angezeigt wurde; ein
+  Fremdschlüssel auf `Einheit`, weil Stammdaten in den Beleg kopiert
+  werden. Schreibweisen werden nur noch beim Import aus Tabellen erkannt
+  (`einheit.code_zum_text`).
 - **Die Anschrift eines neuen Belegs folgt der Belegart**: Angebot und Auftrag
   die Postanschrift, Lieferschein die Lieferanschrift, sonst die
   Rechnungsanschrift (`services.VERWENDUNG_JE_BELEGART`). Umwandeln kopiert

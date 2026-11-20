@@ -45,9 +45,9 @@ def auftrag(projekt):
     beleg = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG,
                                    betreff='Rückbau')
     for nummer, text, menge, einheit, preis in (
-            ('01.0010', 'Asbest Einzelprobe', '20', 'Stk', '65.00'),
-            ('01.0020', 'Ausführungsplanung', '1', 'pausch', '8500.00'),
-            ('01.0030', 'Nebenkosten 3%', '1', 'pausch', '340.50')):
+            ('01.0010', 'Asbest Einzelprobe', '20', 'C62', '65.00'),
+            ('01.0020', 'Ausführungsplanung', '1', 'LS', '8500.00'),
+            ('01.0030', 'Nebenkosten 3%', '1', 'LS', '340.50')):
         services.position_hinzufuegen(
             beleg=beleg, position=nummer, bezeichnung=text,
             menge=Decimal(menge), einheit=einheit,
@@ -98,17 +98,17 @@ def referenzfall(projekt, auftrag):
                           for n in ('01.0010', '01.0020', '01.0030'))
     ab1 = _abschlag(
         projekt,
-        (probe, 'Asbest Einzelprobe', '6', 'Stk', '65.00', '19.00'),
-        (planung, 'Ausführungsplanung', '1', 'pausch', '3000.00',
+        (probe, 'Asbest Einzelprobe', '6', 'C62', '65.00', '19.00'),
+        (planung, 'Ausführungsplanung', '1', 'LS', '3000.00',
          '19.00'),
-        (None, 'Nebenkosten 3%', '1', 'pausch', '214.50', '19.00'),
+        (None, 'Nebenkosten 3%', '1', 'LS', '214.50', '19.00'),
         tag=date(2025, 2, 3))
     ab2 = _abschlag(
         projekt,
-        (probe, 'Asbest Einzelprobe', '4', 'Stk', '65.00', '19.00'),
-        (planung, 'Ausführungsplanung', '1', 'pausch', '5500.00',
+        (probe, 'Asbest Einzelprobe', '4', 'C62', '65.00', '19.00'),
+        (planung, 'Ausführungsplanung', '1', 'LS', '5500.00',
          '19.00'),
-        (None, 'Nebenkosten 3%', '1', 'pausch', '126.00', '19.00'),
+        (None, 'Nebenkosten 3%', '1', 'LS', '126.00', '19.00'),
         tag=date(2025, 6, 2))
     return ab1, ab2, (probe, planung, nk)
 
@@ -157,7 +157,7 @@ class TestLeistungAusDenAbschlaegen:
 
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Nebenkosten 3%', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('340.50'),
+            einheit='LS', einzelpreis=Decimal('340.50'),
             steuersatz='19.00',
             auftragsposition=_ap(auftrag, '01.0030'))
         assert services.belegsummen(schluss).netto == Decimal('0.00')
@@ -183,16 +183,17 @@ class TestLeistungAusDenAbschlaegen:
 
     def test_pauschalabschlag_ohne_bezug_bringt_keine_leistung(
             self, projekt, auftrag):
-        _abschlag(projekt, (None, 'Leistungsstand 1', '1', 'pausch',
+        _abschlag(projekt, (None, 'Leistungsstand 1', '1', 'LS',
                             '5000.00', '19.00'),
                   tag=date(2025, 2, 3))
         schluss = _schluss(auftrag)
 
         assert _leistungen(schluss) == []
 
-    def test_katalogleistung_ohne_auftrag_wird_zusammengefasst(
+    def test_mengenleistung_ohne_auftrag_wird_zusammengefasst(
             self, projekt, auftrag):
-        """Aus dem Katalog (``art`` gesetzt), ohne Auftragsposition."""
+        """In einer Einheit mit der Erfassungsart Menge, ohne
+        Auftragsposition."""
         for tag, menge in ((date(2025, 2, 3), '2'), (date(2025, 6, 2), '3')):
             beleg = services.beleg_anlegen(
                 projekt=projekt, typ=BelegTyp.RECHNUNG,
@@ -200,8 +201,8 @@ class TestLeistungAusDenAbschlaegen:
                 leistungsdatum=tag, leistungsdatum_bis=tag)
             services.position_hinzufuegen(
                 beleg=beleg, bezeichnung='Ortstermin', menge=Decimal(menge),
-                einheit='Stk', einzelpreis=Decimal('150.00'),
-                steuersatz='19.00', art='menge')
+                einheit='C62', einzelpreis=Decimal('150.00'),
+                steuersatz='19.00')
             services.beleg_festschreiben(beleg_id=beleg.pk)
         schluss = _schluss(auftrag)
 
@@ -231,7 +232,7 @@ class TestLeistungAusDenAbschlaegen:
         """Die Teilschlussrechnung übernimmt ihre Positionen aus dem Auftrag,
         nicht zusätzlich aus den Abschlägen."""
         probe = _ap(auftrag, '01.0010')
-        _abschlag(projekt, (probe, 'Asbest Einzelprobe', '6', 'Stk', '65.00',
+        _abschlag(projekt, (probe, 'Asbest Einzelprobe', '6', 'C62', '65.00',
                             '19.00'), tag=date(2025, 2, 3))
         teil = Abnahme.objects.create(
             auftrag=auftrag, art=Abnahmeart.TEIL, abgenommen_am=ABNAHME)
@@ -277,8 +278,8 @@ class TestJeAbschlagEineZeile:
         und Satz."""
         ab = _abschlag(
             projekt,
-            (None, 'Planung', '1', 'pausch', '1000.00', '19.00'),
-            (None, 'Druck', '1', 'pausch', '100.00', '7.00'),
+            (None, 'Planung', '1', 'LS', '1000.00', '19.00'),
+            (None, 'Druck', '1', 'LS', '100.00', '7.00'),
             tag=date(2025, 2, 3))
         schluss = _schluss(auftrag)
 
@@ -295,9 +296,9 @@ class TestJeAbschlagEineZeile:
         probe = _ap(auftrag, '01.0010')
         ab = _abschlag(
             projekt,
-            (probe, 'Asbest Einzelprobe', '10', 'Stk', '65.00',
+            (probe, 'Asbest Einzelprobe', '10', 'C62', '65.00',
              '19.00'),
-            (None, 'Nebenkosten 3%', '1', 'pausch', '350.00',
+            (None, 'Nebenkosten 3%', '1', 'LS', '350.00',
              '19.00'),
             tag=date(2025, 2, 3), bezahlt=False)
         # 1.000 netto, 1.190 brutto; bezahlt 595, die Hälfte.
@@ -329,7 +330,7 @@ class TestJeAbschlagEineZeile:
         schluss = _schluss(auftrag)
         services.position_hinzufuegen(
             beleg=schluss, bezeichnung='Nebenkosten 3%', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('340.50'),
+            einheit='LS', einzelpreis=Decimal('340.50'),
             steuersatz='19.00',
             auftragsposition=_ap(auftrag, '01.0030'))
         schluss = services.beleg_festschreiben(beleg_id=schluss.pk)
@@ -417,7 +418,7 @@ class TestMaskeWieBlatt:
         daten.update({
             f'{leer.prefix}-bezeichnung': 'Nebenkosten 3%',
             f'{leer.prefix}-menge': '1',
-            f'{leer.prefix}-einheit': 'pausch',
+            f'{leer.prefix}-einheit': 'LS',
             f'{leer.prefix}-einzelpreis': '340.50',
             f'{leer.prefix}-steuersatz': '19.00',
         })

@@ -24,7 +24,6 @@ from faktura.models import (
     BelegTyp,
     Firma,
     Kontakt,
-    Leistungsart,
     Rechnungsart,
     Zeilenart,
 )
@@ -61,15 +60,15 @@ def lv(projekt):
     angelegt = Belegposition.objects.bulk_create([
         zeile('2', 'Erkundung', Zeilenart.TITEL),
         zeile('2.05', 'Vorbemerkung zur Erkundung', Zeilenart.TEXT),
-        zeile('2.10', 'Probenahme', menge=Decimal('20'), einheit='Std',
-              einzelpreis=Decimal('95.00'), art=Leistungsart.ZEIT),
-        zeile('2.20', 'Bodenprobe', menge=Decimal('40'), einheit='Stk',
-              einzelpreis=Decimal('145.00'), art=Leistungsart.MENGE),
+        zeile('2.10', 'Probenahme', menge=Decimal('20'), einheit='HUR',
+              einzelpreis=Decimal('95.00')),
+        zeile('2.20', 'Bodenprobe', menge=Decimal('40'), einheit='C62',
+              einzelpreis=Decimal('145.00')),
         zeile('03', 'Gutachten', Zeilenart.TITEL),
         zeile('03.01', 'Bericht', Zeilenart.TITEL),
         zeile('03.01.0010', 'Bericht erstellen', menge=Decimal('1'),
-              einheit='Std', einzelpreis=Decimal('95.00'),
-              art=Leistungsart.ZEIT),
+              einheit='HUR', einzelpreis=Decimal('95.00'),
+              ),
     ])
     return {p.position: p for p in angelegt}
 
@@ -217,7 +216,7 @@ class TestKumulieren:
         proben = _proben(projekt, kollege, lv['2.20'], 6, 3)
         analyse = Fremdleistung.objects.create(
             rechnung=labor, projekt=projekt, auftragsposition=lv['2.20'],
-            bezeichnung='Analyse', einheit='Stk', menge=Decimal('2'),
+            bezeichnung='Analyse', einheit='C62', menge=Decimal('2'),
             einkaufspreis=Decimal('56.70'))
 
         rechnung = _uebernehmen(
@@ -247,7 +246,7 @@ class TestKumulieren:
         for paket in ('Paket A', 'Paket B'):
             Fremdleistung.objects.create(
                 rechnung=labor, projekt=projekt, auftragsposition=lv['2.10'],
-                bezeichnung=paket, einheit='Stk', menge=Decimal('1'),
+                bezeichnung=paket, einheit='C62', menge=Decimal('1'),
                 einkaufspreis=Decimal('50.00'))
 
         rechnung = _uebernehmen([], fremd=Fremdleistung.objects.all())

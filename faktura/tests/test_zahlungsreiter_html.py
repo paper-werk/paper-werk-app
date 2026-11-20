@@ -32,7 +32,7 @@ def rechnung(db):
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Gutachten', menge=Decimal('1'),
         einzelpreis=Decimal('1000.00'), steuersatz='19.00',
-        einheit='psch')
+        einheit='LS')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
 

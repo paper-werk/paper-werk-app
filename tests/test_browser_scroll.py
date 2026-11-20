@@ -22,7 +22,7 @@ def maske(live_server, page, chefin, kunde):
     for nummer in range(1, 31):
         services.position_hinzufuegen(
             beleg=beleg, position=str(nummer), bezeichnung=f'Zeile {nummer}',
-            menge=Decimal('1'), einheit='Std', einzelpreis=Decimal('10.00'),
+            menge=Decimal('1'), einheit='HUR', einzelpreis=Decimal('10.00'),
             steuersatz='19.00')
     page.set_viewport_size({'width': 1280, 'height': 700})
     _anmelden(page, live_server.url)

@@ -34,11 +34,14 @@ class BelegpositionSerializer(serializers.ModelSerializer):
 
     steuersatz = serializers.SerializerMethodField()
     summe = serializers.SerializerMethodField()
+    #: Anzeigetext wie im PDF; der UN/ECE-Code in ``einheit_code``.
+    einheit = serializers.CharField(source='einheit_anzeige', read_only=True)
+    einheit_code = serializers.CharField(source='einheit', read_only=True)
 
     class Meta:
         model = Belegposition
         fields = [
-            'position', 'bezeichnung', 'menge', 'einheit',
+            'position', 'bezeichnung', 'menge', 'einheit', 'einheit_code',
             'einzelpreis', 'steuersatz', 'summe',
         ]
 

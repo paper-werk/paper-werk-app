@@ -35,6 +35,17 @@ def drosselung_zuruecksetzen():
 
 
 @pytest.fixture(autouse=True)
+def einheiten_frisch():
+    """Leert den Zwischenspeicher der Einheiten, weil das Zurückrollen eines
+    Tests kein Signal sendet (``faktura/models/einheit.py``)."""
+    from faktura.models import einheit
+
+    einheit.zwischenspeicher_leeren()
+    yield
+    einheit.zwischenspeicher_leeren()
+
+
+@pytest.fixture(autouse=True)
 def kein_pdf_beim_festschreiben(request, monkeypatch):
     """Festschreiben ohne PDF und ohne Archivierung, außer bei ``mit_pdf``.
 

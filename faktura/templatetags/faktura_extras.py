@@ -12,6 +12,7 @@ from django import template
 from django.utils.safestring import mark_safe
 
 from .. import formate, services
+from ..models import einheit as einheit_tabelle
 
 register = template.Library()
 
@@ -62,6 +63,8 @@ _LESEFORMAT = {
     'einzelpreis': formate.geld,
     'steuersatz': formate.prozent,
     'zuschlag_prozent': formate.menge,
+    # Gespeichert ist der UN/ECE-Code, angezeigt wird der Text wie im PDF.
+    'einheit': einheit_tabelle.anzeige,
 }
 
 

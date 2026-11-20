@@ -136,7 +136,7 @@ Unter dem Kopf stehen die Positionen. Die Spalten:
 |---|---|
 | Pos. | Positionsnummer, frei wählbar |
 | Bezeichnung | Kurztext der Position, Pflicht |
-| Menge, Einheit | z. B. 6 Std, 1 pausch |
+| Menge, Einheit | z. B. 6 Std, 1 psch; Einheiten aus den Stammdaten |
 | Preis (Netto) | Einzelpreis ohne Umsatzsteuer, Pflicht |
 | USt. | Steuersatz aus der Tabelle der Steuersätze |
 | Betrag | Menge mal Preis, wird beim Tippen mitgerechnet |

@@ -40,7 +40,7 @@ def rechnung(kunde):
                                    leistungsdatum=date(2026, 10, 1))
     services.position_hinzufuegen(
         beleg=beleg, position='1', bezeichnung='Pauschale', menge=DRITTEL,
-        einheit='psch', einzelpreis=Decimal('1755.00'), steuersatz='19.00')
+        einheit='LS', einzelpreis=Decimal('1755.00'), steuersatz='19.00')
     return beleg
 
 
@@ -51,7 +51,7 @@ def anderthalb(kunde):
                                    leistungsdatum=date(2026, 10, 1))
     services.position_hinzufuegen(
         beleg=beleg, position='1', bezeichnung='Stunden', menge=Decimal('1.5'),
-        einheit='Std', einzelpreis=Decimal('100.00'), steuersatz='19.00')
+        einheit='HUR', einzelpreis=Decimal('100.00'), steuersatz='19.00')
     return beleg
 
 

@@ -526,7 +526,7 @@ class TestErstSichernDannDieAktion:
                 'positionen-0-bezeichnung': position.bezeichnung,
                 'positionen-0-langtext': '',
                 'positionen-0-menge': '10',
-                'positionen-0-einheit': position.einheit or 'Stk',
+                'positionen-0-einheit': position.einheit or 'C62',
                 'positionen-0-einzelpreis': '100.00',
                 'positionen-0-steuersatz': position.steuersatz,
                 '_danach': 'pdf-ansehen',

@@ -10,7 +10,6 @@ from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.db.models import F, Q
-from django.db.models.functions import Lower, Trim
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -36,7 +35,7 @@ from core.exceptions import FachlicherFehler
 from core.optimistic_locking import VersionAdminMixin
 from faktura.admin.menge import MengeOhneNullen
 from faktura.formate import geld
-from faktura.models import Belegposition, BelegStatus, BelegTyp, Projekt
+from faktura.models import Belegposition, BelegStatus, BelegTyp, Einheit, Projekt
 
 from ..formate import personenname
 from ..models import (
@@ -108,7 +107,20 @@ class AuftragspositionFeld:
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         """Kein "anlegen" oder "ändern" neben der Auftragsposition, weil
-        Auftragspositionen im Auftrag gepflegt werden."""
+        Auftragspositionen im Auftrag gepflegt werden.
+
+        Die Einheit als Auswahl aus der Tabelle ``Einheit``: die Einheiten
+        zur Auswahl und alle, die Fremdleistungen schon tragen, weil eine
+        E-Rechnung jeden Code der Codeliste liefern kann."""
+        if db_field.name == 'einheit':
+            verwendet = Fremdleistung.objects.values('einheit')
+            einheiten = Einheit.objects.filter(
+                Q(zur_auswahl=True) | Q(code__in=verwendet))
+            return forms.ChoiceField(
+                label=db_field.verbose_name, initial=db_field.default,
+                choices=[('', '---------')]
+                + [(e.code, str(e)) for e in einheiten],
+                widget=UnfoldAdminSelectWidget)
         feld = super().formfield_for_dbfield(db_field, request, **kwargs)
         if db_field.name == 'auftragsposition' and feld is not None:
             for schalter in ('can_add_related', 'can_change_related',
@@ -464,8 +476,7 @@ class ZuordnungFilter(admin.SimpleListFilter):
     """Zuordnung zur Auftragsposition, mit den Gründen, aus denen eine
     Abschlags- oder Schlussrechnung eine Fremdleistung übergeht
     (``services.grund_ohne_auftragspreis``). Einheiten werden wie in
-    ``_einheit_passt`` ohne Groß- und Kleinschreibung und Leerraum
-    verglichen."""
+    ``_einheit_passt`` über den UN/ECE-Code verglichen."""
 
     title = 'Zuordnung'
     parameter_name = 'zuordnung'
@@ -483,10 +494,8 @@ class ZuordnungFilter(admin.SimpleListFilter):
             return queryset.filter(auftragsposition__isnull=True)
         if wert not in (self.EINHEIT, self.ZUGEORDNET):
             return queryset
-        mit_position = queryset.filter(auftragsposition__isnull=False).annotate(
-            _einheit=Lower(Trim('einheit')),
-            _auftragseinheit=Lower(Trim('auftragsposition__einheit')))
-        gleich = Q(_einheit=F('_auftragseinheit'))
+        mit_position = queryset.filter(auftragsposition__isnull=False)
+        gleich = Q(einheit=F('auftragsposition__einheit'))
         if wert == self.EINHEIT:
             return mit_position.exclude(gleich)
         return mit_position.filter(gleich)

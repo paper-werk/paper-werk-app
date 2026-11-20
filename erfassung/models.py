@@ -26,6 +26,7 @@ from core.felder import MengenFeld
 from core.optimistic_locking import ErhoehtElternversion, MitVersion
 from faktura.formate import geld
 from faktura.models import Leistungsart
+from faktura.models import einheit as einheit_tabelle
 
 from .formate import MINUTEN_JE_TAG, dauer_zeigen
 
@@ -335,7 +336,7 @@ class Erfassungszeile(models.Model):
         if art == Leistungsart.MENGE and not self.menge:
             raise ValidationError({
                 'menge': f'Bei "{self.leistungsbezeichnung}" gehört eine '
-                         f'Menge dazu ({self.einheit}), sonst steht '
+                         f'Menge dazu ({self.einheit_anzeige}), sonst steht '
                          f'die Zeile ohne Umfang in Nachweis und Abrechnung.',
             })
 
@@ -353,10 +354,10 @@ class Erfassungszeile(models.Model):
 
     @property
     def leistungsart(self) -> str:
-        """Zeit, Menge oder Pauschale. Ohne Art (von Hand eingegebene
-        Auftragsposition) gilt MENGE, damit keine Ausnahme entsteht."""
+        """Zeit, Menge oder Pauschale: die Erfassungsart der Einheit der
+        Grundlage, ohne Grundlage Menge."""
         grundlage = self.grundlage
-        return (grundlage.art if grundlage else "") or Leistungsart.MENGE
+        return grundlage.erfassungsart if grundlage else Leistungsart.MENGE
 
     @property
     def leistungsbezeichnung(self) -> str:
@@ -365,7 +366,12 @@ class Erfassungszeile(models.Model):
 
     @property
     def einheit(self) -> str:
+        """UN/ECE-Code der Grundlage."""
         return self.grundlage.einheit if self.grundlage else ""
+
+    @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
 
     @property
     def einzelpreis(self):
@@ -392,7 +398,7 @@ class Erfassungszeile(models.Model):
         Leistungsnachweis sie verwenden."""
         if self.ist_zeitleistung or self.menge is None:
             return ''
-        return f'{self.menge.normalize():f} {self.einheit}'.strip()
+        return f'{self.menge.normalize():f} {self.einheit_anzeige}'.strip()
 
     @property
     def zustand(self) -> str:
@@ -654,7 +660,12 @@ class Fremdleistung(ErhoehtElternversion):
         db_comment='Gleich Belegposition.fremdschluessel; Grundlage der '
                    'automatischen Zuordnung (erfassung.services.zuordnung).',
     )
-    einheit = models.CharField('Einheit', max_length=20, blank=True, default='Stk')
+    einheit = models.CharField(
+        'Einheit', max_length=3, default=einheit_tabelle.VORGABE,
+        validators=[einheit_tabelle.pruefen],
+        db_comment='UN/ECE-Code wie Belegposition.einheit; aus der '
+                   'E-Rechnung unverändert (BT-130).',
+    )
     menge = MengenFeld(
         'Menge', default=Decimal('1'),
         db_comment='Dieselben Nachkommastellen wie Belegposition.menge; '
@@ -715,6 +726,10 @@ class Fremdleistung(ErhoehtElternversion):
     def __str__(self) -> str:
         projekt = self.projekt.nummer if self.projekt_id else 'ohne Projekt'
         return f'{self.bezeichnung} ({projekt})'
+
+    @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
 
     def save(self, *args, **kwargs):
         """Berechnet den Betrag aus Menge und Preis, wenn keiner eingetragen

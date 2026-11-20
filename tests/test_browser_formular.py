@@ -95,12 +95,12 @@ class TestPositionenImFormular:
     @pytest.fixture
     def katalog(self, db):
         Katalogposition.objects.create(
-            nummer='E-100', bezeichnung='Gesellenstunde', einheit='Std',
+            nummer='E-100', bezeichnung='Gesellenstunde', einheit='HUR',
             einzelpreis=Decimal('62.00'))
         return Katalogposition.objects.create(
             nummer='E-210', bezeichnung='Unterverteilung setzen',
             langtext='Aufputz, bis 24 Module, inkl. Hutschiene',
-            einheit='Stk', einzelpreis=Decimal('340.00'),
+            einheit='C62', einzelpreis=Decimal('340.00'),
             fremdschluessel='UV-24')
 
     def test_die_suche_findet_ueber_den_langtext_und_fuellt_die_zeile(
@@ -132,7 +132,7 @@ class TestPositionenImFormular:
 
         expect(page.locator('#id_positionen-3-position')).to_have_value('40')
         _katalog_waehlen(page, 3, 'Gesellen', 'Gesellenstunde')
-        expect(page.locator('#id_positionen-3-einheit')).to_have_value('Std')
+        expect(page.locator('#id_positionen-3-einheit')).to_have_value('HUR')
 
     def test_angefuegt_hinter_lv_nummern_geht_es_in_ihrer_form_weiter(
             self, live_server, page, chefin, kunde):

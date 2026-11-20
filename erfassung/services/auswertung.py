@@ -30,6 +30,7 @@ from faktura.models import (
     Leistungsart,
     Rechnungsart,
 )
+from faktura.models import einheit as einheit_tabelle
 from faktura.services.summen import POSITIONSNETTO
 
 from ..formate import dauer_zeigen, personenname
@@ -145,6 +146,7 @@ class Aufwandszeile:
     name: str
     minuten: int
     menge: Decimal | None
+    #: UN/ECE-Code.
     einheit: str
     zeilen: int
 
@@ -153,10 +155,14 @@ class Aufwandszeile:
         return dauer_zeigen(self.minuten) if self.minuten else ''
 
     @property
+    def einheit_anzeige(self) -> str:
+        return einheit_tabelle.anzeige(self.einheit)
+
+    @property
     def umfang(self) -> str:
         if self.menge is None or not self.menge:
             return ''
-        return f'{self.menge.normalize():f} {self.einheit}'.strip()
+        return f'{self.menge.normalize():f} {self.einheit_anzeige}'.strip()
 
 
 @dataclass(frozen=True)
@@ -262,7 +268,7 @@ def aufwand_je_leistung(projekt) -> list[Aufwandszeile]:
             name=e['name'],
             minuten=e['minuten'],
             menge=None if e['ist_zeit'] else e['menge'],
-            einheit='Std' if e['ist_zeit'] else e['einheit'],
+            einheit=einheit_tabelle.STUNDE if e['ist_zeit'] else e['einheit'],
             zeilen=e['zeilen'],
         )
         for e in zeilen.values()

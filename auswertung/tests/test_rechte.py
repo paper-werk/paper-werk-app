@@ -29,14 +29,14 @@ def bestand(db):
     auftrag = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG)
     position = services.position_hinzufuegen(
         beleg=auftrag, bezeichnung='Planung', menge=Decimal('10'),
-        einheit='Std', einzelpreis=Decimal('90.00'),
-        steuersatz='19.00', art='zeit')
+        einheit='HUR', einzelpreis=Decimal('90.00'),
+        steuersatz='19.00')
     auftrag = services.beleg_festschreiben(beleg_id=auftrag.pk)
     rechnung = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.RECHNUNG,
                                       leistungsdatum=date(2026, 9, 1))
     services.position_hinzufuegen(
         beleg=rechnung, bezeichnung='Planung', menge=Decimal('4'),
-        einheit='Std', einzelpreis=Decimal('90.00'),
+        einheit='HUR', einzelpreis=Decimal('90.00'),
         steuersatz='19.00', auftragsposition=position)
     services.beleg_festschreiben(beleg_id=rechnung.pk)
     erfassung_services.zeile_erfassen(

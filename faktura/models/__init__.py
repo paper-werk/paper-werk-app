@@ -3,6 +3,7 @@
 ``stammdaten``  Firma, Kunde samt Adressen, Personen, Kontaktwegen; Projekt
 ``beleg``       Beleg, Positionen, frühere Fassungen, Proxy je Belegart
 ``katalog``     Leistungskatalog und Textbausteine
+``einheit``     Mengeneinheiten nach UN/ECE
 ``zahlung``     Zahlungseingänge und ihre Zuordnung
 ``steuersatz``  die wählbaren Umsatzsteuersätze
 
@@ -35,6 +36,7 @@ from .beleg import (
     Zeilenart,
     proxy_fuer,
 )
+from .einheit import Einheit
 from .katalog import (
     MAIL_PLATZHALTER,
     Katalogposition,
@@ -70,7 +72,7 @@ __all__ = [
     'Abschlagsrechnung', 'Abzugsgrundlage', 'Adresse', 'Adressverwendung',
     'Angebot', 'Anrede', 'Ansprechpartner', 'Auftrag', 'Beleg',
     'BelegNichtAenderbar', 'BelegStatus', 'BelegTyp', 'Belegfassung',
-    'Belegposition', 'Firma', 'Katalogposition', 'Kontaktart', 'Kontaktweg',
+    'Belegposition', 'Einheit', 'Firma', 'Katalogposition', 'Kontaktart', 'Kontaktweg',
     'Kontakt', 'Leistungsart', 'Zeilenart', 'Lieferschein', 'Mahnung', 'Projekt', 'Rechnung',
     'Rechnungsart', 'Rechnungskorrektur', 'Schlussrechnung', 'Steuerfall',
     'Steuersatz', 'Stornorechnung', 'Teilschlussrechnung', 'Textbaustein',

@@ -36,7 +36,7 @@ def auftrag(projekt):
     for nummer, text in (('1.1', 'Probenahme'), ('2.1', 'Bericht')):
         services.position_hinzufuegen(
             beleg=beleg, position=nummer, bezeichnung=text,
-            menge=Decimal('40'), einheit='Std',
+            menge=Decimal('40'), einheit='HUR',
             einzelpreis=Decimal('100.00'), steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -57,7 +57,7 @@ def _abschlag(projekt, auftrag, tag, *, prozent='5', preis='100.00',
     _titel(beleg, '1', 'Erkundung')
     services.position_hinzufuegen(
         beleg=beleg, position='1.1', bezeichnung='Probenahme',
-        menge=Decimal('10'), einheit='Std', einzelpreis=Decimal(preis),
+        menge=Decimal('10'), einheit='HUR', einzelpreis=Decimal(preis),
         steuersatz='19.00',
         auftragsposition=auftrag.positionen.get(position='1.1'),
         leistung_von=tag, leistung_bis=tag)
@@ -69,13 +69,13 @@ def _abschlag(projekt, auftrag, tag, *, prozent='5', preis='100.00',
     if frei:
         services.position_hinzufuegen(
             beleg=beleg, position=frei, bezeichnung='Fahrt',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('30.00'), steuersatz='19.00')
     if mit_titel_2:
         _titel(beleg, '2', 'Gutachten')
         services.position_hinzufuegen(
             beleg=beleg, position='2.1', bezeichnung='Bericht',
-            menge=Decimal('1'), einheit='Std', einzelpreis=Decimal('100.00'),
+            menge=Decimal('1'), einheit='HUR', einzelpreis=Decimal('100.00'),
             steuersatz='19.00',
             auftragsposition=auftrag.positionen.get(position='2.1'),
             leistung_von=tag, leistung_bis=tag)
@@ -153,7 +153,7 @@ class TestAufbauWieImErstenAbschlag:
 
         zeilen = [z for _, z in _zeilen(pdf.beleg_als_html(zweiter))]
 
-        assert '1.3 | Fahrt | 2 | pausch | 30,00 | 19 % | 60,00' in zeilen
+        assert '1.3 | Fahrt | 2 | psch | 30,00 | 19 % | 60,00' in zeilen
         # 2.000,00 + 60,00 + Zuschlag 5 % auf je 1.030,00 = 103,00.
         assert ' | Summe Titel 1 Erkundung | 2.163,00' in zeilen
 

@@ -30,7 +30,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
     Rechnungsart,
 )
@@ -58,8 +57,8 @@ def projekt(kunde):
 @pytest.fixture
 def stunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('90.00'), art=Leistungsart.ZEIT,
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('90.00'),
         steuersatz='19.00',
     )
 
@@ -67,8 +66,8 @@ def stunde(db):
 @pytest.fixture
 def anfahrt(db):
     return Katalogposition.objects.create(
-        bezeichnung='Anfahrt', einheit='km',
-        einzelpreis=Decimal('0.80'), art=Leistungsart.MENGE,
+        bezeichnung='Anfahrt', einheit='KMT',
+        einzelpreis=Decimal('0.80'),
         steuersatz='19.00',
     )
 
@@ -83,7 +82,7 @@ def rechnung(*, projekt=None, kunde=None, betrag, nummer,
              typ=BelegTyp.RECHNUNG, belegdatum=None,
              rechnungsart=Rechnungsart.NORMAL,
              status=BelegStatus.FESTGESCHRIEBEN, menge=Decimal('1'),
-             einheit='pausch'):
+             einheit='LS'):
     """Beleg mit einer Position."""
     beleg = Beleg.objects.create(typ=typ, projekt=projekt, kunde=kunde,
                                  empfaenger='Empfänger')
@@ -232,7 +231,7 @@ class TestDerAeltesteOffenePosten:
             betrag_netto=Decimal('500.00'))
         Fremdleistung.objects.create(
             rechnung=eingang, projekt=projekt, bezeichnung='Analyse',
-            einheit='Stk', menge=Decimal('5'),
+            einheit='C62', menge=Decimal('5'),
             einkaufspreis=Decimal('100.00'), weiterberechenbar=True)
 
         seit = erfassung_services.aeltester_offener_posten_je_projekt()
@@ -317,13 +316,13 @@ class TestDerAufwandJePerson:
         Auftragsakte)."""
         auftrag = rechnung(projekt=projekt, betrag='10000.00', nummer='AB-1',
                            typ=BelegTyp.AUFTRAG, menge=Decimal('100'),
-                           einheit='Std')
+                           einheit='HUR')
         erfassen(projekt, stunde, person, minuten=120)
 
         auf_dem_auftrag = erfassung_services.zeile_erfassen(
             projekt=projekt, auftragsposition=auftrag.positionen.first(),
             benutzer=person, beschreibung='', datum=HEUTE,
-            menge=Decimal('3'))
+            von=time(8, 0), bis=time(11, 0))
         assert auf_dem_auftrag.pk
 
         alle = erfassung_services.aufwand_je_person(projekt)
@@ -345,7 +344,7 @@ class TestDerAufwandJeLeistung:
         assert zeile.name == 'Ingenieurstunde'
         assert zeile.minuten == 165
         assert zeile.menge is None
-        assert zeile.einheit == 'Std'
+        assert zeile.einheit == 'HUR'
 
     def test_mengenleistungen_tragen_ihre_menge(self, projekt, anfahrt, person):
         """Mengenleistungen mit ihrer Menge, ohne Aufrundung auf die
@@ -356,7 +355,7 @@ class TestDerAufwandJeLeistung:
         zeile = erfassung_services.aufwand_je_leistung(projekt)[0]
 
         assert zeile.menge == Decimal('41.5')
-        assert zeile.einheit == 'km'
+        assert zeile.einheit == 'KMT'
         assert zeile.umfang == '41.5 km'
 
     def test_zwei_leistungen_bleiben_getrennt(self, projekt, stunde, anfahrt,
@@ -444,7 +443,7 @@ class TestDieKleinenAuskuenfte:
         """R-011: "60 von 100 Std abgerechnet" an der Auftragsposition."""
         auftrag = rechnung(projekt=projekt, betrag='90.00', nummer='AB-1',
                            typ=BelegTyp.AUFTRAG, menge=Decimal('100'),
-                           einheit='Std')
+                           einheit='HUR')
         position = auftrag.positionen.first()
 
         beleg = Beleg.objects.create(typ=BelegTyp.RECHNUNG, projekt=projekt,
@@ -452,7 +451,7 @@ class TestDieKleinenAuskuenfte:
         beleg.rechnungsart = Rechnungsart.NORMAL
         Belegposition.objects.create(
             beleg=beleg, position=10, bezeichnung='Leistung',
-            menge=Decimal('60'), einheit='Std', einzelpreis=Decimal('90.00'),
+            menge=Decimal('60'), einheit='HUR', einzelpreis=Decimal('90.00'),
             steuersatz=Decimal('19.00'), auftragsposition=position)
         beleg.status = BelegStatus.FESTGESCHRIEBEN
         beleg.nummer = 'RE-1'

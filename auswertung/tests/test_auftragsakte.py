@@ -22,7 +22,6 @@ from faktura.models import (
     BelegStatus,
     BelegTyp,
     Kontakt,
-    Leistungsart,
     Projekt,
     Rechnungsart,
 )
@@ -45,8 +44,8 @@ def auftrag(projekt):
     beleg = Beleg.objects.create(typ=BelegTyp.AUFTRAG, projekt=projekt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Ingenieurstunde',
-        menge=Decimal('100'), einheit='Std', einzelpreis=Decimal('95.00'),
-        art=Leistungsart.ZEIT)
+        menge=Decimal('100'), einheit='HUR', einzelpreis=Decimal('95.00'),
+        )
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = 'AU-2026-0001'
     beleg.belegdatum = date(2026, 7, 1)
@@ -62,7 +61,7 @@ def _rechnung(auftrag, menge, rechnungsart, nummer=None,
         projekt=auftrag.projekt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Ingenieurstunde',
-        menge=Decimal(menge), einheit='Std', einzelpreis=Decimal('95.00'),
+        menge=Decimal(menge), einheit='HUR', einzelpreis=Decimal('95.00'),
         auftragsposition=auftrag.positionen.first())
     beleg.status = status
     beleg.nummer = nummer
@@ -133,7 +132,7 @@ class TestDerAbrechnungsstand:
         for nummer, text, art, menge, preis in zeilen:
             Belegposition.objects.create(
                 beleg=beleg, position=nummer, bezeichnung=text,
-                zeilenart=art, menge=Decimal(menge), einheit='Stk',
+                zeilenart=art, menge=Decimal(menge), einheit='C62',
                 einzelpreis=Decimal(preis))
         beleg.status = BelegStatus.FESTGESCHRIEBEN
         beleg.nummer = 'AU-2026-0013'

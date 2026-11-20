@@ -183,7 +183,7 @@ class TestOhneRechteKeinBeleg:
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Kalkulation', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('9999.00'),
+            einheit='C62', einzelpreis=Decimal('9999.00'),
             steuersatz='19.00')
         return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -247,7 +247,7 @@ class TestOhneRechteKeinBeleg:
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='P', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('10.00'),
+            einheit='C62', einzelpreis=Decimal('10.00'),
             steuersatz='19.00')
         services.beleg_festschreiben(beleg_id=beleg.pk)
 

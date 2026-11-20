@@ -58,7 +58,7 @@ def _auftrag(projekt, betrag):
                                    betreff='Planung Kläranlage')
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Planung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal(betrag),
+        einheit='LS', einzelpreis=Decimal(betrag),
         steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -71,7 +71,7 @@ def _abschlag(projekt, *betraege):
     for nummer, betrag in enumerate(betraege, start=1):
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung=f'Leistungsstand {nummer}',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal(betrag), steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
@@ -83,7 +83,7 @@ def _schluss(auftrag, leistung):
     schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
     services.position_hinzufuegen(
         beleg=schluss, bezeichnung='Planung', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal(leistung),
+        einheit='LS', einzelpreis=Decimal(leistung),
         steuersatz='19.00')
     return schluss
 
@@ -226,7 +226,7 @@ class TestDieKuerzung:
             leistungsdatum=date(2026, 1, 15))
         services.position_hinzufuegen(
             beleg=rechnung, bezeichnung='Regie', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('1000.00'),
+            einheit='LS', einzelpreis=Decimal('1000.00'),
             steuersatz='19.00')
         rechnung = services.beleg_festschreiben(beleg_id=rechnung.pk)
 

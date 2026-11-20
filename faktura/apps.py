@@ -1,5 +1,6 @@
 from django.apps import AppConfig
-from django.db.models.signals import post_migrate
+from django.core.signals import request_started
+from django.db.models.signals import post_delete, post_migrate, post_save
 from django.urls import reverse_lazy
 
 
@@ -16,10 +17,17 @@ class FakturaConfig(AppConfig):
         from .api.belege import BelegViewSet
         from .api.kunden import KontaktViewSet, KundeViewSet
         from .api.projekte import ProjektViewSet
-        from .models.steuersatz import grundausstattung_anlegen
+        from .models import einheit, steuersatz
 
-        # Anfangsbestand der Steuersätze, siehe faktura/models/steuersatz.py.
-        post_migrate.connect(grundausstattung_anlegen, sender=self)
+        # Anfangsbestand der Steuersätze und Einheiten, siehe
+        # faktura/models/steuersatz.py und einheit.py.
+        post_migrate.connect(steuersatz.grundausstattung_anlegen, sender=self)
+        post_migrate.connect(einheit.grundausstattung_anlegen, sender=self)
+        # Zwischenspeicher der Einheiten, siehe einheit._abweichende.
+        request_started.connect(einheit.zwischenspeicher_leeren)
+        post_save.connect(einheit.zwischenspeicher_leeren, sender=einheit.Einheit)
+        post_delete.connect(einheit.zwischenspeicher_leeren,
+                            sender=einheit.Einheit)
 
         # Für die API-Selbstauskunft (core.schnittstelle.views.IchAnsicht).
         erweiterungen.fachliche_app('faktura')
@@ -202,6 +210,14 @@ class FakturaConfig(AppConfig):
                 'permission': lambda r: r.user.has_perm(
                     'faktura.view_textbaustein'),
                 'rang': 30,
+            },
+            {
+                'title': 'Einheiten',
+                'icon': 'straighten',
+                'link': reverse_lazy('admin:faktura_einheit_changelist'),
+                'permission': lambda r: r.user.has_perm(
+                    'faktura.view_einheit'),
+                'rang': 44,
             },
             {
                 'title': 'Steuersätze',

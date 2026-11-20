@@ -57,7 +57,7 @@ Sie wählen:
 4. **Leistung aus dem Katalog**: nur, wenn Sie keine Auftragsposition
    wählen, für Arbeit ohne Auftrag. Zur Wahl stehen die kontierbaren
    Katalogpositionen.
-5. Je nach Art der Leistung:
+5. Je nach Erfassungsart der Einheit der Position (siehe [Einheiten](#einheit)):
    - **Zeit**: **Von** und **Bis**. Getippt wird etwa „0830“; die Dauer
      rechnet Paper-Werk. Bis muss nach Von liegen, am selben Tag; eine
      Schicht über Mitternacht teilen Sie auf zwei Zeilen auf.
@@ -119,7 +119,7 @@ neu zieht, bekommt den Stand von morgen. An den Zeilen ändert er nichts.
 **Leistungsnachweis zur Rechnung.** An einer Rechnung öffnet der Knopf
 **Leistungsnachweis** die Zeilen, die auf dieser Rechnung abgerechnet
 sind, nach Positionsnummer geordnet. Pauschalen stehen dort mit
-„1 pausch“, ohne Uhrzeiten und ohne Stunden. Erfassungen mit Uhrzeiten
+„1 psch“, ohne Uhrzeiten und ohne Stunden. Erfassungen mit Uhrzeiten
 auf eine Pauschale werden in diesem Nachweis nicht aufgeführt. Mit
 Stunden erscheinen sie nur im Leistungsnachweis aus der Erfassungsliste,
 wenn sie dort ausgewählt sind, und im Controlling des Projekts.
@@ -364,9 +364,9 @@ Eine Fremdleistung kommt dort nur zum Preis ihrer Auftragsposition auf die
 Rechnung, nie zum Einkaufspreis. Das gelingt nur, wenn beides stimmt:
 
 - Die Fremdleistung hat eine **Auftragsposition**.
-- Die **Einheit** der Fremdleistung passt zu der der Auftragsposition.
-  Groß- und Kleinschreibung zählen nicht: „Stk“ und „stk“ passen, „Stk“
-  und „Std“ oder „pausch“ nicht.
+- Die **Einheit** der Fremdleistung ist dieselbe wie die der
+  Auftragsposition: „Stk“ und „Stk“ passen, „Stk“ und „Std“ oder „psch“
+  nicht.
 
 Die gewöhnliche Rechnung nimmt weiter alles auf, Fremdleistungen ohne
 passende Position zum Einkaufspreis. Sie ist für Abrechnungen ohne

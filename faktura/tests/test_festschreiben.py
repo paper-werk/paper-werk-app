@@ -320,7 +320,7 @@ class TestWiedereroeffnen:
         )
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Material', menge=Decimal('3'),
-            einzelpreis=Decimal('0.00'), steuersatz='0.00', einheit='Stk',
+            einzelpreis=Decimal('0.00'), steuersatz='0.00', einheit='C62',
         )
         services.beleg_festschreiben(beleg_id=beleg.pk)
 

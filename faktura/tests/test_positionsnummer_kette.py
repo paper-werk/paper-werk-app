@@ -37,7 +37,7 @@ def _mit_lv(beleg):
     for nummer in LV:
         services.position_hinzufuegen(
             beleg=beleg, position=nummer, bezeichnung=f'Position {nummer}',
-            menge=Decimal('1'), einheit='pausch',
+            menge=Decimal('1'), einheit='LS',
             einzelpreis=Decimal('1000.00'), steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 

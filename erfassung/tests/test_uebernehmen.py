@@ -391,7 +391,7 @@ def _gestellter_abschlag(projekt, betrag='1000.00'):
         rechnungsart=Rechnungsart.ABSCHLAG, betreff='Abschlag')
     faktura_services.position_hinzufuegen(
         beleg=abschlag, bezeichnung='Abschlag', menge=Decimal('1'),
-        einheit='pausch', einzelpreis=Decimal(betrag),
+        einheit='LS', einzelpreis=Decimal(betrag),
         steuersatz='19.00')
     Beleg.objects.filter(pk=abschlag.pk).update(
         status=BelegStatus.FESTGESCHRIEBEN, nummer='2026-0901',

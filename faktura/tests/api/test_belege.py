@@ -68,7 +68,7 @@ class TestListe:
             typ=BelegTyp.RECHNUNG, projekt=projekt, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Rohbau', menge=Decimal('1.000'),
-            einheit='Pausch', einzelpreis=Decimal('100.00'),
+            einheit='LS', einzelpreis=Decimal('100.00'),
             steuersatz='19.00',
         )
         services.beleg_festschreiben(beleg_id=beleg.pk)
@@ -109,7 +109,7 @@ class TestListe:
         lieferschein = services.beleg_anlegen(typ=BelegTyp.LIEFERSCHEIN, kunde=kunde)
         services.position_hinzufuegen(
             beleg=lieferschein, bezeichnung='Ware', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('10.00'), steuersatz='19.00')
+            einheit='C62', einzelpreis=Decimal('10.00'), steuersatz='19.00')
 
         eintraege = {b['typ_kennung']: b for b in client.get('/api/v1/belege/').json()['results']}
 
@@ -131,7 +131,7 @@ class TestListe:
                 leistungsdatum=date(2026, 8, 1))
             services.position_hinzufuegen(
                 beleg=beleg, bezeichnung='Posten', menge=Decimal('1.000'),
-                einheit='Stk', einzelpreis=Decimal('10.00'),
+                einheit='C62', einzelpreis=Decimal('10.00'),
                 steuersatz='19.00',
             )
             services.beleg_festschreiben(beleg_id=beleg.pk)
@@ -158,7 +158,7 @@ class TestFilter:
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=spaeter, bezeichnung='Neu', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('50.00'),
+            einheit='C62', einzelpreis=Decimal('50.00'),
             steuersatz='19.00',
         )
         services.beleg_festschreiben(beleg_id=spaeter.pk)
@@ -449,7 +449,7 @@ class TestArchivvermerk:
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=zweite, bezeichnung='Posten', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('10.00'),
+            einheit='C62', einzelpreis=Decimal('10.00'),
             steuersatz='19.00',
         )
         services.beleg_festschreiben(beleg_id=zweite.pk)
@@ -551,7 +551,7 @@ class TestFestschreiben:
             leistungsdatum=date(2026, 1, 1), leistungsdatum_bis=date(2026, 1, 31))
         services.position_hinzufuegen(
             beleg=abschlag, bezeichnung='Leistungsstand', menge=Decimal('1'),
-            einheit='pausch', einzelpreis=Decimal('1000.00'), steuersatz='19.00')
+            einheit='LS', einzelpreis=Decimal('1000.00'), steuersatz='19.00')
 
         assert self._festschreiben(client, abschlag).status_code == 200
         eintrag = LogEntry.objects.get(object_id=str(abschlag.pk))
@@ -578,7 +578,7 @@ class TestFestschreiben:
             typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='P', menge=Decimal('1.000'),
-            einheit='Stk', einzelpreis=Decimal('10.00'), steuersatz='19.00')
+            einheit='C62', einzelpreis=Decimal('10.00'), steuersatz='19.00')
         # Der Ausdruck nennt jemand anderen als die E-Rechnungsfelder.
         Beleg.objects.filter(pk=beleg.pk).update(
             empfaenger='Ganz andere GmbH\nAnderstraße 9\n99999 Anderswo')
@@ -614,7 +614,7 @@ class TestFestschreiben:
         auftrag = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG)
         position = services.position_hinzufuegen(
             beleg=auftrag, bezeichnung='Planung', menge=Decimal('10'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00')
         services.beleg_festschreiben(beleg_id=auftrag.pk)
 
@@ -623,7 +623,7 @@ class TestFestschreiben:
             leistungsdatum=date(2026, 8, 1))
         services.position_hinzufuegen(
             beleg=rechnung, bezeichnung='Planung', menge=Decimal('12'),
-            einheit='Std', einzelpreis=Decimal('95.00'),
+            einheit='HUR', einzelpreis=Decimal('95.00'),
             steuersatz='19.00', auftragsposition=position)
         return rechnung
 

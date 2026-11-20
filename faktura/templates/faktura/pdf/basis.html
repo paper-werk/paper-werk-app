@@ -155,7 +155,7 @@
               <td class="einheit"></td>
             {% else %}
               <td class="menge">{{ position.menge|menge }}</td>
-              <td class="einheit">{{ position.einheit }}</td>
+              <td class="einheit">{{ position.einheit_anzeige }}</td>
             {% endif %}
             {% if mit_preisen %}
               <td class="preis">{% if position.zeilenart != "zuschlag" %}{{ position.einzelpreis|geld }}{% endif %}</td>

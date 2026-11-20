@@ -47,7 +47,7 @@ def rechnung(kunde):
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Gutachten', menge=Decimal('1'),
         einzelpreis=Decimal('1000.00'), steuersatz='19.00',
-        einheit='psch')
+        einheit='LS')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 
 
@@ -348,7 +348,7 @@ class TestDieZahlungsmaske:
         services.position_hinzufuegen(
             beleg=bezahlte, bezeichnung='Beratung', menge=Decimal('1'),
             einzelpreis=Decimal('100.00'), steuersatz='19.00',
-            einheit='psch')
+            einheit='LS')
         bezahlte = services.beleg_festschreiben(beleg_id=bezahlte.pk)
         services.zahlung_verbuchen(
             beleg_id=bezahlte.pk, datum=HEUTE, betrag=Decimal('119.00'))

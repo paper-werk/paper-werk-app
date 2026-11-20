@@ -19,6 +19,7 @@ from faktura.models import (
     Leistungsart,
     Rechnungsart,
 )
+from faktura.models import einheit as einheit_tabelle
 
 from ..formate import personenname
 from ..models import (
@@ -117,8 +118,8 @@ class ZeitraumFilter(admin.SimpleListFilter):
 
 
 class LeistungsartFilter(admin.SimpleListFilter):
-    """Filter nach Zeit, Menge oder Pauschale über Auftrags- und
-    Katalogposition. Ohne Art gilt eine Position als Menge."""
+    """Filter nach Zeit, Menge oder Pauschale, der Erfassungsart der Einheit
+    von Auftrags- oder Katalogposition."""
 
     title = "Art der Erfassung"
     parameter_name = "leistungsart"
@@ -130,13 +131,10 @@ class LeistungsartFilter(admin.SimpleListFilter):
         wert = self.value()
         if not wert:
             return queryset
-
-        passend = (Q(auftragsposition__art=wert)
-                   | Q(auftragsposition__isnull=True, leistung__art=wert))
-        if wert == Leistungsart.MENGE:
-            # Die Vorgabe für eine Auftragsposition ohne Art.
-            passend |= Q(auftragsposition__art="")
-        return queryset.filter(passend)
+        codes = einheit_tabelle.codes_der_art(wert)
+        return queryset.filter(
+            Q(auftragsposition__einheit__in=codes)
+            | Q(auftragsposition__isnull=True, leistung__einheit__in=codes))
 
 
 class ZustandFilter(admin.SimpleListFilter):
@@ -205,9 +203,9 @@ class FremdleistungsPositionsAuswahl(AuftragspositionsAuswahl):
 
 
 class LeistungsAuswahl(UnfoldAdminSelectWidget):
-    """Setzt die Erfassungsart als ``data-art`` an jede Option, für Katalog-
-    und Auftragspositionen; ``erfassungsart()`` blendet danach die passenden
-    Felder ein."""
+    """Setzt die Erfassungsart der Einheit als ``data-art`` an jede Option,
+    für Katalog- und Auftragspositionen; ``erfassungsart()`` blendet danach
+    die passenden Felder ein."""
 
     def create_option(self, name, value, label, selected, index,
                       subindex=None, attrs=None):
@@ -216,7 +214,7 @@ class LeistungsAuswahl(UnfoldAdminSelectWidget):
         # Die leere Option hat keine Instanz.
         grundlage = getattr(value, 'instance', None)
         if grundlage is not None:
-            eintrag['attrs']['data-art'] = grundlage.art
+            eintrag['attrs']['data-art'] = grundlage.erfassungsart
         return eintrag
 
 

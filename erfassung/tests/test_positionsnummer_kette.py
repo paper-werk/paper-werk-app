@@ -16,7 +16,6 @@ from faktura.models import (
     BelegStatus,
     BelegTyp,
     Kontakt,
-    Leistungsart,
     Rechnungsart,
 )
 
@@ -30,13 +29,13 @@ def lv(projekt):
         nummer='AU-2026-0011', projekt=projekt)
     planung, proben = Belegposition.objects.bulk_create([
         Belegposition(beleg=auftrag, position='2.1', bezeichnung='Planung',
-                      menge=Decimal('100'), einheit='Std',
+                      menge=Decimal('100'), einheit='HUR',
                       einzelpreis=Decimal('95.00'), steuersatz='19.00',
-                      art=Leistungsart.ZEIT),
+                      ),
         Belegposition(beleg=auftrag, position='2.2',
                       bezeichnung='Bodenprobe', menge=Decimal('40'),
-                      einheit='Stk', einzelpreis=Decimal('145.00'),
-                      steuersatz='19.00', art=Leistungsart.MENGE),
+                      einheit='C62', einzelpreis=Decimal('145.00'),
+                      steuersatz='19.00'),
     ])
     return planung, proben
 
@@ -56,7 +55,7 @@ def _fremdleistung(projekt, auftragsposition):
         betrag_netto=Decimal('96.00'))
     Fremdleistung.objects.create(
         rechnung=rechnung, projekt=projekt, bezeichnung='Paket 4711',
-        menge=Decimal('1'), einheit='Stk', einkaufspreis=Decimal('96.00'),
+        menge=Decimal('1'), einheit='C62', einkaufspreis=Decimal('96.00'),
         auftragsposition=auftragsposition)
     return Fremdleistung.objects.all()
 

@@ -53,11 +53,11 @@ def positionen(projekt):
     return Belegposition.objects.bulk_create([
         Belegposition(beleg=auftrag, position='10',
                       bezeichnung='Asbest Materialprobe', menge=Decimal('40'),
-                      einheit='Stk', einzelpreis=Decimal('65.00'),
+                      einheit='C62', einzelpreis=Decimal('65.00'),
                       steuersatz='19.00'),
         Belegposition(beleg=auftrag, position='20',
                       bezeichnung='Probenaufbereitung', menge=Decimal('1'),
-                      einheit='pausch', einzelpreis=Decimal('300.00'),
+                      einheit='LS', einzelpreis=Decimal('300.00'),
                       steuersatz='19.00'),
     ])
 
@@ -73,7 +73,7 @@ def bestand(laborrechnung, projekt, positionen):
             rechnung=laborrechnung, projekt=projekt,
             auftragsposition=auftragsposition, fremdschluessel=schluessel,
             bezeichnung=f'{paket}, Probe {probe}, Analyse {probe}00',
-            einheit='Stk', menge=Decimal('1'),
+            einheit='C62', menge=Decimal('1'),
             einkaufspreis=Decimal('56.70'))
 
     return {
@@ -181,7 +181,7 @@ class TestAuswahl:
         assert [(a.grund, a.bezeichnung, a.anzahl, a.detail)
                 for a in ausschluesse] == [
             (services.GRUND_EINHEIT_ABWEICHEND, 'Aufbereitung Asbest/KMF', 2,
-             'Stk, Pos. 20 hat pausch'),
+             'Stk, Pos. 20 hat psch'),
             (services.GRUND_OHNE_AUFTRAGSPOSITION, 'KI-Index Mineralfasern', 2,
              ''),
         ]
@@ -218,7 +218,7 @@ class TestMaskeAnDerRechnung:
         assert angeboten == set(_pks(bestand['passend']))
         assert 'data-ausschluesse' in inhalt
         assert '2 &times; KI-Index Mineralfasern' in inhalt
-        assert 'Stk, Pos. 20 hat pausch' in inhalt
+        assert 'Stk, Pos. 20 hat psch' in inhalt
         assert (f'?projekt__id__exact={projekt.pk}&amp;zustand=offen'
                 in inhalt)
 
@@ -264,7 +264,7 @@ class TestListe:
                                                   projekt, bestand):
         """„ stk “ passt zu „Stk“ wie beim Übernehmen."""
         Fremdleistung.objects.filter(
-            pk__in=_pks(bestand['passend'])).update(einheit=' stk ')
+            pk__in=_pks(bestand['passend'])).update(einheit='C62')
 
         antwort = admin_client.get(
             reverse('admin:erfassung_fremdleistung_changelist'),

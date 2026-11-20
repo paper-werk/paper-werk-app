@@ -12,6 +12,7 @@ from django.db import transaction
 from django.db.models import Sum
 
 from faktura.models import Katalogposition, Leistungsart, Projekt
+from faktura.models import einheit as einheit_tabelle
 
 from ..formate import dauer_zeigen
 from ..models import Erfassungszeile, Fremdleistung
@@ -171,8 +172,10 @@ def zeitaufstellung(zeilen) -> Zeitaufstellung:
     daten = [z.datum for z in zeilen]
     mengen = {}
     for zeile in zeilen:
+        # Ohne Pauschalen, weil eine Summe über verschiedene Pauschalen
+        # ("psch 3") nichts aussagt.
         if (zeile.ist_zeitleistung or zeile.menge is None
-                or _ist_pauschale(zeile)):
+                or zeile.leistungsart == Leistungsart.PAUSCHALE):
             continue
         einheit = zeile.einheit
         mengen[einheit] = mengen.get(einheit, Decimal('0')) + zeile.menge
@@ -189,24 +192,12 @@ def zeitaufstellung(zeilen) -> Zeitaufstellung:
         # für den Kunden sichtbar ist.
         minuten_ohne_berechnung=sum(
             z.dauer_minuten for z in zeilen if not z.abrechenbar),
-        mengen=[Mengensumme(einheit, menge)
-                for einheit, menge in sorted(mengen.items())],
+        mengen=sorted((Mengensumme(einheit_tabelle.anzeige(code), menge)
+                       for code, menge in mengen.items()),
+                      key=lambda summe: summe.einheit),
         projekt=next(iter(projekte.values())) if len(projekte) == 1 else None,
         kunde=next(iter(kunden.values())) if len(kunden) == 1 else None,
     )
-
-
-#: Einheiten, an denen eine Pauschale ohne Leistungsart erkannt wird. Von
-#: Hand angelegte Auftragspositionen haben keine Art und gelten als MENGE.
-PAUSCHALEINHEITEN = {'psch', 'pausch', 'pauschal', 'pschl'}
-
-
-def _ist_pauschale(zeile) -> bool:
-    """Ob die Zeile eine Pauschale abrechnet. Pauschalen fehlen in den
-    Mengensummen, weil eine Summe über verschiedene Pauschalen ("psch 3")
-    nichts aussagt."""
-    return (zeile.leistungsart == Leistungsart.PAUSCHALE
-            or zeile.einheit.strip().rstrip('.').lower() in PAUSCHALEINHEITEN)
 
 
 def nachweis_zur_rechnung(beleg) -> Zeitaufstellung:
@@ -315,7 +306,7 @@ def _rechnungspositionen(beleg, quellen) -> dict[int, tuple[str, tuple]]:
 
 def _merkmal(position) -> tuple:
     return (position.bezeichnung, position.einheit, position.einzelpreis,
-            position.steuersatz, position.art)
+            position.steuersatz)
 
 
 def _leistung_pruefen(leistung: Katalogposition) -> None:
@@ -327,12 +318,12 @@ def _leistung_pruefen(leistung: Katalogposition) -> None:
 
 
 def _art_von(leistung, auftragsposition) -> str:
-    """Leistungsart der gewählten Grundlage, vor dem Speichern. Ohne Art gilt
-    MENGE, wie am Modell."""
+    """Leistungsart der gewählten Grundlage vor dem Speichern, wie
+    ``Erfassungszeile.leistungsart``."""
     grundlage = auftragsposition or leistung
     if grundlage is None:
         return Leistungsart.MENGE
-    return getattr(grundlage, 'art', '') or Leistungsart.MENGE
+    return grundlage.erfassungsart
 
 
 def _menge(art: str, menge):

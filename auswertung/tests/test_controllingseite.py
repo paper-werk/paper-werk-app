@@ -23,7 +23,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
 )
 
@@ -47,8 +46,8 @@ def projekt(kunde):
 @pytest.fixture
 def stunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('95.00'), kontierbar=True, art=Leistungsart.ZEIT)
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('95.00'), kontierbar=True)
 
 
 @pytest.fixture
@@ -71,7 +70,7 @@ def _beleg(typ, projekt, betrag, *, nummer, tage_zurueck=0):
     beleg = Beleg.objects.create(typ=typ, projekt=projekt)
     Belegposition.objects.create(
         beleg=beleg, position=10, bezeichnung='Leistung',
-        menge=Decimal('1'), einheit='pausch', einzelpreis=Decimal(betrag))
+        menge=Decimal('1'), einheit='LS', einzelpreis=Decimal(betrag))
     beleg.status = BelegStatus.FESTGESCHRIEBEN
     beleg.nummer = nummer
     beleg.belegdatum = HEUTE - timedelta(days=tage_zurueck)

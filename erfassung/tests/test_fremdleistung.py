@@ -20,7 +20,6 @@ from faktura.models import (
     BelegStatus,
     BelegTyp,
     Kontakt,
-    Leistungsart,
 )
 
 
@@ -53,9 +52,9 @@ def laborposition(projekt):
     return Belegposition.objects.bulk_create([
         Belegposition(
             beleg=auftrag, position=20, bezeichnung='Bodenprobe LAGA-Paket',
-            menge=Decimal('40'), einheit='Stk',
+            menge=Decimal('40'), einheit='C62',
             einzelpreis=Decimal('145.00'), steuersatz='19.00',
-            art=Leistungsart.MENGE,
+            
         )
     ])[0]
 
@@ -137,7 +136,7 @@ class TestDerEinkauf:
         """0,85 € je 100 m sind 0,0085 € je Meter; 250 m ergeben 2,125,
         kaufmännisch 2,13."""
         position = _position(laborrechnung, projekt, menge=Decimal('250'),
-                             einheit='m', einkaufspreis=Decimal('0.0085'))
+                             einheit='MTR', einkaufspreis=Decimal('0.0085'))
 
         position.refresh_from_db()
         assert position.einkaufspreis == Decimal('0.0085')
@@ -349,7 +348,7 @@ class TestDieAbrechnungsvorschau:
         """10 zu 50,00 abzüglich 10 % ergeben eine Pauschale über 450,00;
         die Menge steht in der Bezeichnung."""
         _position(laborrechnung, projekt, bezeichnung='Klemmen',
-                  einheit='Stk', menge=Decimal('10'),
+                  einheit='C62', menge=Decimal('10'),
                   einkaufspreis=Decimal('50.00'),
                   einkauf_netto=Decimal('450.00'))
 
@@ -358,7 +357,7 @@ class TestDieAbrechnungsvorschau:
 
         assert position.summe == Decimal('450.00')
         assert position.menge == Decimal('1')
-        assert position.einheit == 'pausch'
+        assert position.einheit == 'LS'
         assert position.bezeichnung == 'Klemmen (10 Stk)'
 
     def test_ein_meterpreis_unter_einem_cent_wird_eine_pauschale(
@@ -366,7 +365,7 @@ class TestDieAbrechnungsvorschau:
         """0,0085 €/m ist kein Cent-Preis; 250 m zu 0,01 ergäben 2,50, der
         Betrag ist 2,13. Deshalb eine Pauschale."""
         _position(laborrechnung, projekt, bezeichnung='NYM-J 3x1,5',
-                  einheit='m', menge=Decimal('250'),
+                  einheit='MTR', menge=Decimal('250'),
                   einkaufspreis=Decimal('0.0085'))
 
         [position] = services.abrechnungsvorschau(
@@ -380,7 +379,7 @@ class TestDieAbrechnungsvorschau:
         """Bei passender Einheit (Stk zu Stk) kommen Bezeichnung, Einheit,
         Preis und Steuersatz aus dem Auftrag."""
         _position(laborrechnung, projekt, bezeichnung='Paket 4711 LAGA Boden',
-                  einheit='Stk', menge=Decimal('12'),
+                  einheit='C62', menge=Decimal('12'),
                   einkaufspreis=Decimal('96.00'),
                   auftragsposition=laborposition)
 
@@ -394,17 +393,16 @@ class TestDieAbrechnungsvorschau:
         assert position.einkauf == Decimal('1152.00')
         assert position.spanne == Decimal('588.00')
         assert position.auftragsposition == laborposition
-        assert position.art == Leistungsart.MENGE
 
     def test_je_auftragsposition_eine_zeile(self, laborrechnung, projekt,
                                             laborposition):
         """Zwei Pakete mit verschiedenem Namen auf derselben
         Auftragsposition ergeben eine Rechnungsposition."""
         _position(laborrechnung, projekt, bezeichnung='Paket 4711',
-                  einheit='Stk', menge=Decimal('5'),
+                  einheit='C62', menge=Decimal('5'),
                   auftragsposition=laborposition)
         _position(laborrechnung, projekt, bezeichnung='Paket 4712',
-                  einheit='Stk', menge=Decimal('7'),
+                  einheit='C62', menge=Decimal('7'),
                   einkaufspreis=Decimal('90.00'),
                   auftragsposition=laborposition)
 
@@ -416,24 +414,13 @@ class TestDieAbrechnungsvorschau:
         # 5 x 96 + 7 x 90
         assert position.einkauf == Decimal('1110.00')
 
-    @pytest.mark.parametrize('einheit', ['stk', ' Stk ', 'STK'])
-    def test_die_einheit_ohne_schreibweise_verglichen(
-            self, laborrechnung, projekt, laborposition, einheit):
-        _position(laborrechnung, projekt, einheit=einheit,
-                  menge=Decimal('2'), auftragsposition=laborposition)
-
-        [position] = services.abrechnungsvorschau(
-            [], Fremdleistung.objects.all()).fremdpositionen
-
-        assert position.einzelpreis == Decimal('145.00')
-
     def test_passt_die_einheit_nicht_wird_zum_einkauf_durchgereicht(
             self, laborrechnung, projekt, laborposition):
         """Bei abweichender Einheit (Pauschale zu Stück) wird zum
         Einkaufspreis weiterberechnet; der Bezug zur Auftragsposition
         bleibt für die Mengenprüfung."""
         _position(laborrechnung, projekt, bezeichnung='Sammelrechnung Labor',
-                  einheit='pausch', menge=Decimal('1'),
+                  einheit='LS', menge=Decimal('1'),
                   einkaufspreis=Decimal('1180.00'),
                   auftragsposition=laborposition)
 
@@ -552,7 +539,7 @@ class TestDieUebernahme:
             self, laborrechnung, projekt, laborposition):
         """Die Rechnungsposition verweist auf die Auftragsposition, damit die
         Menge gegen den Auftrag zählt."""
-        _position(laborrechnung, projekt, einheit='Stk', menge=Decimal('12'),
+        _position(laborrechnung, projekt, einheit='C62', menge=Decimal('12'),
                   auftragsposition=laborposition)
 
         beleg, _ = services.in_rechnung_uebernehmen(
@@ -561,7 +548,6 @@ class TestDieUebernahme:
         position = beleg.positionen.get()
         assert position.auftragsposition == laborposition
         assert position.einzelpreis == Decimal('145.00')
-        assert position.art == Leistungsart.MENGE
 
     def test_die_mengenpruefung_sieht_den_einkauf(
             self, laborrechnung, projekt, laborposition):
@@ -569,7 +555,7 @@ class TestDieUebernahme:
         Festschreiben, keine Sperre."""
         from faktura import services as faktura_services
 
-        _position(laborrechnung, projekt, einheit='Stk', menge=Decimal('50'),
+        _position(laborrechnung, projekt, einheit='C62', menge=Decimal('50'),
                   auftragsposition=laborposition)
         beleg, _ = services.in_rechnung_uebernehmen(
             zeilen=[], fremdleistungen=Fremdleistung.objects.all())
@@ -594,7 +580,7 @@ class TestDieUebernahme:
         """Mit Vertragspreis erscheint der Einkaufspreis nicht auf der
         Rechnung; ohne Vertragspreis wird zum Einkaufspreis
         weiterberechnet."""
-        _position(laborrechnung, projekt, einheit='Stk',
+        _position(laborrechnung, projekt, einheit='C62',
                   einkaufspreis=Decimal('96.00'),
                   auftragsposition=laborposition)
 

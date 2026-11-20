@@ -31,7 +31,7 @@ class TestLeistungskatalog:
         from faktura.models import Katalogposition
         return Katalogposition.objects.create(
             bezeichnung='Beratungsstunde',
-            einheit='Std',
+            einheit='HUR',
             einzelpreis=Decimal('120.00'),
             steuersatz='19.00',
         )
@@ -52,7 +52,7 @@ class TestLeistungskatalog:
             'positionen-0-position': '10',
             'positionen-0-bezeichnung': '',
             'positionen-0-menge': '1',
-            'positionen-0-einheit': 'Stk',
+            'positionen-0-einheit': 'C62',
             'positionen-0-einzelpreis': '',
             'positionen-0-steuersatz': '19.00',
         }
@@ -69,7 +69,7 @@ class TestLeistungskatalog:
         beleg = Beleg.objects.filter(typ=BelegTyp.ANGEBOT).latest('pk')
         position = beleg.positionen.get()
         assert position.bezeichnung == 'Beratungsstunde'
-        assert position.einheit == 'Std'
+        assert position.einheit == 'HUR'
         assert position.einzelpreis == Decimal('120.00')
 
     def test_eigener_preis_gewinnt_gegen_den_katalog(self, buero, kunde, katalog):
@@ -182,7 +182,7 @@ class TestLeistungskatalog:
                 'positionen-0-position': '10',
                 'positionen-0-bezeichnung': '',
                 'positionen-0-menge': '3',
-                'positionen-0-einheit': 'Stk',
+                'positionen-0-einheit': 'C62',
             },
             follow=True,
         )
@@ -314,7 +314,7 @@ class TestKatalogsuche:
             'positionen-0-bezeichnung': '',
             # Fehler, der das Formular erneut anzeigt.
             'positionen-0-menge': 'viel',
-            'positionen-0-einheit': 'Stk',
+            'positionen-0-einheit': 'C62',
             'positionen-0-einzelpreis': '',
             'positionen-0-steuersatz': '19.00',
         })

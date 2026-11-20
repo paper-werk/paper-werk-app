@@ -128,7 +128,7 @@ class TestDieGrundlageEinerZeile:
         assert zeile.leistung_id is None
         assert zeile.grundlage == auftragsposition
         assert zeile.leistungsbezeichnung == 'Planung Lph 1-4'
-        assert zeile.einheit == 'Std'
+        assert zeile.einheit == 'HUR'
         assert zeile.ist_zeitleistung
 
     def test_der_preis_kommt_aus_dem_vertrag(self, projekt, auftragsposition,
@@ -303,10 +303,10 @@ class TestMengenleistungen:
         self, projekt, kunde, mitarbeiter
     ):
         """Eine Pauschale hat immer Menge eins."""
-        from faktura.models import Katalogposition, Leistungsart
+        from faktura.models import Katalogposition
         pauschale = Katalogposition.objects.create(
-            bezeichnung='Anfahrtspauschale', einheit='pausch',
-            einzelpreis=Decimal('35.00'), art=Leistungsart.PAUSCHALE,
+            bezeichnung='Anfahrtspauschale', einheit='LS',
+            einzelpreis=Decimal('35.00'),
         )
 
         zeile = services.zeile_erfassen(

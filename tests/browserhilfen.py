@@ -48,7 +48,7 @@ def _entwurf(kunde, typ=BelegTyp.AUFTRAG):
         leistungsdatum=date(2026, 8, 1))
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Gesellenstunde', menge=Decimal('40'),
-        einheit='Std', einzelpreis=Decimal('62.00'),
+        einheit='HUR', einzelpreis=Decimal('62.00'),
         steuersatz='19.00')
     return beleg
 
@@ -134,7 +134,7 @@ def _auftrag_mit_position(projekt, nummer, bezeichnung):
         nummer=nummer, projekt=projekt)
     return Belegposition.objects.bulk_create([Belegposition(
         beleg=auftrag, position=10, bezeichnung=bezeichnung,
-        menge=Decimal('40'), einheit='Stk', einzelpreis=Decimal('145.00'))])[0]
+        menge=Decimal('40'), einheit='C62', einzelpreis=Decimal('145.00'))])[0]
 
 
 def _beleg_mit_fuenf_positionen(kunde, typ):
@@ -148,6 +148,6 @@ def _beleg_mit_fuenf_positionen(kunde, typ):
                         'Anfahrt', 'Entsorgung'):
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung=bezeichnung, menge=Decimal('1'),
-            einheit='Stk', einzelpreis=Decimal('1450.00'),
+            einheit='C62', einzelpreis=Decimal('1450.00'),
             steuersatz='19.00')
     return beleg

@@ -48,9 +48,11 @@ from ..models import (
     Belegposition,
     BelegStatus,
     BelegTyp,
+    Leistungsart,
     Rechnungsart,
     Zeilenart,
 )
+from ..models.einheit import PAUSCHAL
 from .anlegen import (
     position_hinzufuegen,
     titel_ergaenzen,
@@ -165,11 +167,13 @@ def abschlaege_absetzen(*, beleg_id: int) -> list[Belegposition]:
 
 def hat_leistungsbezug(quelle: Belegposition) -> bool:
     """Ob eine Abschlagsposition eine Leistung abrechnet: mit Bezug auf eine
-    Auftragsposition, aus dem Katalog (``art``) oder mit erfassten Zeiten
-    und Fremdleistungen. Ein frei eingegebener Betrag ("Leistungsstand 1,
-    pauschal") fordert nur Geld an; die Leistung wird in der
-    Schlussrechnung eingetragen."""
-    if quelle.auftragsposition_id or quelle.art:
+    Auftragsposition, in einer Einheit mit der Erfassungsart Menge oder Zeit
+    oder mit erfassten Zeiten und Fremdleistungen. Ein pauschaler Betrag
+    ohne diesen Bezug ("Leistungsstand 1, psch") fordert nur Geld an; die
+    Leistung wird in der Schlussrechnung eingetragen."""
+    if quelle.auftragsposition_id:
+        return True
+    if quelle.einheit and quelle.erfassungsart != Leistungsart.PAUSCHALE:
         return True
     # Über die Reverse Relations der Erfassung, ohne Import, weil faktura
     # nicht von erfassung abhängt.
@@ -193,11 +197,11 @@ def _leistung_aus_abschlaegen(rechnung: Beleg, quellen) -> list[Belegposition]:
       "Leistungsphasen 1-4, 5.000 von 18.000"): die Auftragsposition mit
       offener Menge und Preis, weil die Summe der Teilbeträge nicht die
       Leistung ergibt.
-    * **Ohne Auftragsposition**, aber aus Katalog oder Erfassung: die Summe
-      der Mengen, zusammengefasst über Bezeichnung, Einheit, Preis, Satz
-      und Art.
-    * **Frei eingegeben** ("Leistungsstand 1, pauschal"): keine Position,
-      weil nur Geld angefordert wurde; die Leistung wird manuell
+    * **Ohne Auftragsposition**, in einer Einheit mit Menge oder Zeit oder
+      mit Erfassung: die Summe der Mengen, zusammengefasst über
+      Bezeichnung, Einheit, Preis und Satz.
+    * **Pauschal ohne Auftragsposition** ("Leistungsstand 1, psch"): keine
+      Position, weil nur Geld angefordert wurde; die Leistung wird manuell
       eingetragen.
     * **Zuschlag** ("Nebenkosten 3 %"): einmal als Zuschlag, berechnet auf
       die volle Leistung der Schlussrechnung.
@@ -220,8 +224,8 @@ def _leistung_aus_abschlaegen(rechnung: Beleg, quellen) -> list[Belegposition]:
             je_auftrag.setdefault(quelle.auftragsposition_id, []).append(quelle)
         elif hat_leistungsbezug(quelle):
             frei.setdefault((quelle.bezeichnung, quelle.einheit,
-                             quelle.einzelpreis, quelle.steuersatz,
-                             quelle.art), []).append(quelle)
+                             quelle.einzelpreis, quelle.steuersatz),
+                            []).append(quelle)
 
     zeilen = []
     for gruppe in je_auftrag.values():
@@ -250,7 +254,7 @@ def _leistung_aus_abschlaegen(rechnung: Beleg, quellen) -> list[Belegposition]:
             beleg=rechnung, bezeichnung=vorlage.bezeichnung,
             langtext=vorlage.langtext, menge=menge,
             einheit=vorlage.einheit, einzelpreis=vorlage.einzelpreis,
-            steuersatz=vorlage.steuersatz, art=vorlage.art,
+            steuersatz=vorlage.steuersatz,
             auftragsposition=vertrag,
             position=None if wunsch in belegt else wunsch,
             leistung_von=min(von, default=None),
@@ -393,7 +397,7 @@ def _reste_abgleichen(rechnung: Beleg) -> None:
             nummer = f'{abzug.position}.1'
             position_hinzufuegen(
                 beleg=rechnung, bezeichnung=RESTTEXT,
-                menge=Decimal('1'), einheit='pausch', einzelpreis=soll,
+                menge=Decimal('1'), einheit=PAUSCHAL, einzelpreis=soll,
                 steuersatz=abzug.steuersatz,
                 position=None if nummer in belegt else nummer,
                 ist_abzug=True, ist_abschlagsrest=True,

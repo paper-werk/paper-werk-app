@@ -16,7 +16,7 @@ from django.utils import timezone
 from erfassung import nachweis, services
 from erfassung.models import Erfassungszeile
 from erfassung.sortierung import Sortierung
-from faktura.models import Katalogposition, Leistungsart
+from faktura.models import Katalogposition
 
 LISTE = 'admin:erfassung_erfassungszeile_changelist'
 
@@ -82,9 +82,9 @@ class TestDieAufstellungRechnetRichtig:
         """Mengen verschiedener Einheiten (23 km, 2 Stk) werden nicht
         addiert."""
         probe = Katalogposition.objects.create(
-            bezeichnung='Bodenprobe', einheit='Stk',
+            bezeichnung='Bodenprobe', einheit='C62',
             einzelpreis=Decimal('45.00'), kontierbar=True,
-            art=Leistungsart.MENGE)
+            )
         services.zeile_erfassen(
             projekt=projekt, leistung=mengenleistung, benutzer=mitarbeiter,
             menge=Decimal('23'), beschreibung='Anfahrt')
@@ -117,9 +117,9 @@ class TestDieAufstellungRechnetRichtig:
         """Von Hand angelegte Positionen haben keine Art Pauschale, nur die
         Einheit."""
         ingenieur = Katalogposition.objects.create(
-            bezeichnung='Ingenieurleistungen', einheit='psch.',
+            bezeichnung='Ingenieurleistungen', einheit='LS',
             einzelpreis=Decimal('900.00'), kontierbar=True,
-            art=Leistungsart.MENGE)
+            )
         services.zeile_erfassen(
             projekt=projekt, leistung=ingenieur, benutzer=mitarbeiter,
             menge=Decimal('1'), beschreibung='Verzeichnis übermittelt')

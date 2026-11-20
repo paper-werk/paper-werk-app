@@ -133,7 +133,7 @@ def _auftrag(projekt, nummer, *positionen):
         Belegposition(
             beleg=auftrag, position=position, bezeichnung=bezeichnung,
             sortierung=sortierschluessel(position), menge=Decimal('10'),
-            einheit='Std', einzelpreis=Decimal('95.00'), art='zeit')
+            einheit='HUR', einzelpreis=Decimal('95.00'))
         for position, bezeichnung in positionen
     ])
 
@@ -279,7 +279,7 @@ class TestNurDieStunden:
     def test_der_artfilter_laesst_nur_zeitzeilen_stehen(self, als_mitarbeiter,
                                                         gemischter_tag):
         antwort = als_mitarbeiter.get(reverse(LISTE),
-                                      {'leistung__art__exact': 'zeit'})
+                                      {'leistungsart': 'zeit'})
         inhalt = antwort.content.decode()
 
         assert antwort.status_code == 200

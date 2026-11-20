@@ -115,7 +115,7 @@ def rechnung_aus_abnahme(*, abnahme_id: int) -> Beleg:
             beleg=rechnung, bezeichnung=position.bezeichnung,
             langtext=position.langtext, menge=menge,
             einheit=position.einheit, einzelpreis=position.einzelpreis,
-            steuersatz=position.steuersatz, art=position.art,
+            steuersatz=position.steuersatz,
             # Ein Zuschlag bleibt Zuschlag, bezogen auf die Teilleistung.
             zeilenart=position.zeilenart,
             zuschlag_prozent=position.zuschlag_prozent,

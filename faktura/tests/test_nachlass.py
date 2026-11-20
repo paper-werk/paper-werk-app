@@ -44,7 +44,7 @@ def _entwurf(kunde, rechnungsart=Rechnungsart.NORMAL):
     beleg.save()
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Beratung', menge=Decimal('10'),
-        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='Std',
+        einzelpreis=Decimal('100.00'), steuersatz='19.00', einheit='HUR',
     )
     return beleg
 

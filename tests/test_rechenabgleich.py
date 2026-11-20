@@ -29,7 +29,6 @@ from faktura.models import (
     BelegTyp,
     Katalogposition,
     Kontakt,
-    Leistungsart,
     Projekt,
     Rechnungsart,
 )
@@ -60,8 +59,8 @@ def projekt(kunde):
 @pytest.fixture
 def stunde(db):
     return Katalogposition.objects.create(
-        bezeichnung='Ingenieurstunde', einheit='Std',
-        einzelpreis=Decimal('89.50'), art=Leistungsart.ZEIT,
+        bezeichnung='Ingenieurstunde', einheit='HUR',
+        einzelpreis=Decimal('89.50'),
         steuersatz='19.00',
     )
 
@@ -123,7 +122,7 @@ def beleg_mit(typ, *, projekt=None, kunde=None, positionen, nummer='B-1',
             zip(positionen, bezuege, strict=True), start=1):
         Belegposition.objects.create(
             beleg=beleg, position=nr * 10, bezeichnung=f'Leistung {nr}',
-            menge=menge, einheit='Std', einzelpreis=preis, steuersatz=satz,
+            menge=menge, einheit='HUR', einzelpreis=preis, steuersatz=satz,
             auftragsposition=bezug)
 
     beleg.status = status
@@ -481,13 +480,11 @@ class TestEineZeileAufEinemRechnungsentwurf:
                                          Decimal('19.00'))])
         auftragsposition = auftrag.positionen.first()
 
-        # Mit Menge, weil bei Kontierung auf eine Auftragsposition deren
-        # Einheit gilt; ohne ``art`` an der Belegposition gilt MENGE
-        # (``_art_von``). Zwei Stunden ergeben die Menge 2.
+        # Die Position ist in Std, also mit Von und Bis; zwei Stunden.
         zeile = erfassung_services.zeile_erfassen(
             projekt=projekt, auftragsposition=auftragsposition,
             benutzer=person, beschreibung='', datum=HEUTE,
-            menge=Decimal('2'))
+            von=time(8, 0), bis=time(10, 0))
 
         entwurf = beleg_mit(BelegTyp.RECHNUNG, projekt=projekt,
                             positionen=[(Decimal('2'), Decimal('89.50'),

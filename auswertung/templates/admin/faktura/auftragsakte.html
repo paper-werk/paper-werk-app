@@ -104,7 +104,7 @@
                     {% if zeile.optional %}<span class="block text-font-subtle-light text-xs dark:text-font-subtle-dark">optional, nicht im Auftragswert</span>{% endif %}
                   </td>
                   <td class="py-2 pr-4 text-right whitespace-nowrap">
-                    {{ zeile.position.menge|menge }} {{ zeile.position.einheit }}
+                    {{ zeile.position.menge|menge }} {{ zeile.position.einheit_anzeige }}
                   </td>
                   <td class="py-2 pr-4 text-right whitespace-nowrap font-medium {% if zeile.ueberzogen %}text-red-600 dark:text-red-500{% else %}text-font-important-light dark:text-font-important-dark{% endif %}">
                     {{ zeile.abgerechnet|menge }}

@@ -109,11 +109,11 @@ def entwurf(firma, kunde):
     beleg = services.beleg_anlegen(typ=BelegTyp.ANGEBOT, kunde=kunde)
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Planung', menge=Decimal('10.000'),
-        einheit='Std', einzelpreis=Decimal('95.00'), steuersatz='19.00',
+        einheit='HUR', einzelpreis=Decimal('95.00'), steuersatz='19.00',
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Fahrtkosten', menge=Decimal('1.000'),
-        einheit='Pausch', einzelpreis=Decimal('120.50'), steuersatz='19.00',
+        einheit='LS', einzelpreis=Decimal('120.50'), steuersatz='19.00',
     )
     return beleg
 
@@ -126,7 +126,7 @@ def rechnung(firma, kunde):
     )
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Ausführung', menge=Decimal('1.000'),
-        einheit='Pausch', einzelpreis=Decimal('2500.00'), steuersatz='19.00',
+        einheit='LS', einzelpreis=Decimal('2500.00'), steuersatz='19.00',
     )
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 

@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from faktura import archiv
 from faktura.models import Kontakt, Projekt
+from faktura.models import einheit as einheit_tabelle
 
 from ..models import Eingangsrechnung, Fremdleistung
 from .fehler import (
@@ -166,7 +167,7 @@ def _position_nachziehen(rechnung: Eingangsrechnung, projekt) -> None:
         projekt=projekt,
         bezeichnung=f'Rechnung {rechnung.nummer}',
         menge=Decimal('1'),
-        einheit='Stk',
+        einheit=einheit_tabelle.STUECK,
         einkaufspreis=rechnung.betrag_netto,
     )
 
@@ -384,7 +385,7 @@ def _positionen_aus_xml(rechnung: Eingangsrechnung, gelesen, projekt) -> None:
             projekt=projekt,
             bezeichnung=f'Rechnung {rechnung.nummer}',
             menge=Decimal('1'),
-            einheit='Stk',
+            einheit=einheit_tabelle.STUECK,
             einkaufspreis=rechnung.betrag_netto,
         )
         return
@@ -395,7 +396,7 @@ def _positionen_aus_xml(rechnung: Eingangsrechnung, gelesen, projekt) -> None:
             projekt=projekt,
             bezeichnung=position.bezeichnung[:300],
             menge=position.menge,
-            einheit=position.einheit[:20],
+            einheit=position.einheit,
             einkaufspreis=position.einzelpreis,
             einkauf_netto=position.betrag,
         )

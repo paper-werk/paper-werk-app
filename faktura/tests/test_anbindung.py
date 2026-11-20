@@ -62,7 +62,7 @@ def rechnung(db):
         typ=BelegTyp.RECHNUNG, kunde=kunde, leistungsdatum=date(2026, 8, 1))
     services.position_hinzufuegen(
         beleg=beleg, bezeichnung='Ausführung', menge=Decimal('1.000'),
-        einheit='Pausch', einzelpreis=Decimal('2500.00'),
+        einheit='LS', einzelpreis=Decimal('2500.00'),
         steuersatz='19.00')
     return services.beleg_festschreiben(beleg_id=beleg.pk)
 

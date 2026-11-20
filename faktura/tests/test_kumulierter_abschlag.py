@@ -42,9 +42,9 @@ def auftrag(projekt):
     beleg = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG,
                                    betreff='Deklaration')
     for nummer, text, menge, einheit, preis in (
-            ('1.1', 'Stundenleistung Dipl.-Ing.', '40', 'h', '85.00'),
-            ('2.3', 'LVGBT', '20', 'Stk', '198.00'),
-            ('3.1', 'Gutachten', '1', 'pausch', '6000.00')):
+            ('1.1', 'Stundenleistung Dipl.-Ing.', '40', 'HUR', '85.00'),
+            ('2.3', 'LVGBT', '20', 'C62', '198.00'),
+            ('3.1', 'Gutachten', '1', 'LS', '6000.00')):
         services.position_hinzufuegen(
             beleg=beleg, position=nummer, bezeichnung=text,
             menge=Decimal(menge), einheit=einheit,
@@ -102,17 +102,17 @@ def zwei_abschlaege(projekt, auftrag):
     stunde, lvgbt, gutachten = (_ap(auftrag, n) for n in ('1.1', '2.3', '3.1'))
     ab1 = _abschlag(
         projekt,
-        (stunde, 'Stundenleistung Dipl.-Ing.', '1.5', 'h', '85.00', '19.00'),
-        (lvgbt, 'LVGBT', '6', 'Stk', '198.00', '19.00'),
-        (gutachten, 'Gutachten', '1', 'pausch', '2000.00', '19.00'),
-        (None, 'Nebenkosten', '1', 'pausch', '50.00', '19.00'),
+        (stunde, 'Stundenleistung Dipl.-Ing.', '1.5', 'HUR', '85.00', '19.00'),
+        (lvgbt, 'LVGBT', '6', 'C62', '198.00', '19.00'),
+        (gutachten, 'Gutachten', '1', 'LS', '2000.00', '19.00'),
+        (None, 'Nebenkosten', '1', 'LS', '50.00', '19.00'),
         tag=date(2026, 1, 5))
     ab2 = _abschlag(
         projekt,
-        (stunde, 'Stundenleistung Dipl.-Ing.', '4.5', 'h', '85.00', '19.00'),
-        (lvgbt, 'LVGBT', '4', 'Stk', '198.00', '19.00'),
-        (gutachten, 'Gutachten', '1', 'pausch', '1000.00', '19.00'),
-        (None, 'Nebenkosten', '1', 'pausch', '30.00', '19.00'),
+        (stunde, 'Stundenleistung Dipl.-Ing.', '4.5', 'HUR', '85.00', '19.00'),
+        (lvgbt, 'LVGBT', '4', 'C62', '198.00', '19.00'),
+        (gutachten, 'Gutachten', '1', 'LS', '1000.00', '19.00'),
+        (None, 'Nebenkosten', '1', 'LS', '30.00', '19.00'),
         tag=date(2026, 2, 4), festschreiben=False)
     return ab1, ab2
 
@@ -135,11 +135,11 @@ class TestLeistungsstand:
         kumuliert = services.kumulierter_abschlag(ab2)
 
         assert _zeilen(kumuliert) == [
-            ('1.1', 'Stundenleistung Dipl.-Ing.', Decimal('6.000'), 'h',
+            ('1.1', 'Stundenleistung Dipl.-Ing.', Decimal('6.000'), 'HUR',
              Decimal('85.00')),
-            ('2.3', 'LVGBT', Decimal('10.000'), 'Stk', Decimal('198.00')),
-            ('3.1', 'Gutachten', Decimal('1'), 'pausch', Decimal('3000.00')),
-            ('', 'Nebenkosten', Decimal('1'), 'pausch', Decimal('80.00')),
+            ('2.3', 'LVGBT', Decimal('10.000'), 'C62', Decimal('198.00')),
+            ('3.1', 'Gutachten', Decimal('1'), 'LS', Decimal('3000.00')),
+            ('', 'Nebenkosten', Decimal('1'), 'LS', Decimal('80.00')),
         ]
 
     def test_abgezogen_wird_der_gestellte_vorgaenger(self, zwei_abschlaege):
@@ -169,26 +169,26 @@ class TestLeistungsstand:
         zusammen 56,62; 0,666 h zu 85,00 wären 56,61. Die Zeile steht
         deshalb pauschal mit 56,62."""
         stunde = _ap(auftrag, '1.1')
-        _abschlag(projekt, (stunde, 'Std', '0.333', 'h', '85.00', '19.00'),
+        _abschlag(projekt, (stunde, 'Std', '0.333', 'HUR', '85.00', '19.00'),
                   tag=date(2026, 1, 5))
         ab2 = _abschlag(projekt,
-                        (stunde, 'Std', '0.333', 'h', '85.00', '19.00'),
+                        (stunde, 'Std', '0.333', 'HUR', '85.00', '19.00'),
                         tag=date(2026, 2, 4), festschreiben=False)
 
         kumuliert = services.kumulierter_abschlag(ab2)
 
-        assert _zeilen(kumuliert)[0][2:] == (Decimal('1'), 'pausch',
+        assert _zeilen(kumuliert)[0][2:] == (Decimal('1'), 'LS',
                                              Decimal('56.62'))
         assert _netto_je_satz(kumuliert) == _belegnetto_je_satz(ab2)
 
     def test_zwei_steuersaetze_je_satz_abgezogen(self, projekt, auftrag):
         _abschlag(projekt,
-                  (None, 'Planung', '1', 'pausch', '1000.00', '19.00'),
-                  (None, 'Druckkosten', '1', 'pausch', '100.00', '7.00'),
+                  (None, 'Planung', '1', 'LS', '1000.00', '19.00'),
+                  (None, 'Druckkosten', '1', 'LS', '100.00', '7.00'),
                   tag=date(2026, 1, 5))
         ab2 = _abschlag(projekt,
-                        (None, 'Planung', '1', 'pausch', '500.00', '19.00'),
-                        (None, 'Druckkosten', '1', 'pausch', '33.33', '7.00'),
+                        (None, 'Planung', '1', 'LS', '500.00', '19.00'),
+                        (None, 'Druckkosten', '1', 'LS', '33.33', '7.00'),
                         tag=date(2026, 2, 4), festschreiben=False)
 
         kumuliert = services.kumulierter_abschlag(ab2)
@@ -204,7 +204,7 @@ class TestLeistungsstand:
         ab1, ab2 = zwei_abschlaege
         ab2 = services.beleg_festschreiben(beleg_id=ab2.pk)
         ab3 = _abschlag(
-            projekt, (_ap(auftrag, '2.3'), 'LVGBT', '2', 'Stk', '198.00',
+            projekt, (_ap(auftrag, '2.3'), 'LVGBT', '2', 'C62', '198.00',
                       '19.00'),
             tag=date(2026, 3, 2), festschreiben=False)
 
@@ -225,10 +225,10 @@ class TestLeistungsstand:
         assert services.kumulierter_abschlag(ab2) is None
 
     def test_vorgaenger_im_entwurf_zaehlt_nicht(self, projekt, auftrag):
-        _abschlag(projekt, (None, 'Planung', '1', 'pausch', '1000.00',
+        _abschlag(projekt, (None, 'Planung', '1', 'LS', '1000.00',
                             '19.00'),
                   tag=date(2026, 1, 5), festschreiben=False)
-        ab2 = _abschlag(projekt, (None, 'Planung', '1', 'pausch', '500.00',
+        ab2 = _abschlag(projekt, (None, 'Planung', '1', 'LS', '500.00',
                                   '19.00'),
                         tag=date(2026, 2, 4), festschreiben=False)
 
@@ -270,10 +270,10 @@ class TestNeufassung:
                 ab2.abschlagsnummer] == [1, 1, 2]
 
     def test_der_naechste_abschlag_zaehlt_weiter(self, projekt, auftrag):
-        ab1 = _abschlag(projekt, (None, 'Planung', '1', 'pausch', '1000.00',
+        ab1 = _abschlag(projekt, (None, 'Planung', '1', 'LS', '1000.00',
                                   '19.00'), tag=date(2026, 1, 5))
         neu = _neufassen(ab1)
-        ab2 = _abschlag(projekt, (None, 'Planung', '1', 'pausch', '500.00',
+        ab2 = _abschlag(projekt, (None, 'Planung', '1', 'LS', '500.00',
                                   '19.00'), tag=date(2026, 2, 4),
                         festschreiben=False)
 

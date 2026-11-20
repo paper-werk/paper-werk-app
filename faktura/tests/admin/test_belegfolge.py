@@ -396,7 +396,7 @@ class TestWiedereroeffnenImAdmin:
                 'positionen-0-bezeichnung': 'Montage, überarbeitet',
                 'positionen-0-langtext': '',
                 'positionen-0-menge': '12',
-                'positionen-0-einheit': position.einheit or 'Stk',
+                'positionen-0-einheit': position.einheit or 'C62',
                 'positionen-0-einzelpreis': '100.00',
                 'positionen-0-steuersatz': position.steuersatz,
                 '_continue': 'Sichern und weiter bearbeiten',

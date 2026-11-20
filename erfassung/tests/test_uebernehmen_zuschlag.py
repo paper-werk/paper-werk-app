@@ -20,7 +20,6 @@ from faktura.models import (
     BelegStatus,
     BelegTyp,
     Firma,
-    Leistungsart,
     Rechnungsart,
     Zeilenart,
 )
@@ -59,10 +58,10 @@ def lv(projekt):
 
     angelegt = Belegposition.objects.bulk_create([
         zeile('2', 'Erkundung', Zeilenart.TITEL, menge=Decimal('0')),
-        zeile('2.10', 'Probenahme', menge=Decimal('20'), einheit='Std',
-              einzelpreis=Decimal('95.00'), art=Leistungsart.ZEIT),
-        zeile('2.20', 'Bodenprobe', menge=Decimal('40'), einheit='Stk',
-              einzelpreis=Decimal('145.00'), art=Leistungsart.MENGE),
+        zeile('2.10', 'Probenahme', menge=Decimal('20'), einheit='HUR',
+              einzelpreis=Decimal('95.00')),
+        zeile('2.20', 'Bodenprobe', menge=Decimal('40'), einheit='C62',
+              einzelpreis=Decimal('145.00')),
         zuschlag('2.90', 'Erschwernis', '10', '2.20'),
         zuschlag('90', 'Nebenkosten', '3'),
         zuschlag('91', 'Samstag', '50', optional=True),

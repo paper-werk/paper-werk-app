@@ -92,8 +92,8 @@ immer wieder vorkommen. Aus ihm füllt die Katalogsuche die Positionen, und
 die Erfassung bietet seine Leistungen für Arbeit ohne Auftrag an.
 
 **Die Liste** zeigt Artikelnummer, Bezeichnung, Fremdschlüssel, Einheit,
-Einzelpreis netto und Steuersatz. Filter nach Steuersatz, Art der
-Erfassung und „In der Erfassung“. Kataloge kommen oft als Tabelle von
+Einzelpreis netto und Steuersatz. Filter nach Steuersatz, Erfassungsart
+und „In der Erfassung“. Kataloge kommen oft als Tabelle von
 außen: Über **Importieren** und **Exportieren** lassen sie sich einlesen,
 etwa für eine Preisrunde, und als Preisliste ausgeben.
 
@@ -102,12 +102,12 @@ etwa für eine Preisrunde, und als Preisliste ausgeben.
 - **Artikelnummer**: freiwillig, aber eindeutig.
 - **Bezeichnung** und **Langtext**: der Langtext erscheint im Beleg unter
   der Bezeichnung und lässt sich dort noch ändern.
-- **Einheit**, **Einzelpreis netto**, **Steuersatz**.
+- **Einheit**: Auswahl aus den Einheiten (siehe [Einheiten](#einheit)). Ihre
+  Erfassungsart bestimmt, wie auf die Leistung erfasst wird.
+- **Einzelpreis netto**, **Steuersatz**.
 - **In der Erfassung**: Die Leistung erscheint in der Leistungserfassung.
   Abwählen bei Positionen, die nur auf Angebote gehören, etwa
   „Baustelleneinrichtung pauschal“.
-- **Art der Erfassung**: Zeit (über Von und Bis), Menge (über eine Zahl)
-  oder Pauschale (Menge 1).
 - **Fremdschlüssel**: freiwillig, die Artikel- oder Paketnummer, unter
   der ein Lieferant diese Leistung berechnet. Er wird mit der Position in
   den Beleg kopiert; dort ordnet er Fremdleistungen der Auftragsposition zu
@@ -157,6 +157,28 @@ Person; frühere Stunden bleiben mit dem alten Satz gerechnet. Ein geänderter E
 
 Die Liste zeigt je Person den neuesten Satz oben. Kostensätze sieht nur,
 wer das Recht dafür hat; sie sind eine Leistungsbewertung.
+
+## Einheiten {#einheit}
+
+Die Einheiten, die in Katalog, Belegen und Fremdleistungen zur Wahl stehen.
+Die Liste enthält alle Einheitencodes der E-Rechnung (UN/ECE), rund 2.000
+Einträge. In der Auswahl erscheinen nur die mit **Zur Auswahl**; der Filter
+„Zur Auswahl“ zeigt sie.
+
+- **Code**: der Code in der E-Rechnung, etwa HUR für die Stunde. Nicht
+  änderbar.
+- **Bezeichnung (UN/ECE)**: die englische Bezeichnung aus der Codeliste.
+- **Anzeige**: so steht die Einheit in Maske und PDF, etwa „Std“ oder „h“.
+  Eine Änderung gilt für alle Positionen mit dieser Einheit. Bereits
+  festgeschriebene PDFs bleiben unverändert.
+- **Erfassungsart**: bestimmt die Leistungserfassung auf Positionen mit
+  dieser Einheit. **Zeit**: Von und Bis, nur bei der Stunde. **Menge**: eine
+  Zahl. **Pauschale**: Menge 1, Von und Bis sind möglich. Sobald Positionen
+  die Einheit verwenden, ist die Erfassungsart fest.
+- **Zur Auswahl**: Ohne Haken fehlt die Einheit in der Auswahl neuer
+  Positionen. Bestehende Positionen behalten sie.
+
+Einheiten lassen sich weder anlegen noch löschen.
 
 ## Steuersätze {#steuersatz}
 

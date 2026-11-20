@@ -39,6 +39,7 @@ from .models import (
     Zahlungsart,
     Zeilenart,
 )
+from .models import einheit as einheit_tabelle
 from .models import steuersatz as steuersatz_tabelle
 from .positionsnummer import naechste_nummern
 
@@ -68,8 +69,26 @@ def steuersatz_auswahl_eingrenzen(form, *, kurz: bool = False):
     )
 
 
+def einheit_auswahl_eingrenzen(form):
+    """Macht das Feld ``einheit`` eines ModelForms zur Auswahl aus der
+    Tabelle ``Einheit``: die Einheiten zur Auswahl, dazu die gespeicherte,
+    falls sie inzwischen abgewählt ist. Wie ``steuersatz_auswahl_eingrenzen``,
+    weil das Modellfeld den Code als Text ohne ``choices`` speichert."""
+    alt = form.fields.get('einheit')
+    if alt is None:
+        return
+    aktuell = form.instance.einheit if form.instance.pk else None
+    form.fields['einheit'] = forms.ChoiceField(
+        label=alt.label, help_text=alt.help_text, required=alt.required,
+        disabled=alt.disabled, initial=alt.initial,
+        widget=UnfoldAdminSelectWidget,
+        choices=einheit_tabelle.angeboten(aktuell),
+    )
+
+
 class KatalogpositionForm(forms.ModelForm):
-    """Formular des Katalogs, eigenes Formular nur für die Steuersatzauswahl."""
+    """Formular des Katalogs, eigenes Formular für die Auswahl von
+    Steuersatz und Einheit."""
 
     class Meta:
         model = Katalogposition
@@ -78,6 +97,7 @@ class KatalogpositionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         steuersatz_auswahl_eingrenzen(self)
+        einheit_auswahl_eingrenzen(self)
 
 
 def widget_am_eingabefeld(feld):
@@ -410,6 +430,7 @@ class BelegpositionForm(forms.ModelForm):
         # Kurz ("19 %", ohne "(Regelsteuersatz)"), damit die Spalte schmal
         # bleibt.
         steuersatz_auswahl_eingrenzen(self, kurz=True)
+        einheit_auswahl_eingrenzen(self)
 
     #: Readonly-Spalten des Admins (``BelegpositionInline``), nicht in
     #: ``fields``; auch sie blendet zeilenart.js aus.
@@ -467,10 +488,6 @@ class BelegpositionForm(forms.ModelForm):
                 if name not in self.changed_data:
                     daten[name] = getattr(katalog, name)
 
-            # Die Art hat kein Formularfeld; die Leistungserfassung braucht
-            # sie, um Zeit und Menge zu unterscheiden.
-            self.instance.art = katalog.art
-
         # Leer bedeutet automatische Vergabe durch das Formset, das alle
         # Zeilen kennt.
         daten['position'] = (daten.get('position') or '').strip()
@@ -493,7 +510,12 @@ class BelegpositionForm(forms.ModelForm):
                 self.add_error('zuschlag_prozent',
                                'Ein Zuschlag braucht seinen Satz in Prozent.')
 
-        for name in ('bezeichnung', 'einzelpreis'):
+        pflicht = ['bezeichnung', 'einzelpreis']
+        if zeilenart == Zeilenart.LEISTUNG:
+            # BT-130 ist in der E-Rechnung je Zeile Pflicht. Die Mahnung hat
+            # kein Feld Einheit.
+            pflicht.append('einheit')
+        for name in pflicht:
             if name in self.fields and daten.get(name) in (None, ''):
                 self.add_error(
                     name,

@@ -40,7 +40,7 @@ def kunde(db):
 def katalogposition(db):
     return Katalogposition.objects.create(
         nummer='2.10', bezeichnung='Probenahme vor Ort',
-        langtext=BESCHREIBUNG, einheit='Std',
+        langtext=BESCHREIBUNG, einheit='HUR',
         einzelpreis=Decimal('85.00'), steuersatz='19.00')
 
 
@@ -87,7 +87,7 @@ class TestDerLangtextAufDemBeleg:
             'positionen-0-bezeichnung': '',
             'positionen-0-langtext': '',
             'positionen-0-menge': '4',
-            'positionen-0-einheit': 'Stk',
+            'positionen-0-einheit': 'C62',
             'positionen-0-einzelpreis': '',
             'positionen-0-steuersatz': '19.00',
         }, follow=True)
@@ -113,7 +113,7 @@ class TestDerLangtextAufDemBeleg:
             'positionen-0-bezeichnung': '',
             'positionen-0-langtext': 'Nur zwei Mischproben, ohne Eluat.',
             'positionen-0-menge': '2',
-            'positionen-0-einheit': 'Stk',
+            'positionen-0-einheit': 'C62',
             'positionen-0-einzelpreis': '',
             'positionen-0-steuersatz': '19.00',
         }, follow=True)
@@ -136,7 +136,7 @@ class TestDerLangtextAufDemBeleg:
                                          betreff='Erkundung')
         services.position_hinzufuegen(
             beleg=angebot, bezeichnung='Probenahme vor Ort',
-            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='Std',
+            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='HUR',
             einzelpreis=Decimal('85.00'), steuersatz='19.00')
         services.beleg_festschreiben(beleg_id=angebot.pk)
 
@@ -154,7 +154,7 @@ class TestDerLangtextAufDemBeleg:
                                          betreff='Schadstofferkundung')
         services.position_hinzufuegen(
             beleg=angebot, bezeichnung='Probenahme vor Ort',
-            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='Std',
+            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='HUR',
             einzelpreis=Decimal('85.00'), steuersatz='19.00')
 
         daten = pdf.beleg_als_pdf(angebot)
@@ -178,7 +178,7 @@ class TestDerLangtextInDerMaske:
             kunde=kunde, typ=BelegTyp.ANGEBOT, betreff='Erkundung')
         services.position_hinzufuegen(
             beleg=beleg, bezeichnung='Probenahme vor Ort',
-            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='Std',
+            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='HUR',
             einzelpreis=Decimal('85.00'), steuersatz='19.00')
         return beleg
 
@@ -257,7 +257,7 @@ class TestDerLangtextUeberDieGanzeBreite:
         angebot = services.beleg_anlegen(kunde=kunde, typ=BelegTyp.ANGEBOT)
         services.position_hinzufuegen(
             beleg=angebot, position=position, bezeichnung='Probenahme vor Ort',
-            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='Std',
+            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='HUR',
             einzelpreis=Decimal('85.00'), steuersatz='19.00')
         return angebot
 
@@ -294,6 +294,6 @@ class TestDerLangtextUeberDieGanzeBreite:
                                               typ=BelegTyp.LIEFERSCHEIN)
         services.position_hinzufuegen(
             beleg=lieferschein, bezeichnung='Probenahme vor Ort',
-            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='Std',
+            langtext=BESCHREIBUNG, menge=Decimal('4'), einheit='HUR',
             einzelpreis=Decimal('0'), steuersatz='19.00')
         assert 'colspan="3"' in pdf.beleg_als_html(lieferschein)
