@@ -215,6 +215,27 @@ class TestErfassungsartAusDerEinheit:
         assert zeile.leistungsart == Leistungsart.PAUSCHALE
 
 
+class TestLeseansicht:
+
+    def test_der_festgeschriebene_beleg_zeigt_den_anzeigetext(
+            self, projekt, admin_client):
+        """Readonly zeigt Django den gespeicherten Wert, also den Code;
+        ``lesewert`` setzt den Anzeigetext ein."""
+        angebot = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.ANGEBOT)
+        services.position_hinzufuegen(
+            beleg=angebot, bezeichnung='Bauleitung', menge=Decimal('40'),
+            einheit='HUR', einzelpreis=Decimal('95.00'), steuersatz='19.00')
+        services.beleg_festschreiben(beleg_id=angebot.pk)
+
+        seite = admin_client.get(reverse(
+            'admin:faktura_angebot_change', args=[angebot.pk])
+        ).content.decode()
+        zelle = seite.split('field-einheit', 1)[1].split('</td>', 1)[0]
+
+        assert 'Std' in zelle
+        assert 'HUR' not in zelle
+
+
 class TestERechnung:
 
     @pytest.mark.parametrize('code', ['LS', 'MTK', 'HUR', 'C62'])
