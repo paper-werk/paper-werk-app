@@ -7,7 +7,10 @@ Abschläge je Projekt gezählt und kumuliert werden.
 Leistungen (R-180) und mindert damit die Bemessungsgrundlage. Sie wird wie
 die Zuschläge des Auftrags beim Anlegen einer Rechnung ergänzt
 (``umlage_ergaenzen``) und ist danach eine gewöhnliche Zeile; gelöscht wird
-sie nicht neu angelegt. Fehlt sie, nennt die Rechnungsmaske das
+sie nicht neu angelegt. Erkannt wird sie an der Bezeichnung aus dem Projekt.
+Steht schon ein anderer negativer Zuschlag auf alle Leistungen im Beleg,
+legt ``umlage_ergaenzen`` keine Zeile an, um die Umlage nicht doppelt
+abzuziehen. Fehlt die Zeile, nennt die Rechnungsmaske das
 (``fehlende_umlage``).
 
 **Umlage vom Brutto und Sicherheitseinbehalt** werden nach der Umsatzsteuer
@@ -72,12 +75,27 @@ def _umlage_vom_netto(beleg: Beleg) -> bool:
             and projekt.umlage_grundlage == Abzugsgrundlage.NETTO)
 
 
+def _erste_leistung(positionen) -> Belegposition | None:
+    return next((p for p in positionen
+                 if p.zeilenart == Zeilenart.LEISTUNG
+                 and not p.ist_abzug and not p.optional), None)
+
+
+def _negativer_zuschlag_auf_alles(positionen) -> bool:
+    return any(p.zeilenart == Zeilenart.ZUSCHLAG and not p.ist_abzug
+               and not p.zuschlag_auf and p.zuschlag_prozent is not None
+               and p.zuschlag_prozent < 0 for p in positionen)
+
+
 def fehlende_umlage(beleg: Beleg) -> str:
     """Bezeichnung und Satz der Umlage vom Netto, wenn das Projekt sie
-    vorsieht und der Entwurf keine Zeile dafür hat, sonst leer."""
+    vorsieht und der Entwurf eine Leistung, aber keine Zeile dafür hat,
+    sonst leer. Ohne Leistung leer, weil die Zeile dort 0,00 ergäbe."""
     if beleg.status != BelegStatus.ENTWURF or not _umlage_vom_netto(beleg):
         return ''
-    if _umlagezeilen(beleg.positionen.all(), beleg.projekt):
+    positionen = list(beleg.positionen.all())
+    if (_erste_leistung(positionen) is None
+            or _umlagezeilen(positionen, beleg.projekt)):
         return ''
     from ..formate import prozent
     return (f'{_umlagebezeichnung(beleg.projekt)} '
@@ -86,18 +104,18 @@ def fehlende_umlage(beleg: Beleg) -> str:
 
 def umlage_ergaenzen(beleg: Beleg) -> Belegposition | None:
     """Legt die Zeile der Umlage vom Netto an, wenn das Projekt sie vorsieht
-    und der Entwurf noch keine hat. Steuersatz der ersten Leistung; ohne
-    Leistung keine Zeile, weil ihr Betrag 0 wäre."""
+    und der Entwurf weder diese Zeile noch einen anderen negativen Zuschlag
+    auf alle Leistungen hat. Steuersatz der ersten Leistung; ohne Leistung
+    keine Zeile, weil ihr Betrag 0 wäre."""
     from .anlegen import position_hinzufuegen
 
     if beleg.status != BelegStatus.ENTWURF or not _umlage_vom_netto(beleg):
         return None
     positionen = list(Belegposition.objects.filter(beleg=beleg))
-    if _umlagezeilen(positionen, beleg.projekt):
+    if (_umlagezeilen(positionen, beleg.projekt)
+            or _negativer_zuschlag_auf_alles(positionen)):
         return None
-    leistung = next((p for p in positionen
-                     if p.zeilenart == Zeilenart.LEISTUNG
-                     and not p.ist_abzug and not p.optional), None)
+    leistung = _erste_leistung(positionen)
     if leistung is None:
         return None
     return position_hinzufuegen(

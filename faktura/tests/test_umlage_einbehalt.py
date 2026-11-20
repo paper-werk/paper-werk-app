@@ -179,6 +179,67 @@ class TestUmlagezeile:
             zeilenart=Zeilenart.ZUSCHLAG).exists()
         assert services.fehlende_umlage(beleg) == 'Anteil Versicherung -1,1 %'
 
+    def test_ohne_leistung_kein_hinweis(self, versicherung):
+        beleg = services.beleg_anlegen(
+            projekt=versicherung, typ=BelegTyp.RECHNUNG,
+            rechnungsart=Rechnungsart.ABSCHLAG, betreff='Abschlag')
+        assert services.fehlende_umlage(beleg) == ''
+
+    def test_anderer_name_hinweis_aber_keine_zweite_zeile(self, versicherung):
+        """Ein negativer Zuschlag auf alles unter anderem Namen ist nicht die
+        Umlage; die Maske meldet das, ergänzt wird nichts."""
+        beleg = _abschlag(versicherung, '1', '1000.00', festschreiben=False)
+        beleg.positionen.filter(zeilenart=Zeilenart.ZUSCHLAG).update(
+            bezeichnung='Beteiligung AG Versicherung')
+        assert services.umlage_ergaenzen(beleg) is None
+        services.zuschlaege_ergaenzen(beleg)
+        assert beleg.positionen.filter(
+            zeilenart=Zeilenart.ZUSCHLAG).count() == 1
+        assert services.fehlende_umlage(beleg) != ''
+
+    def test_positiver_zuschlag_verhindert_umlage_nicht(self, versicherung):
+        beleg = _abschlag(versicherung, '1', '1000.00', festschreiben=False)
+        beleg.positionen.filter(zeilenart=Zeilenart.ZUSCHLAG).update(
+            bezeichnung='Nebenkosten', zuschlag_prozent=D('3'))
+        assert services.umlage_ergaenzen(beleg) is not None
+
+    def test_zuschlag_mit_bezug_verhindert_umlage_nicht(self, versicherung):
+        beleg = _abschlag(versicherung, '1', '1000.00', festschreiben=False)
+        beleg.positionen.filter(zeilenart=Zeilenart.ZUSCHLAG).update(
+            bezeichnung='Nachlass Titel 01', zuschlag_auf='01')
+        assert services.umlage_ergaenzen(beleg) is not None
+
+    def test_umlage_aus_dem_auftrag_unter_anderem_namen(self, versicherung):
+        """Der Auftrag enthält die Umlage als eigenen Zuschlag; beim
+        Übernehmen entsteht nur diese Zeile, nicht zusätzlich die des
+        Projekts."""
+        auftrag = services.beleg_anlegen(
+            projekt=versicherung, typ=BelegTyp.AUFTRAG, betreff='Planung')
+        planung = services.position_hinzufuegen(
+            beleg=auftrag, bezeichnung='Planung', menge=D('1'), einheit='LS',
+            einzelpreis=D('10000.00'), steuersatz='19.00', position='01.01')
+        services.position_hinzufuegen(
+            beleg=auftrag, bezeichnung='Beteiligung AG Versicherung',
+            zeilenart=Zeilenart.ZUSCHLAG, menge=D('1'), einheit='',
+            einzelpreis=D('0'), steuersatz='19.00', position='06.01',
+            zuschlag_prozent=D('-1.1'), zuschlag_auf='')
+        services.beleg_festschreiben(beleg_id=auftrag.pk)
+
+        abschlag = services.beleg_anlegen(
+            projekt=versicherung, typ=BelegTyp.RECHNUNG,
+            rechnungsart=Rechnungsart.ABSCHLAG, betreff='Abschlag')
+        services.position_hinzufuegen(
+            beleg=abschlag, bezeichnung='Planung', menge=D('0.5'),
+            einheit='LS', einzelpreis=D('10000.00'), steuersatz='19.00',
+            auftragsposition=planung)
+        services.zuschlaege_ergaenzen(abschlag)
+        services.zuschlaege_nachrechnen(abschlag)
+
+        zuschlaege = list(abschlag.positionen.filter(
+            zeilenart=Zeilenart.ZUSCHLAG))
+        assert [(z.bezeichnung, z.einzelpreis) for z in zuschlaege] == [
+            ('Beteiligung AG Versicherung', D('-55.00'))]
+
 
 class TestGrenze:
     """Auftrag 10.000 netto, Grenze 5 % = 500, Einbehalt 10 % je Abschlag
