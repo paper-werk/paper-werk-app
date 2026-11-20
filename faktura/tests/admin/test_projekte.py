@@ -90,6 +90,97 @@ class TestProjektAdmin:
 
 
 @pytest.mark.django_db
+class TestProjektAbschliessen:
+    """Aktionen "Projekt abschließen" und "Wieder öffnen" in Maske und
+    Liste, zusätzlich zum Schalter im Formular."""
+
+    @pytest.fixture
+    def projekt(self, kunde):
+        return Projekt.objects.create(nummer='2026-001',
+                                      bezeichnung='Ludwigsplatz 9',
+                                      kunde=kunde)
+
+    def _detail(self, client, projekt, aktion):
+        return client.get(reverse(f'admin:faktura_projekt_detail_{aktion}',
+                                  args=[projekt.pk]))
+
+    def test_die_detailaktion_schliesst_ab(self, buero, projekt):
+        version = projekt.version
+
+        antwort = self._detail(buero, projekt, 'abschliessen')
+
+        assert antwort.status_code == 302
+        projekt.refresh_from_db()
+        assert projekt.abgeschlossen
+        # Inkrementiert, damit ein offenes Formular den Konflikt meldet.
+        assert projekt.version == version + 1
+
+    def test_die_detailaktion_oeffnet_wieder(self, buero, projekt):
+        Projekt.objects.filter(pk=projekt.pk).update(abgeschlossen=True)
+
+        self._detail(buero, projekt, 'oeffnen')
+
+        projekt.refresh_from_db()
+        assert not projekt.abgeschlossen
+
+    def test_die_maske_bietet_nur_die_passende_aktion(self, buero, projekt):
+        url = reverse('admin:faktura_projekt_change', args=[projekt.pk])
+
+        laufend = buero.get(url).content.decode()
+        Projekt.objects.filter(pk=projekt.pk).update(abgeschlossen=True)
+        fertig = buero.get(url).content.decode()
+
+        assert '/abschliessen/' in laufend and '/oeffnen/' not in laufend
+        assert '/oeffnen/' in fertig and '/abschliessen/' not in fertig
+
+    def test_die_listenaktion_schliesst_die_auswahl_ab(self, buero, kunde,
+                                                       projekt):
+        anderes = Projekt.objects.create(nummer='2026-002',
+                                         bezeichnung='Halle Nord', kunde=kunde)
+        unberuehrt = Projekt.objects.create(nummer='2026-003',
+                                            bezeichnung='Hort', kunde=kunde)
+
+        buero.post(reverse('admin:faktura_projekt_changelist'), {
+            'action': 'action_abschliessen',
+            '_selected_action': [projekt.pk, anderes.pk],
+        })
+
+        assert set(Projekt.objects.filter(abgeschlossen=True)
+                   .values_list('pk', flat=True)) == {projekt.pk, anderes.pk}
+        unberuehrt.refresh_from_db()
+        assert not unberuehrt.abgeschlossen
+
+    def test_die_listenaktion_oeffnet_wieder(self, buero, projekt):
+        Projekt.objects.filter(pk=projekt.pk).update(abgeschlossen=True)
+
+        # Abgeschlossene Projekte zeigt die Liste nur mit Filter.
+        buero.post(reverse('admin:faktura_projekt_changelist') + '?stand=alle',
+                   {'action': 'action_oeffnen',
+                    '_selected_action': [projekt.pk]})
+
+        projekt.refresh_from_db()
+        assert not projekt.abgeschlossen
+
+    def test_ohne_aenderungsrecht_bleibt_das_projekt_offen(
+            self, client, django_user_model, projekt):
+        from django.contrib.auth.models import Permission
+        person = django_user_model.objects.create_user(
+            username='lesen', password='x', is_staff=True)
+        person.user_permissions.add(Permission.objects.get(
+            content_type__app_label='faktura', codename='view_projekt'))
+        client.force_login(person)
+
+        self._detail(client, projekt, 'abschliessen')
+        client.post(reverse('admin:faktura_projekt_changelist'), {
+            'action': 'action_abschliessen',
+            '_selected_action': [projekt.pk],
+        })
+
+        projekt.refresh_from_db()
+        assert not projekt.abgeschlossen
+
+
+@pytest.mark.django_db
 class TestProjektAlsKlammer:
     """Ein Beleg gehört einem Kunden, einem Projekt oder keinem von beiden.
 

@@ -4,7 +4,7 @@ Ansprechpartnern, Projekte, Textbausteine, Leistungskatalog."""
 
 from decimal import Decimal
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.options import IS_POPUP_VAR
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
@@ -415,6 +415,10 @@ def _hilfelink(anker: str) -> str:
         'Mehr in der Hilfe</a>', url, anker)
 
 
+def _projekte(anzahl):
+    return '1 Projekt' if anzahl == 1 else f'{anzahl} Projekte'
+
+
 @admin.register(Projekt)
 class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
                    ImportExportModelAdmin,
@@ -426,7 +430,9 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
     import_form_class = ImportForm
     export_form_class = SelectableFieldsExportForm
 
-    actions_detail = ['detail_akte', weitere()]
+    actions_detail = ['detail_akte',
+                      weitere('detail_abschliessen', 'detail_oeffnen')]
+    actions = ['action_abschliessen', 'action_oeffnen']
     formfield_overrides = {ProzentFeld: {'widget': ProzentWidget}}
     list_display = ['akte', 'nummer', 'bezeichnung', 'kunde', 'anzahl_belege',
                     'archiv']
@@ -499,6 +505,91 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
         """Link vom Formular auf die Akte über den URL-Namen, ohne Import aus
         ``auswertung``."""
         return redirect('projektakte', pk=object_id)
+
+    # --- Abschließen und wieder öffnen ---
+    #
+    # Zusätzlich zum Schalter im Formular, weil er im Kasten "Weiteres" nicht
+    # gefunden wird. Ohne Rückfrage, weil beides umkehrbar ist und die Belege
+    # unberührt bleiben. Gespeichert wird per save(), damit die Version
+    # inkrementiert wird und ein offenes Formular den Konflikt meldet.
+
+    def _projekt_oder_none(self, object_id):
+        if object_id is None:
+            return None
+        return Projekt.objects.filter(pk=object_id).first()
+
+    def has_abschliessen_permission(self, request, object_id=None):
+        """Änderungsrecht; in der Maske nur an einem laufenden Projekt."""
+        if not self.has_change_permission(request):
+            return False
+        projekt = self._projekt_oder_none(object_id)
+        return projekt is None or not projekt.abgeschlossen
+
+    def has_oeffnen_permission(self, request, object_id=None):
+        """Änderungsrecht; in der Maske nur an einem abgeschlossenen
+        Projekt."""
+        if not self.has_change_permission(request):
+            return False
+        projekt = self._projekt_oder_none(object_id)
+        return projekt is None or projekt.abgeschlossen
+
+    def _abschluss_setzen(self, request, projekte, abgeschlossen):
+        """Setzt ``abgeschlossen`` an den Projekten, die ihn noch nicht
+        haben, mit LogEntry. Liefert die Anzahl der geänderten."""
+        geaendert = 0
+        for projekt in projekte:
+            if projekt.abgeschlossen == abgeschlossen:
+                continue
+            projekt.abgeschlossen = abgeschlossen
+            projekt.save()
+            self.log_change(request, projekt,
+                            'Abgeschlossen.' if abgeschlossen
+                            else 'Wieder geöffnet.')
+            geaendert += 1
+        return geaendert
+
+    @unfold_action(
+        description='Projekt abschließen',
+        icon='inventory_2',
+        permissions=['abschliessen'],
+        url_path='abschliessen',
+    )
+    def detail_abschliessen(self, request, object_id):
+        projekt = get_object_or_404(Projekt, pk=object_id)
+        self._abschluss_setzen(request, [projekt], True)
+        self.message_user(request, f'{projekt} abgeschlossen.',
+                          messages.SUCCESS)
+        return redirect('admin:faktura_projekt_change', object_id)
+
+    @unfold_action(
+        description='Wieder öffnen',
+        icon='unarchive',
+        permissions=['oeffnen'],
+        url_path='oeffnen',
+    )
+    def detail_oeffnen(self, request, object_id):
+        projekt = get_object_or_404(Projekt, pk=object_id)
+        self._abschluss_setzen(request, [projekt], False)
+        self.message_user(request, f'{projekt} wieder geöffnet.',
+                          messages.SUCCESS)
+        return redirect('admin:faktura_projekt_change', object_id)
+
+    # Listenaktionen mit ``permissions``, weil Django sie sonst schon mit
+    # View-Recht ausführt.
+
+    @admin.action(description='Ausgewählte Projekte abschließen',
+                  permissions=['abschliessen'])
+    def action_abschliessen(self, request, queryset):
+        anzahl = self._abschluss_setzen(request, queryset, True)
+        self.message_user(request, f'{_projekte(anzahl)} abgeschlossen.',
+                          messages.SUCCESS)
+
+    @admin.action(description='Ausgewählte Projekte wieder öffnen',
+                  permissions=['oeffnen'])
+    def action_oeffnen(self, request, queryset):
+        anzahl = self._abschluss_setzen(request, queryset, False)
+        self.message_user(request, f'{_projekte(anzahl)} wieder geöffnet.',
+                          messages.SUCCESS)
 
     @admin.display(description='Akte')
     def akte(self, projekt):

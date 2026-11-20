@@ -34,7 +34,11 @@ Ein abgeschlossenes Projekt steht in neuen Belegen nicht mehr zur Wahl,
 bleibt aber in der Liste (Filter „Nur abgeschlossene“) und in allen
 Auswertungen auffindbar.
 
-Oben in der Maske führt **Projektakte** in die Akte.
+Oben in der Maske führt **Projektakte** in die Akte. Unter „Weitere …“
+stehen **Projekt abschließen** und an einem abgeschlossenen Projekt
+**Wieder öffnen**. In der Liste schließen die Aktionen **Ausgewählte
+Projekte abschließen** und **Ausgewählte Projekte wieder öffnen** mehrere
+Projekte auf einmal ab oder öffnen sie wieder.
 
 ## Projektakte {#projektakte}
 
