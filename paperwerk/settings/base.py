@@ -208,6 +208,10 @@ AXES_IPWARE_META_PRECEDENCE_ORDER = (
 # eval, lässt aber nur Quellen dieses Hosts zu und verbietet das Einbetten
 # in fremde Seiten.
 #
+# frame-ancestors 'self', weil Unfold verknüpfte Objekte (Drei-Punkte-Menü
+# an Fremdschlüsseln) in einem Dialog mit <iframe> derselben Seite öffnet.
+# Mit 'none' blockiert der Browser den Frame und der Dialog bleibt leer.
+#
 # form-action enthält den OIDC-Anbieter, weil Browser die Direktive auch auf
 # den Redirect nach dem Absenden anwenden; die SSO-Anmeldung führt per POST
 # zum Anbieter.
@@ -223,7 +227,7 @@ SECURE_CSP = {
     'connect-src': [CSP.SELF],
     'object-src': [CSP.NONE],
     'base-uri': [CSP.SELF],
-    'frame-ancestors': [CSP.NONE],
+    'frame-ancestors': [CSP.SELF],
     'form-action': [CSP.SELF],
 }
 
