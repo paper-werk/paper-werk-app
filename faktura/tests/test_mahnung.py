@@ -58,6 +58,20 @@ class TestMahnung:
         with pytest.raises(services.FalscherStatus, match='fällig'):
             services.mahnung_erstellen(beleg_id=original.pk, stufe=1)
 
+    def test_am_faelligkeitstag_wird_nicht_gemahnt(self, rechnung,
+                                                    ueberfaellig):
+        """Verzug beginnt am Tag nach der Fälligkeit."""
+        original = ueberfaellig(rechnung, tage=0)
+
+        with pytest.raises(services.FalscherStatus, match='fällig'):
+            services.mahnung_erstellen(beleg_id=original.pk, stufe=1)
+
+    def test_am_tag_nach_der_faelligkeit_wird_gemahnt(self, rechnung,
+                                                       ueberfaellig):
+        original = ueberfaellig(rechnung, tage=1)
+
+        assert services.mahnung_erstellen(beleg_id=original.pk, stufe=1)
+
     def test_die_aufstellung_nennt_rechnung_datum_und_faelligkeit(self, rechnung, ueberfaellig):
         """Die Aufstellung nennt Rechnung, Datum und Fälligkeit.
 

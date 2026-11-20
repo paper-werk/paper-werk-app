@@ -171,6 +171,32 @@ class TestStufenwechsel:
 
         assert _gebuehr(mahnung) is None
 
+    def test_die_neue_gebuehr_zaehlt_einmal_zur_summe(self, mahnung):
+        offen = services.belegsummen(mahnung).brutto
+        mahnung.mahnstufe = 2
+        mahnung.save()
+
+        services.mahnstufe_angleichen(mahnung=mahnung, alte_stufe=1)
+
+        assert services.belegsummen(mahnung).brutto == (
+            offen + services.mahngebuehr(2))
+
+    def test_geloeschte_gebuehr_kommt_beim_naechsten_wechsel_nicht_wieder(
+            self, mahnung):
+        """Eine neue Gebührenzeile entsteht nur beim Wechsel von einer Stufe
+        ohne Gebühr; eine von Hand gelöschte Zeile bleibt gelöscht."""
+        mahnung.mahnstufe = 2
+        mahnung.save()
+        services.mahnstufe_angleichen(mahnung=mahnung, alte_stufe=1)
+        mahnung.positionen.filter(
+            bezeichnung=services.korrektur.MAHNGEBUEHR_ZEILE).delete()
+
+        mahnung.mahnstufe = 3
+        mahnung.save()
+        services.mahnstufe_angleichen(mahnung=mahnung, alte_stufe=2)
+
+        assert _gebuehr(mahnung) is None
+
     def test_eigener_text_bleibt(self, buero, mahnung):
         mahnung.kopftext = 'Von Hand geschrieben.'
         mahnung.save()

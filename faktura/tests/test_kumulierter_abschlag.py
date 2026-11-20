@@ -125,6 +125,16 @@ class TestLeistungsstand:
 
         assert services.kumulierter_abschlag(ab1) is None
 
+    def test_der_leistungszeitraum_spannt_ueber_die_abschlaege(
+            self, zwei_abschlaege):
+        _, ab2 = zwei_abschlaege
+
+        kumuliert = services.kumulierter_abschlag(ab2)
+
+        assert {(p.leistung_von, p.leistung_bis)
+                for p in kumuliert.positionen} == {
+            (date(2026, 1, 5), date(2026, 2, 4))}
+
     def test_je_auftragsposition_eine_zeile_mit_gesamtmenge(
             self, zwei_abschlaege):
         """Stunden und LVGBT zum Vertragspreis: Mengen addiert. Gutachten in

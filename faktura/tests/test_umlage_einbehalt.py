@@ -197,11 +197,24 @@ class TestUmlagezeile:
             zeilenart=Zeilenart.ZUSCHLAG).count() == 1
         assert services.fehlende_umlage(beleg) != ''
 
-    def test_positiver_zuschlag_verhindert_umlage_nicht(self, versicherung):
+    @pytest.mark.parametrize('satz', ['0', '0.5', '3'])
+    def test_zuschlag_ab_null_verhindert_umlage_nicht(self, versicherung,
+                                                      satz):
         beleg = _abschlag(versicherung, '1', '1000.00', festschreiben=False)
         beleg.positionen.filter(zeilenart=Zeilenart.ZUSCHLAG).update(
-            bezeichnung='Nebenkosten', zuschlag_prozent=D('3'))
+            bezeichnung='Nebenkosten', zuschlag_prozent=D(satz))
         assert services.umlage_ergaenzen(beleg) is not None
+
+    def test_nur_mit_titel_kein_hinweis(self, versicherung):
+        beleg = services.beleg_anlegen(
+            projekt=versicherung, typ=BelegTyp.RECHNUNG,
+            rechnungsart=Rechnungsart.ABSCHLAG, betreff='Abschlag')
+        services.position_hinzufuegen(
+            beleg=beleg, position='01', bezeichnung='Planung',
+            zeilenart=Zeilenart.TITEL, menge=D('0'), einheit='',
+            einzelpreis=D('0'), steuersatz='19.00')
+        assert services.fehlende_umlage(beleg) == ''
+        assert services.umlage_ergaenzen(beleg) is None
 
     def test_zuschlag_mit_bezug_verhindert_umlage_nicht(self, versicherung):
         beleg = _abschlag(versicherung, '1', '1000.00', festschreiben=False)
