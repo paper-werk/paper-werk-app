@@ -415,10 +415,6 @@ def _hilfelink(anker: str) -> str:
         'Mehr in der Hilfe</a>', url, anker)
 
 
-def _projekte(anzahl):
-    return '1 Projekt' if anzahl == 1 else f'{anzahl} Projekte'
-
-
 @admin.register(Projekt)
 class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
                    ImportExportModelAdmin,
@@ -533,6 +529,10 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
         projekt = self._projekt_oder_none(object_id)
         return projekt is None or projekt.abgeschlossen
 
+    @staticmethod
+    def _projekte(anzahl):
+        return '1 Projekt' if anzahl == 1 else f'{anzahl} Projekte'
+
     def _abschluss_setzen(self, request, projekte, abgeschlossen):
         """Setzt ``abgeschlossen`` an den Projekten, die ihn noch nicht
         haben, mit LogEntry. Liefert die Anzahl der geänderten."""
@@ -581,14 +581,14 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
                   permissions=['abschliessen'])
     def action_abschliessen(self, request, queryset):
         anzahl = self._abschluss_setzen(request, queryset, True)
-        self.message_user(request, f'{_projekte(anzahl)} abgeschlossen.',
+        self.message_user(request, f'{self._projekte(anzahl)} abgeschlossen.',
                           messages.SUCCESS)
 
     @admin.action(description='Ausgewählte Projekte wieder öffnen',
                   permissions=['oeffnen'])
     def action_oeffnen(self, request, queryset):
         anzahl = self._abschluss_setzen(request, queryset, False)
-        self.message_user(request, f'{_projekte(anzahl)} wieder geöffnet.',
+        self.message_user(request, f'{self._projekte(anzahl)} wieder geöffnet.',
                           messages.SUCCESS)
 
     @admin.display(description='Akte')
