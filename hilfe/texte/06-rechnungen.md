@@ -184,8 +184,12 @@ Basis.
   negativem Satz auf alle Leistungen, etwa „Anteil Versicherung -1,1 % auf
   5.589,90“. Sie steht vor der Umsatzsteuer und mindert sie. Die Zeile
   entsteht mit „Erbrachte Leistungen hinzufügen“ und in der
-  Schlussrechnung. Fehlt sie im Entwurf, steht oben in der Maske
-  „Zeile … fehlt“; dann legen Sie sie als Zuschlag an.
+  Schlussrechnung, außer der Beleg hat schon einen anderen Zuschlag mit
+  negativem Satz auf alle Leistungen. Als Umlage zählt nur eine Zeile mit
+  der Bezeichnung aus dem Projekt. Fehlt sie in einem Entwurf mit
+  Leistungen, steht oben in der Maske „Keine Zeile …“. Dann legen Sie
+  einen Zuschlag mit dieser Bezeichnung, dem negativen Satz und leerem
+  „Zuschlag auf“ an oder benennen die vorhandene Zeile um.
 - **Brutto**: Der Satz wird vom Bruttobetrag gerechnet und nach der
   Umsatzsteuer abgezogen.
 

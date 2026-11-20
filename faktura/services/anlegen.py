@@ -304,13 +304,22 @@ def zuschlaege_ergaenzen(beleg: Beleg) -> list[Belegposition]:
     Bezeichnung der Beleg schon als Zuschlag hat; dessen Betrag rechnet
     ``zuschlaege_nachrechnen`` auf die Positionen des Belegs neu. Die
     Positionsnummer des Auftrags bleibt, sofern frei.
+
+    Die Umlage zuletzt, weil ein Zuschlag des Auftrags die Umlage unter
+    anderer Bezeichnung enthalten kann und ``umlage_ergaenzen`` dann keine
+    zweite Zeile anlegt.
     """
     from .abzuege import umlage_ergaenzen
 
-    angelegt = []
+    angelegt = _auftragszuschlaege_ergaenzen(beleg)
     umlage = umlage_ergaenzen(beleg)
     if umlage is not None:
         angelegt.append(umlage)
+    return angelegt
+
+
+def _auftragszuschlaege_ergaenzen(beleg: Beleg) -> list[Belegposition]:
+    angelegt = []
     positionen = list(beleg.positionen.select_related('auftragsposition'))
     bezogen = [p for p in positionen
                if p.auftragsposition_id and not p.ist_abzug]

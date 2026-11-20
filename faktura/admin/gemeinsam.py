@@ -10,7 +10,7 @@ from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.db.models import Q
 from django.forms import Script
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils.html import format_html
 from unfold import admin as unfold_admin
 from unfold.contrib.filters.admin import DropdownFilter
@@ -288,6 +288,17 @@ def adresse_im_admin(beleg) -> str:
         f'admin:{modell._meta.app_label}_{modell._meta.model_name}_change',
         args=[beleg.pk],
     )
+
+
+def hilfelink(anker: str) -> str:
+    """Link auf einen Abschnitt der Hilfe; leer ohne die App ``hilfe``."""
+    try:
+        url = reverse('hilfe')
+    except NoReverseMatch:
+        return ''
+    return format_html(
+        '<br><a href="{}#{}" class="text-primary-600 dark:text-primary-500">'
+        'Mehr in der Hilfe</a>', url, anker)
 
 
 def verweis_auf(beleg):

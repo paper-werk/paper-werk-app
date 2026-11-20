@@ -42,6 +42,7 @@ from .gemeinsam import (
     VersandstandFilter,
     ZahlungsstandFilter,
     adresse_im_admin,
+    hilfelink,
     verweis_auf,
 )
 
@@ -104,10 +105,13 @@ class RechnungAdmin(BelegAdmin):
                     messages.INFO)
             umlage = services.fehlende_umlage(beleg)
             if umlage:
-                self.message_user(request, (
-                    f'Zeile „{umlage}“ fehlt. Das Projekt sieht diese '
-                    f'Umlage vom Netto vor; anlegen als Zuschlag mit '
-                    f'negativem Satz, „Zuschlag auf“ leer.'),
+                satz = formate.prozent(beleg.projekt.umlage_prozent)
+                self.message_user(request, format_html(
+                    'Keine Zeile „{}“ vom Netto. Anlegen als Zuschlag mit '
+                    '-{}, „Zuschlag auf“ leer, Bezeichnung wie im Projekt. '
+                    'Steht die Umlage unter anderem Namen im Beleg, die '
+                    'Zeile umbenennen.{}',
+                    umlage, satz, hilfelink('einbehalt')),
                     messages.WARNING)
         return super().change_view(request, object_id, form_url,
                                    extra_context)

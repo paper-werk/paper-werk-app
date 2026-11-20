@@ -10,7 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import NoReverseMatch, path, reverse
+from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from import_export.admin import ImportExportModelAdmin
@@ -62,6 +62,7 @@ from .gemeinsam import (
     KontaktAktivFilter,
     ProjektAbgeschlossenFilter,
     RolleFilter,
+    hilfelink,
 )
 
 
@@ -404,17 +405,6 @@ EINBEHALT_TEXT = (
 )
 
 
-def _hilfelink(anker: str) -> str:
-    """Link auf einen Abschnitt der Hilfe; leer ohne die App ``hilfe``."""
-    try:
-        url = reverse('hilfe')
-    except NoReverseMatch:
-        return ''
-    return format_html(
-        '<br><a href="{}#{}" class="text-primary-600 dark:text-primary-500">'
-        'Mehr in der Hilfe</a>', url, anker)
-
-
 @admin.register(Projekt)
 class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
                    ImportExportModelAdmin,
@@ -465,7 +455,7 @@ class ProjektAdmin(Kopfleiste, VersionAdminMixin, AktionNachDemSichern,
         aufgelöst wird."""
         beschreibung = {'Umlage': UMLAGE_TEXT,
                         'Sicherheitseinbehalt': EINBEHALT_TEXT}
-        link = _hilfelink('einbehalt')
+        link = hilfelink('einbehalt')
         return [
             (titel, {**optionen, 'description': beschreibung[titel] + link})
             if titel in beschreibung else (titel, optionen)
