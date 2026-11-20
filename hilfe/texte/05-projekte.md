@@ -28,13 +28,36 @@ exportieren.
   Auftraggeber von den Rechnungen abzieht. Leer, wenn er nichts abzieht
   (siehe [Umlage und Sicherheitseinbehalt](#einbehalt)).
 - Unter „Weiteres“: **Beschreibung** und **Notiz** für interne Zwecke und
-  der Haken **Abgeschlossen**.
-
-Ein abgeschlossenes Projekt steht in neuen Belegen nicht mehr zur Wahl,
-bleibt aber in der Liste (Filter „Nur abgeschlossene“) und in allen
-Auswertungen auffindbar.
+  der Schalter **Abgeschlossen** (siehe [Projekt abschließen](#abschliessen)).
 
 Oben in der Maske führt **Projektakte** in die Akte.
+
+### Projekt abschließen {#abschliessen}
+
+Ein fertiges Projekt wird abgeschlossen (archiviert), damit es nicht mehr
+zur Wahl steht. Dafür gibt es drei Wege:
+
+- In der Maske unter „Weitere …“: **Projekt abschließen**.
+- In der Liste die Projekte markieren und unter „Aktion wählen“
+  **Ausgewählte Projekte abschließen** ausführen.
+- In der Maske unter „Weiteres“ den Schalter **Abgeschlossen** setzen und
+  sichern.
+
+Ein abgeschlossenes Projekt
+
+- steht in neuen Belegen und in der Erfassung nicht mehr zur Wahl,
+- fehlt im Controlling, das nur laufende Projekte zählt,
+- steht weiter in der Projektliste (Filter „Bearbeitungsstand“: „Nur
+  abgeschlossene“ oder „Alle“) mit dem Symbol in der letzten Spalte, in
+  der Kundenakte mit dem Zusatz „(abgeschlossen)“ und in seiner
+  Projektakte.
+
+Seine Belege bleiben unverändert und lassen sich weiter bearbeiten,
+festschreiben und bezahlen.
+
+**Wieder öffnen** steht in der Maske unter „Weitere …“, in der Liste als
+**Ausgewählte Projekte wieder öffnen**. Die Liste zeigt abgeschlossene
+Projekte nur mit dem Filter „Nur abgeschlossene“ oder „Alle“.
 
 ## Projektakte {#projektakte}
 
