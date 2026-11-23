@@ -35,6 +35,10 @@ class ZahlungszuordnungInline(unfold_admin.TabularInline):
         zugeordneten, weil eine ausgeglichene Rechnung nicht mehr offen ist
         und die Zeile sonst beim Speichern ungültig wäre.
 
+        Bereits zugeordnete auch storniert, damit eine Zuordnung aus der
+        Zeit vor der Sperre in ``rechnung_korrigieren`` mit ihrer Rechnung
+        erscheint und sich löschen lässt (``Zahlungszuordnung.clean``).
+
         Kein Autocomplete, weil ``Beleg`` im Admin nicht registriert ist.
         """
         if db_field.name == 'beleg':
@@ -46,9 +50,11 @@ class ZahlungszuordnungInline(unfold_admin.TabularInline):
             eigene = (Zahlungszuordnung.objects.filter(zahlung_id=zahlung)
                       .values_list('beleg_id', flat=True) if zahlung else [])
             kwargs['queryset'] = Beleg.objects.filter(
-                Q(pk__in=offene) | Q(pk__in=list(eigene)),
+                Q(pk__in=offene, status=BelegStatus.FESTGESCHRIEBEN)
+                | Q(pk__in=list(eigene),
+                    status__in=[BelegStatus.FESTGESCHRIEBEN,
+                                BelegStatus.STORNIERT]),
                 typ=BelegTyp.RECHNUNG,
-                status=BelegStatus.FESTGESCHRIEBEN,
             ).order_by('-nummer')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

@@ -61,7 +61,7 @@ Festschreiben sind Leistungsdatum und Empfängeranschrift.
 | Mahnung erzeugen | Weitere … | festgeschrieben, etwas offen | Mahnung der nächsten Stufe als Entwurf |
 | Nachlass gewähren | Weitere … | festgeschrieben, nicht am Abschlag | Rechnungskorrektur über einen Betrag |
 | E-Rechnung neu ausstellen | Weitere … | festgeschrieben | Neue Dateien bei gleicher Nummer, etwa nach Ablehnung durch ein Portal |
-| Stornieren und neu schreiben | Weitere … | festgeschrieben, Nachlass vorher storniert | Stornorechnung und neuer Entwurf |
+| Stornieren und neu schreiben | Weitere … | festgeschrieben, Nachlass vorher storniert, keine Zahlung zugeordnet | Stornorechnung und neuer Entwurf |
 | Rechnung duplizieren | Weitere … | immer | Neuer Entwurf mit denselben Positionen |
 | Verlauf | Weitere … | immer | Änderungen und Vorgänge |
 
@@ -381,6 +381,26 @@ der Neufassung abgesetzt.
 Hat die Rechnung schon einen festgeschriebenen Nachlass, stornieren Sie
 zuerst den Nachlass, dann die Rechnung, siehe
 [Nachlass stornieren](#nachlass-stornieren).
+
+### Storno einer bezahlten Rechnung {#storno-bezahlt}
+
+Solange der Rechnung eine Zahlung zugeordnet ist, lässt sie sich nicht
+stornieren. Dann:
+
+1. Öffnen Sie unter Zahlungen die Zahlung und löschen Sie unter
+   „Zuordnung Rechnungen“ die Zeile mit dieser Rechnung. Die Zahlung
+   bleibt; ihr Betrag steht danach als Rest und erscheint im Filter
+   „Noch nicht ganz verteilt“.
+2. Stornieren und neu schreiben wie oben, Neufassung versenden.
+3. Ordnen Sie den Rest der Zahlung der Neufassung zu oder erstatten Sie
+   ihn. Skonto oder Kürzung der alten Zeile tragen Sie dabei neu ein.
+
+Das PDF der Neufassung nennt den vollen Betrag ohne die angerechnete
+Zahlung. Offen ist nach der Zuordnung der Rest. Eine Erstattung bildet
+Paper-Werk nicht ab; der Rest bleibt dann an der Zahlung stehen.
+
+Zuordnungen auf eine schon stornierte Rechnung aus älteren Ständen zeigt
+die Zahlung mit der stornierten Rechnung an. Sie lassen sich nur löschen.
 
 ## Rechnungskorrekturen {#rechnungskorrektur}
 
