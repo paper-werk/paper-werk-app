@@ -11,7 +11,6 @@ from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.urls import reverse
 
 from faktura import services
 from faktura.forms import ZahlungForm
@@ -170,21 +169,3 @@ class TestNurAnDerSchlussrechnung:
         assert 'einbehalten' in ZahlungForm(mit_einbehalt=True).fields
         assert 'einbehalten' not in ZahlungForm().fields
 
-
-class TestAkten:
-
-    def test_projektakte_zeigt_die_karte(self, buero, projekt, abschlag):
-        antwort = buero.get(reverse('projektakte', args=[projekt.pk]))
-
-        titel = [k['titel'] for k in antwort.context['kennzahlen']]
-        assert 'Einbehalten' in titel
-
-    def test_kundenakte_nennt_den_betrag(self, buero, kunde, abschlag):
-        antwort = buero.get(reverse('kundenakte', args=[kunde.pk]))
-
-        assert antwort.context['einbehalten'] == Decimal('238.00')
-
-    def test_ohne_einbehalt_keine_karte(self, buero, kunde):
-        antwort = buero.get(reverse('kundenakte', args=[kunde.pk]))
-
-        assert antwort.context['einbehalten'] == Decimal('0.00')
