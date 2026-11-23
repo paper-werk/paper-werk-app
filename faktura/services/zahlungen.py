@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import F, Prefetch, Sum
+from django.db.models import F, Prefetch, Q, Sum
 from django.utils import timezone
 
 from ..models import (
@@ -342,3 +342,28 @@ def zahlung_verbuchen(*, beleg_id: int, datum: date, betrag: Decimal,
     zuordnung.save()
 
     return zahlung
+
+
+def gekuerzte_abschlaege(zahlung: Zahlung) -> list[Zahlungszuordnung]:
+    """Zuordnungen mit Kürzung auf Abschläge des Zahlers, für den Hinweis an
+    einer Zahlung mit Rest: Der Rest kann der nachgezahlte gekürzte Teil
+    sein, der erst nach Rücknahme der Kürzung dem Abschlag zugeordnet werden
+    kann.
+
+    Ohne Abschläge, die eine festgeschriebene Schlussrechnung abgerechnet
+    hat, weil die Zahlung dann zu dieser gehört. Ohne Kunden an der Zahlung
+    kein Hinweis, weil der Zahler nicht feststeht.
+    """
+    if not zahlung.kunde_id or zahlung.rest <= 0:
+        return []
+    kunde = zahlung.kunde_id
+    zuordnungen = list(
+        Zahlungszuordnung.objects
+        .filter(kuerzung__gt=0,
+                beleg__rechnungsart=Rechnungsart.ABSCHLAG,
+                beleg__status=BelegStatus.FESTGESCHRIEBEN)
+        .filter(Q(beleg__kunde_id=kunde) | Q(beleg__projekt__kunde_id=kunde))
+        .select_related('beleg', 'zahlung')
+        .order_by('beleg__belegdatum', 'beleg__pk', 'pk'))
+    erledigt = ganz_abgerechnete([z.beleg_id for z in zuordnungen])
+    return [z for z in zuordnungen if z.beleg_id not in erledigt]

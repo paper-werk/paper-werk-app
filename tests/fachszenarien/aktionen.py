@@ -45,6 +45,7 @@ from faktura.models import (
     Kontakt,
     Projekt,
     Rechnungsart,
+    Zahlung,
     Zahlungszuordnung,
 )
 from faktura.models.einheit import Einheit, Leistungsart
@@ -588,12 +589,43 @@ def _zahlungseingang(lauf, schritt, beleg, summe, skonto, offen, zahler) -> None
     if zugeordnet > 0:
         formular.zeile('zuordnungen', 0, beleg=beleg.pk, betrag=zugeordnet,
                        skonto=skonto)
+    vorher = set(Zahlung.objects.values_list('pk', flat=True))
     formular.absenden('_save')
     rest = summe - zugeordnet
+    if rest:
+        zahlung = Zahlung.objects.exclude(pk__in=vorher).get()
+        rest -= _kuerzung_zuruecknehmen(lauf, zahlung, rest, schritt)
     if rest:
         lauf.luecken.append(
             f'Zahlung {summe} auf {schritt["rechnung"]} mit {offen} offen: '
             f'{rest} ohne offene Rechnung, unverteilt')
+
+
+def _kuerzung_zuruecknehmen(lauf, zahlung, rest, schritt) -> Decimal:
+    """Der Rest ist der nachgezahlte gekürzte Teil: Kürzung an der
+    früheren Zahlung auf 0 mit Notiz, Rest dem Abschlag zuordnen (Hilfe,
+    „Kürzung zurücknehmen“). Gibt den zugeordneten Betrag zurück."""
+    zugeordnet = Decimal('0.00')
+    for alt in services.gekuerzte_abschlaege(zahlung):
+        betrag_ = min(alt.kuerzung, rest - zugeordnet)
+        if betrag_ <= 0:
+            break
+        formular = maske.oeffnen(lauf.client, reverse(
+            'admin:faktura_zahlung_change', args=[alt.zahlung_id]))
+        index = next(i for i in range(formular.zeilen('zuordnungen'))
+                     if formular.wert(f'zuordnungen-{i}-id') == str(alt.pk))
+        formular.setzen(f'zuordnungen-{index}-kuerzung', alt.kuerzung - betrag_)
+        formular.setzen(f'zuordnungen-{index}-notiz',
+                        f'Kürzung {betrag_} zurückgenommen, bezahlt mit '
+                        f'Zahlung vom {schritt["datum"]:%d.%m.%Y}')
+        formular.absenden('_save')
+        formular = maske.oeffnen(lauf.client, reverse(
+            'admin:faktura_zahlung_change', args=[zahlung.pk]))
+        index = formular.freie_zeile('zuordnungen')
+        formular.zeile('zuordnungen', index, beleg=alt.beleg_id, betrag=betrag_)
+        formular.absenden('_save')
+        zugeordnet += betrag_
+    return zugeordnet
 
 
 def _ausfuehren(lauf: Lauf, schritt: dict) -> bool:
