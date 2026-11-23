@@ -28,7 +28,8 @@ class ZahlungszuordnungInline(unfold_admin.TabularInline):
 
     model = Zahlungszuordnung
     extra = 1
-    fields = ['beleg', 'betrag', 'skonto', 'kuerzung', 'notiz']
+    fields = ['beleg', 'betrag', 'skonto', 'kuerzung', 'einbehalten',
+              'notiz']
     verbose_name = 'Zuordnung'
     verbose_name_plural = 'Zuordnung Rechnungen'
 
@@ -185,7 +186,7 @@ class ZahlungszuordnungAdmin(Kopfleiste, unfold_admin.ModelAdmin):
     gepflegt an der Zahlung."""
 
     list_display = ['beleg', 'zahlung', 'betrag_anzeige', 'skonto_anzeige',
-                    'kuerzung_anzeige']
+                    'kuerzung_anzeige', 'einbehalten_anzeige']
     list_filter = ['zahlung__zahlungsart']
     search_fields = ['beleg__nummer', 'zahlung__zahlername',
                      'zahlung__verwendungszweck']
@@ -211,3 +212,9 @@ class ZahlungszuordnungAdmin(Kopfleiste, unfold_admin.ModelAdmin):
         if zuordnung.kuerzung == 0:
             return '-'
         return formate.geld_mit_waehrung(zuordnung.kuerzung)
+
+    @admin.display(description='Einbehalten', ordering='einbehalten')
+    def einbehalten_anzeige(self, zuordnung):
+        if zuordnung.einbehalten == 0:
+            return '-'
+        return formate.geld_mit_waehrung(zuordnung.einbehalten)

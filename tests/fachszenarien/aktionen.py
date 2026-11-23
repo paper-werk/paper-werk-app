@@ -531,8 +531,13 @@ def zahlung(lauf: Lauf, schritt: dict) -> None:
     if not _ausfuehren(lauf, schritt):
         return
     beleg = lauf.beleg(schritt['rechnung'])
-    offen = services.offener_betrag(beleg)
     wert = lauf.wert(schritt.get('betrag', 'voll'))
+    if wert != 'voll' and betrag(wert) > services.offener_betrag(beleg):
+        _einbehalt_freigeben(lauf, beleg, betrag(wert), schritt)
+    offen = services.offener_betrag(beleg)
+    einbehalten = _maengeleinbehalt(lauf, beleg) if wert == 'voll' else None
+    if einbehalten:
+        wert = str(offen - einbehalten)
     skonto = lauf.wert(schritt.get('skonto', schritt.get('skonto_beansprucht', '0.00')))
     if isinstance(skonto, str) and skonto.endswith('%'):
         skonto = _runden(offen * betrag(skonto.rstrip(' %')) / HUNDERT)
@@ -545,7 +550,7 @@ def zahlung(lauf: Lauf, schritt: dict) -> None:
                            or (zahler and zahler != _kunde_von(beleg))):
         _zahlungseingang(lauf, schritt, beleg, betrag(wert), skonto, offen, zahler)
     else:
-        _zahlung_vermerken(lauf, schritt, beleg, wert, skonto)
+        _zahlung_vermerken(lauf, schritt, beleg, wert, skonto, einbehalten)
         if not Zahlungszuordnung.objects.exclude(pk__in=vorher).exists():
             raise maske.MaskeAbgelehnt(f'Zahlung auf {beleg} nicht verbucht')
     neu = Zahlungszuordnung.objects.exclude(pk__in=vorher)
@@ -561,12 +566,39 @@ def _kunde_von(beleg: Beleg) -> Kontakt:
     return beleg.kunde or beleg.projekt.kunde
 
 
-def _zahlung_vermerken(lauf, schritt, beleg, wert, skonto) -> None:
+def _maengeleinbehalt(lauf, beleg) -> Decimal | None:
+    """Mängeleinbehalt des Kunden auf die Schlussrechnung, Prozent vom
+    Brutto aus ``[einbehalt] maengel_prozent``."""
+    prozent = lauf.fall.daten.get('einbehalt', {}).get('maengel_prozent')
+    if not prozent or beleg.rechnungsart != Rechnungsart.SCHLUSS:
+        return None
+    return _runden(services.leistungssummen(beleg).brutto * betrag(prozent)
+                   / HUNDERT)
+
+
+def _einbehalt_freigeben(lauf, beleg, summe, schritt) -> None:
+    """Auszahlung eines Einbehalts: Einbehalten an der früheren Zahlung auf
+    0 mit Notiz (Hilfe, „Einbehalt auf die Schlussrechnung“)."""
+    for alt in Zahlungszuordnung.objects.filter(beleg=beleg, einbehalten__gt=0):
+        formular = maske.oeffnen(lauf.client, reverse(
+            'admin:faktura_zahlung_change', args=[alt.zahlung_id]))
+        index = next(i for i in range(formular.zeilen('zuordnungen'))
+                     if formular.wert(f'zuordnungen-{i}-id') == str(alt.pk))
+        frei = min(alt.einbehalten, summe)
+        formular.setzen(f'zuordnungen-{index}-einbehalten', alt.einbehalten - frei)
+        formular.setzen(f'zuordnungen-{index}-notiz',
+                        f'Einbehalt {frei} ausgezahlt am {schritt["datum"]:%d.%m.%Y}')
+        formular.absenden('_save')
+
+
+def _zahlung_vermerken(lauf, schritt, beleg, wert, skonto, einbehalten=None) -> None:
     formular = maske.oeffnen(lauf.client, _url(beleg, 'zahlung'), enthaelt='betrag')
     formular.setzen('datum', f'{schritt["datum"]:%d.%m.%Y}')
     if wert != 'voll':
         formular.setzen('betrag', betrag(wert))
     formular.setzen('skonto', skonto)
+    if einbehalten:
+        formular.setzen('einbehalten', einbehalten)
     if 'strittig' in schritt:
         if 'kuerzung' not in formular:
             raise Luecke(f'{beleg}: Zahlung ohne Feld Gekürzt')
@@ -677,8 +709,9 @@ def schlussrechnung(lauf: Lauf, schritt: dict) -> Beleg:
         abnahme(lauf, schritt)
     maengel = lauf.fall.daten.get('einbehalt', {}).get('maengel_prozent')
     if maengel:
-        lauf.luecken.append(f'Mängeleinbehalt {maengel} % auf die '
-                            f'Schlussrechnung nicht abbildbar')
+        lauf.luecken.append(f'Mängeleinbehalt {maengel} % steht nicht auf '
+                            f'der Schlussrechnung; erfasst mit der Zahlung '
+                            f'(Einbehalten)')
     abgerechnet = Beleg.objects.filter(
         abnahme_id=lauf.belege['abnahme'],
         status=BelegStatus.FESTGESCHRIEBEN).order_by('pk').last()

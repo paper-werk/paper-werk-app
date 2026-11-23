@@ -515,12 +515,15 @@ class RechnungAdmin(BelegAdmin):
             '<td class="py-2 pr-6 text-right whitespace-nowrap">{}</td>'
             '<td class="py-2 pr-6 text-right whitespace-nowrap">{}</td>'
             '<td class="py-2 pr-6 text-right whitespace-nowrap">{}</td>'
+            '<td class="py-2 pr-6 text-right whitespace-nowrap">{}</td>'
             '<td class="py-2 pr-6 whitespace-nowrap">{}</td>'
             '<td class="py-2">{}</td></tr>',
             ((z.zahlung.datum.strftime('%d.%m.%Y'),
               formate.geld_mit_waehrung(z.betrag),
               formate.geld_mit_waehrung(z.skonto) if z.skonto else '–',
               formate.geld_mit_waehrung(z.kuerzung) if z.kuerzung else '–',
+              (formate.geld_mit_waehrung(z.einbehalten)
+               if z.einbehalten else '–'),
               z.zahlung.get_zahlungsart_display(),
               z.zahlung.verwendungszweck or '')
              for z in zuordnungen))
@@ -534,6 +537,7 @@ class RechnungAdmin(BelegAdmin):
             '<th class="font-medium pb-2 pr-6 text-right" scope="col">Betrag</th>'
             '<th class="font-medium pb-2 pr-6 text-right" scope="col">Skonto</th>'
             '<th class="font-medium pb-2 pr-6 text-right" scope="col">Gekürzt</th>'
+            '<th class="font-medium pb-2 pr-6 text-right" scope="col">Einbehalten</th>'
             '<th class="font-medium pb-2 pr-6" scope="col">Art</th>'
             '<th class="font-medium pb-2" scope="col">Verwendungszweck</th>'
             '</tr></thead><tbody>{}</tbody></table>'
@@ -579,9 +583,14 @@ class RechnungAdmin(BelegAdmin):
         # Gekürzt wird nur ein Abschlag, weil nur dort die Schlussrechnung
         # den Betrag erneut fordert (R-174).
         mit_kuerzung = rechnung.rechnungsart == Rechnungsart.ABSCHLAG
+        # Einbehalten nur an der (Teil-)Schlussrechnung; am Abschlag gilt
+        # der Sicherheitseinbehalt des Projekts (R-190).
+        mit_einbehalt = rechnung.rechnungsart in (Rechnungsart.SCHLUSS,
+                                                  Rechnungsart.TEILSCHLUSS)
 
         if 'anwenden' in request.POST:
-            formular = ZahlungForm(request.POST, mit_kuerzung=mit_kuerzung)
+            formular = ZahlungForm(request.POST, mit_kuerzung=mit_kuerzung,
+                                   mit_einbehalt=mit_einbehalt)
             if formular.is_valid():
                 try:
                     services.zahlung_verbuchen(
@@ -591,6 +600,8 @@ class RechnungAdmin(BelegAdmin):
                         skonto=formular.cleaned_data['skonto'],
                         kuerzung=formular.cleaned_data.get(
                             'kuerzung', Decimal('0.00')),
+                        einbehalten=formular.cleaned_data.get(
+                            'einbehalten', Decimal('0.00')),
                         zahlungsart=formular.cleaned_data['zahlungsart'],
                         verwendungszweck=formular.cleaned_data[
                             'verwendungszweck'],
@@ -618,8 +629,9 @@ class RechnungAdmin(BelegAdmin):
                 'betrag': offen,
                 'skonto': Decimal('0.00'),
                 'kuerzung': Decimal('0.00'),
+                'einbehalten': Decimal('0.00'),
                 'verwendungszweck': rechnung.nummer or '',
-            }, mit_kuerzung=mit_kuerzung)
+            }, mit_kuerzung=mit_kuerzung, mit_einbehalt=mit_einbehalt)
 
         return render(
             request,

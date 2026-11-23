@@ -27,7 +27,7 @@ from faktura import formate
 from faktura import services as faktura_services
 from faktura.admin import adresse_im_admin
 from faktura.formate import euro, geld
-from faktura.models import Projekt
+from faktura.models import Beleg, Projekt
 
 from . import controlling, darstellung, ergebnisse, zuordnung
 
@@ -252,6 +252,7 @@ def _zahlen(projekt) -> dict:
                                  f'{ergebnis.marge} % Marge.'),
                 'icon': 'savings',
             },
+            *([karte] if (karte := _einbehaltkarte(projekt)) else []),
             # Der Stundensatz als letzte Karte; ohne erfasste Stunden
             # entfällt sie.
             *([karte] if (karte := _stundenkarte(ertrag)) else []),
@@ -326,6 +327,21 @@ def _kostenlegende(ergebnis) -> list[dict]:
         }
         for titel, betrag, farbe in zeilen
     ]
+
+
+def _einbehaltkarte(projekt) -> dict | None:
+    """Karte mit den Einbehalten des Projekts (R-192), ``None`` ohne
+    Einbehalt."""
+    stand = faktura_services.einbehalten(
+        Beleg.objects.filter(projekt=projekt))
+    if not stand.gesamt:
+        return None
+    return {
+        'titel': 'Einbehalten',
+        'wert': euro(stand.gesamt),
+        'hinweis': darstellung.einbehalt_hinweis(stand),
+        'icon': 'lock_clock',
+    }
 
 
 def _stundenkarte(ertrag) -> dict | None:

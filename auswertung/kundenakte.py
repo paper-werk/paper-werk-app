@@ -29,6 +29,8 @@ from faktura.models import (
     Zahlung,
 )
 
+from . import darstellung
+
 #: Höchstzahl der Belege in der Akte; darüber verlinkt sie auf die Liste,
 #: damit Kunden mit vielen Rechnungen die Seite nicht überladen (wie
 #: ``FREMDLEISTUNGEN_IN_DER_AKTE`` in der Projektakte).
@@ -365,7 +367,12 @@ def _zahlen(kunde) -> dict:
         als_umsatz=True,
     )
 
+    einbehalten = faktura_services.einbehalten(_belege_des_kunden(kunde))
+
     return {
+        'einbehalten': einbehalten.gesamt,
+        'einbehalten_hinweis': (darstellung.einbehalt_hinweis(einbehalten)
+                                if einbehalten.gesamt else ''),
         'umsatz_netto': umsatz.netto,
         'umsatz_brutto': umsatz.brutto,
         'offen_anzahl': len(eigene),

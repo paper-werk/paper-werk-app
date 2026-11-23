@@ -60,7 +60,8 @@ class TestDieTabelleImFormular:
 
         # Nicht ``<th[^>]*>``, weil das auch ``<thead>`` trifft.
         kopfzellen = re.findall(r'<th\s[^>]*>(.*?)</th>', tabelle)
-        assert kopfzellen == ['Datum', 'Betrag', 'Skonto', 'Gekürzt', 'Art',
+        assert kopfzellen == ['Datum', 'Betrag', 'Skonto', 'Gekürzt',
+                              'Einbehalten', 'Art',
                               'Verwendungszweck']
         # Alle außer der letzten haben das Padding.
         abstaende = re.findall(r'<th class="([^"]*)"', tabelle)
@@ -96,10 +97,12 @@ class TestDieTabelleImFormular:
         assert werte[0] == HEUTE.strftime('%d.%m.%Y')
         assert '1.154,30' in werte[1]
         assert '35,70' in werte[2]
-        # Gekürzt (R-175) nur beim Abschlag, hier ein Strich.
+        # Gekürzt (R-175) nur beim Abschlag, Einbehalten nur an der
+        # Schlussrechnung, hier je ein Strich.
         assert werte[3] == '–'
-        assert werte[4] == 'Überweisung'
-        assert werte[5] == 'RE-0001'
+        assert werte[4] == '–'
+        assert werte[5] == 'Überweisung'
+        assert werte[6] == 'RE-0001'
 
     def test_ohne_skonto_steht_ein_strich_und_keine_null(
             self, buero, rechnung):

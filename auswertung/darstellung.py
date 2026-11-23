@@ -137,3 +137,14 @@ def _stufenfarbe(stufe) -> str:
     if stufe['art'] == 'zwischensumme':
         return 'var(--pw-reihe-3)'
     return 'var(--pw-gedaempft)'
+
+
+def einbehalt_hinweis(stand) -> str:
+    """Aufteilung der Einbehalte für Projekt- und Kundenakte."""
+    teile = []
+    if stand.abschlaege:
+        teile.append(f'Sicherheitseinbehalt {formate.geld(stand.abschlaege)} €, '
+                     f'frei mit der Schlussrechnung')
+    if stand.schlussrechnungen:
+        teile.append(f'an Schlussrechnungen {formate.geld(stand.schlussrechnungen)} €')
+    return 'Brutto, nicht fällig. ' + '; '.join(teile) + '.'
