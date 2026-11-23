@@ -477,6 +477,29 @@ def nachtrag_beauftragen(lauf: Lauf, schritt: dict) -> Beleg:
     return neu
 
 
+def folgeauftrag(lauf: Lauf, schritt: dict) -> Beleg:
+    """Neuer Auftrag im selben Projekt aus dem Folgeangebot, für Leistung
+    nach der Schlussrechnung des bisherigen Auftrags. Er wird der Auftrag
+    der folgenden Schritte und bekommt eine eigene Gesamtabnahme; der
+    bisherige bleibt unter ``auftrag-<Name>-vorher``."""
+    name = schritt['folgeauftrag']
+    neu = _detailaktion(lauf, lauf.beleg(f'{name}-angebot'), 'in-auftrag')
+    if neu is None or neu.typ != BelegTyp.AUFTRAG:
+        raise maske.MaskeAbgelehnt('Auftrag erzeugen: kein Auftrag')
+    vorher = lauf.beleg('auftrag')
+    formular = maske.oeffnen(lauf.client, _url(neu))
+    formular.setzen('kopftext', f'Folgeauftrag zu {vorher.nummer} vom '
+                                f'{vorher.belegdatum:%d.%m.%Y}.')
+    formular.absenden('_continue')
+    neu = _festschreiben(lauf, neu)
+    lauf.belege[f'auftrag-{name}-vorher'] = vorher.pk
+    lauf.belege['auftrag'] = lauf.belege[name] = neu.pk
+    if 'abnahme' in lauf.belege:
+        lauf.belege[f'abnahme-{name}-vorher'] = lauf.belege.pop('abnahme')
+    _auftragspositionen_merken(lauf, neu)
+    return neu
+
+
 def abschlag(lauf: Lauf, schritt: dict) -> Beleg:
     tag = schritt['datum']
     _leistungsstand_erfassen(lauf, schritt.get('leistungsstand', {}), tag)
@@ -790,23 +813,17 @@ def _zuordnungen_anlegen(lauf: Lauf, geloest: list[dict], beleg: Beleg) -> None:
                               .values_list('pk', flat=True))
 
 
-def auftrag_wiedereroeffnen_und_nachtrag(lauf: Lauf, schritt: dict) -> Beleg:
-    """Erweiterung eines abgerechneten Auftrags: Nachtrag zum
-    festgeschriebenen Hauptauftrag. "Wieder öffnen" setzte den Auftrag in
-    den Entwurf zurück, an dem kein Nachtrag möglich ist."""
-    return nachtrag_beauftragen(lauf, schritt)
-
-
 AKTIONEN = {
     'stunden_erfassen': stunden_erfassen,
     'fremdleistung_erfassen': fremdleistung_erfassen,
     'rechnung': rechnung,
     'storno_und_neufassung': storno_und_neufassung,
-    'auftrag_wiedereroeffnen_und_nachtrag': auftrag_wiedereroeffnen_und_nachtrag,
     'angebot': angebot,
     'auftrag': auftrag,
     'nachtragsangebot': nachtragsangebot,
     'nachtrag_beauftragen': nachtrag_beauftragen,
+    'folgeangebot': nachtragsangebot,
+    'folgeauftrag': folgeauftrag,
     'abschlag': abschlag,
     'zahlung': zahlung,
     'abnahme': abnahme,
