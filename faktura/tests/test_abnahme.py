@@ -15,6 +15,7 @@ from django.db import IntegrityError
 from django.urls import reverse
 
 from faktura import facturx, services
+from faktura.admin import adresse_im_admin
 from faktura.admin.abnahme import AbnahmeForm
 from faktura.models import (
     Abnahme,
@@ -600,3 +601,66 @@ class TestKorrigierenBehaeltDieArt:
         assert neu.rechnungsart == Rechnungsart.TEILSCHLUSS
         assert neu.abnahme == teilabnahme
         neu.full_clean(exclude=['nummer'])
+
+
+def _zweiter_auftrag(projekt, *, nachtrag_zu=None):
+    beleg = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG,
+                                   betreff='Gutachten')
+    if nachtrag_zu is not None:
+        beleg.nachtrag_zu = nachtrag_zu
+        beleg.save()
+    services.position_hinzufuegen(
+        beleg=beleg, bezeichnung='Gutachten', menge=Decimal('1'),
+        einheit='LS', einzelpreis=Decimal('5000.00'), steuersatz='19.00')
+    return services.beleg_festschreiben(beleg_id=beleg.pk)
+
+
+def _schluss_zu(auftrag):
+    gesamt = Abnahme.objects.create(
+        auftrag=auftrag, art=Abnahmeart.GESAMT, abgenommen_am=REST_ABNAHME)
+    return services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
+
+
+@pytest.mark.django_db
+class TestAbschlaegeAndererAuftraege:
+    """Die Schlussrechnung setzt alle Abschläge des Projekts ab; der
+    Hinweis nennt die eines anderen Hauptauftrags."""
+
+    def test_abschlag_eines_parallelen_auftrags_wird_genannt(
+            self, projekt, auftrag, lph_1_4):
+        gutachten = _zweiter_auftrag(projekt)
+        fremd = abschlag(projekt, '3000.00', auftragsposition=lph_1_4)
+        abschlag(projekt, '1000.00',
+                 auftragsposition=gutachten.positionen.get())
+
+        befund = services.abschlaege_anderer_auftraege(_schluss_zu(gutachten))
+
+        assert [(f.abschlag, f.auftrag) for f in befund] == [(fremd, auftrag)]
+
+    def test_abschlag_zu_einem_nachtrag_gehoert_zum_auftrag(
+            self, projekt, auftrag):
+        nachtrag = _zweiter_auftrag(projekt, nachtrag_zu=auftrag)
+        abschlag(projekt, '1000.00',
+                 auftragsposition=nachtrag.positionen.get())
+
+        assert services.abschlaege_anderer_auftraege(
+            _schluss_zu(auftrag)) == []
+
+    def test_abschlag_ohne_auftragsposition_wird_nicht_geprueft(
+            self, projekt, auftrag):
+        abschlag(projekt, '3000.00')
+
+        assert services.abschlaege_anderer_auftraege(
+            _schluss_zu(auftrag)) == []
+
+    def test_die_versandseite_zeigt_den_hinweis(self, buero, projekt,
+                                               auftrag, lph_1_4):
+        gutachten = _zweiter_auftrag(projekt)
+        fremd = abschlag(projekt, '3000.00', auftragsposition=lph_1_4)
+        schluss = _schluss_zu(gutachten)
+        url = adresse_im_admin(schluss).rsplit('change/', 1)[0] + 'versenden/'
+
+        antwort = buero.get(url)
+
+        assert [f.abschlag for f in antwort.context['fremde_abschlaege']] == [
+            fremd]

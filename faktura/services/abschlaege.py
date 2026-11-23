@@ -507,3 +507,49 @@ def offene_abgesetzte_abschlaege(rechnung: Beleg) -> list[OffenerAbschlag]:
         if offen > 0:
             befund.append(OffenerAbschlag(abschlag=abschlag, offen=offen))
     return befund
+
+
+@dataclass(frozen=True)
+class FremderAbschlag:
+    """Abgesetzter Abschlag mit Positionen eines anderen Hauptauftrags."""
+
+    abschlag: Beleg
+    auftrag: Beleg
+
+    def __str__(self) -> str:
+        return (f'{self.abschlag.rechnungsbezeichnung} {self.abschlag.nummer}'
+                f' zu {self.auftrag.nummer}')
+
+
+def abschlaege_anderer_auftraege(rechnung: Beleg) -> list[FremderAbschlag]:
+    """Abgesetzte Abschläge einer Schlussrechnung, deren Positionen über die
+    Auftragsposition zu einem anderen Hauptauftrag gehören als ihre
+    Gesamtabnahme; für den Hinweis vor dem Festschreiben.
+
+    Die Schlussrechnung setzt alle Abschläge des Projekts ab
+    (``anrechenbare_abschlagspositionen``). Ein Auftrag, der neben einem
+    laufenden für sich schlussgerechnet wird, gehört in ein eigenes Projekt;
+    der Hinweis zeigt, dass das nicht geschehen ist. Positionen ohne
+    Auftragsposition werden nicht geprüft, weil ihr Auftrag nicht feststeht.
+    """
+    if (rechnung.abnahme_id is None
+            or rechnung.abnahme.art != Abnahmeart.GESAMT):
+        return []
+    eigener = rechnung.abnahme.auftrag_id
+    positionen = (
+        rechnung.positionen
+        .filter(abgesetzte_position__auftragsposition__isnull=False,
+                ist_abschlagsrest=False)
+        .select_related('abgesetzte_position__beleg',
+                        'abgesetzte_position__auftragsposition__beleg'
+                        '__nachtrag_zu'))
+    befund = {}
+    for p in positionen:
+        auftrag = p.abgesetzte_position.auftragsposition.beleg
+        hauptauftrag = auftrag.nachtrag_zu or auftrag
+        if hauptauftrag.pk != eigener:
+            abschlag = p.abgesetzte_position.beleg
+            befund[(abschlag.pk, hauptauftrag.pk)] = FremderAbschlag(
+                abschlag=abschlag, auftrag=hauptauftrag)
+    return sorted(befund.values(),
+                  key=lambda f: (f.abschlag.belegdatum, f.abschlag.pk))
