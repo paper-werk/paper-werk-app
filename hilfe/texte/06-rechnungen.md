@@ -395,8 +395,9 @@ stornieren. Dann:
 3. Ordnen Sie den Rest der Zahlung der Neufassung zu oder erstatten Sie
    ihn. Skonto oder Kürzung der alten Zeile tragen Sie dabei neu ein.
 
-Eine Erstattung bildet Paper-Werk nicht ab; der Rest bleibt dann an der
-Zahlung stehen.
+Das PDF der Neufassung nennt den vollen Betrag ohne die angerechnete
+Zahlung. Offen ist nach der Zuordnung der Rest. Eine Erstattung bildet
+Paper-Werk nicht ab; der Rest bleibt dann an der Zahlung stehen.
 
 Zuordnungen auf eine schon stornierte Rechnung aus älteren Ständen zeigt
 die Zahlung mit der stornierten Rechnung an. Sie lassen sich nur löschen.
