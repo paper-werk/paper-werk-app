@@ -37,7 +37,9 @@ ein deutschsprachiges Projekt.
   `tests/test_grenzzaun.py` prüft das.
 - **Jede neue oder geänderte Berechnung** bekommt einen Eintrag im
   [Rechenregister](docs/rechenregister.md) mit Test. Dort stehen
-  auch die Regeln für Änderungen an bestehenden Formeln.
+  auch die Regeln für Änderungen an bestehenden Formeln. Ob die Tests eines
+  Rechenmoduls Fehler erkennen, prüft der
+  [Mutationstest](mutationstest/README.md).
 - **Abhängigkeiten zwischen den Apps** gehen nur in eine Richtung:
   `core` ← `faktura` ← `erfassung` ← `auswertung`. Obere Apps melden sich
   über `core/erweiterungen.py` an (`tests/test_richtung.py`).

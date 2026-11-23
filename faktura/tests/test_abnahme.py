@@ -461,6 +461,32 @@ class TestAbschlaegeAbsetzen:
         assert not storno.positionen.filter(
             abgesetzte_position__isnull=False).exists()
 
+    def test_nach_dem_teilschluss_ist_am_abschlag_nur_der_rest_offen(
+            self, projekt, auftrag, teilabnahme, lph_1_4):
+        """Abschlag 5.000 auf LPH 1-4 und 3.000 auf LPH 5-8, nicht bezahlt.
+        Die Teilschlussrechnung fordert den Teil für LPH 1-4 mit der
+        Restzeile erneut (5.950 brutto); am Abschlag bleiben 3.570 offen."""
+        beleg = services.beleg_anlegen(
+            projekt=projekt, typ=BelegTyp.RECHNUNG,
+            rechnungsart=Rechnungsart.ABSCHLAG, betreff='Abschlag',
+            leistungsdatum=TEIL_BEGINN, leistungsdatum_bis=TEIL_ABNAHME)
+        for ap, betrag in ((lph_1_4, '5000.00'),
+                           (auftrag.positionen.get(position=20), '3000.00')):
+            services.position_hinzufuegen(
+                beleg=beleg, bezeichnung=ap.bezeichnung, menge=Decimal('1'),
+                einheit='LS', einzelpreis=Decimal(betrag),
+                steuersatz='19.00', auftragsposition=ap)
+        abschlag_ = services.beleg_festschreiben(beleg_id=beleg.pk)
+
+        services.beleg_festschreiben(beleg_id=services.rechnung_aus_abnahme(
+            abnahme_id=teilabnahme.pk).pk)
+
+        assert services.abschlaege.uebernommener_rest(abschlag_) == Decimal(
+            '5950.00')
+        assert services.offener_betrag(abschlag_) == Decimal('3570.00')
+        # Teilweise abgerechnet, also noch in keiner Rechnung abgerechnet.
+        assert services.abgerechnet_in(abschlag_) is None
+
     def test_offene_abschlaege_werden_gemeldet(self, projekt, auftrag):
         pauschal = abschlag(projekt, '3000.00')
         gesamt = Abnahme.objects.create(

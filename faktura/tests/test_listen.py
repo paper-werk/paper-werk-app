@@ -123,6 +123,33 @@ class TestDieSummeStimmt:
         assert summe.ohne_wert == 1
         assert summe.netto == Decimal('100.00')
 
+    def test_die_restzeile_eines_abschlags_zaehlt_mit(self, projekt):
+        """Die Summenzeile enthält Restzeilen nicht bezahlter Abschläge
+        (R-174), weil sie Teil des Zahlbetrags des Einzelbelegs sind. Nur
+        ``als_umsatz=True`` lässt sie aus."""
+        beleg = Beleg.objects.create(typ=BelegTyp.RECHNUNG, projekt=projekt)
+        Belegposition.objects.create(
+            beleg=beleg, position=10, bezeichnung='Leistung',
+            menge=Decimal('1'), einheit='LS',
+            einzelpreis=Decimal('1000.00'), steuersatz='19.00')
+        Belegposition.objects.create(
+            beleg=beleg, position=20, bezeichnung='Abschlag abgesetzt',
+            menge=Decimal('1'), einheit='LS',
+            einzelpreis=Decimal('-400.00'), steuersatz='19.00',
+            ist_abzug=True)
+        Belegposition.objects.create(
+            beleg=beleg, position=30, bezeichnung='davon nicht bezahlt',
+            menge=Decimal('1'), einheit='LS',
+            einzelpreis=Decimal('150.00'), steuersatz='19.00',
+            ist_abzug=True, ist_abschlagsrest=True)
+
+        liste = services.summe_ueber(Beleg.objects.all())
+        umsatz = services.summe_ueber(Beleg.objects.all(), als_umsatz=True)
+
+        assert liste.netto == services.belegsummen(beleg).netto
+        assert liste.netto == Decimal('750.00')
+        assert umsatz.netto == Decimal('600.00')
+
     def test_eine_leere_menge_ergibt_null_und_nicht_einen_fehler(self, db):
         summe = services.summe_ueber(Beleg.objects.none())
 

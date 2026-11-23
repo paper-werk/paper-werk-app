@@ -15,7 +15,7 @@ und reine Sortierungen. Für sie gelten die übrigen Tests.
 | `~` | Nur mittelbar geprüft: Ein Test durchläuft die Funktion, prüft aber etwas anderes. |
 | `-` | Kein Test nennt diese Funktion. |
 
-Derzeit tragen 160 Einträge `+`, 23 `~` und keiner `-`. Die mittelbar
+Derzeit tragen 160 Einträge `+`, 22 `~` und keiner `-`. Die mittelbar
 geprüften sind fast alle abgeleitete Aussagen wie `ist_klumpen`, `ist_knapp`
 oder `traegt`: ein Vergleich auf einer Zahl, die selbst geprüft ist.
 
@@ -39,7 +39,6 @@ vergleicht beide.
 | R-003 | Steuer je Satz | Nettosumme des Satzes mal Satz durch 100, kaufmännisch auf Cent: **je Satz, nicht je Position**. Wählbar sind 19, 7, 0 und die gesenkten 16 und 5; ein Satz außerhalb der Liste wird trotzdem gerechnet | `services.belegsummen` | `+` |
 | R-004 | Netto gesamt | Summe über alle Satzanteile | `services.belegsummen` | `+` |
 | R-005 | Brutto gesamt | Netto plus Steuer | `services.belegsummen` | `+` |
-| R-006 | Brutto je Satz | Netto plus Steuer des Satzes | `Steueranteil.brutto` | `~` |
 | R-007 | Steuersatz als Zahl | Der gespeicherte Text als Dezimalzahl | `Belegposition.steuersatz_dezimal` | `+` |
 | R-008 | Abgerechnete Menge je Auftragsposition | Summe der Rechnungspositionen mit Bezug auf sie; nur festgeschrieben, nur `normal` und `schluss`: **ein Abschlag zählt nicht** | `services.abgerechnete_mengen` | `+` |
 | R-009 | Abgerechnete Menge, einzeln | Dieselbe Regel für eine Position | `Belegposition.abgerechnete_menge` | `+` |

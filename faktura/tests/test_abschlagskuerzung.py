@@ -26,6 +26,7 @@ from faktura import facturx, pdf, services
 from faktura.models import (
     Abnahme,
     Abnahmeart,
+    Belegposition,
     BelegStatus,
     BelegTyp,
     Kontakt,
@@ -161,6 +162,17 @@ class TestGekuerzterErsterAbschlag:
             for p in schluss.positionen.filter(ist_abzug=True))
         assert services.abschlaege.RESTTEXT not in html
         assert 'gestellt 50.000,00, bezahlt 40.000,00' in html
+
+    def test_eine_abzugszeile_ohne_abschlag_steht_mit_ihrem_betrag(self):
+        """Manuell eingetragen oder im Storno: eine Zeile je Position."""
+        zeile = Belegposition(
+            bezeichnung='Vorauszahlung', menge=Decimal('1'),
+            einzelpreis=Decimal('-500.00'), steuersatz='19.00', ist_abzug=True)
+
+        block = services.abzugsblock([zeile])
+
+        assert [(z.bezeichnung, z.betrag) for z in block] == [
+            ('Vorauszahlung', Decimal('-500.00'))]
 
     def test_bt_113_ist_das_bezahlte(self, schluss):
         schluss = services.beleg_festschreiben(beleg_id=schluss.pk)
@@ -335,6 +347,21 @@ class TestZahlungNachDemAbsetzen:
         with pytest.raises(services.UngueltigerBetrag,
                            match='Abschläge absetzen'):
             services.beleg_festschreiben(beleg_id=schluss.pk)
+
+    def test_nach_teilzahlung_wird_der_rest_kleiner(self, projekt):
+        """Abschlag 3.000, nach dem Absetzen 1.190 brutto bezahlt: Die
+        Restzeile sinkt von 3.000 auf 2.000."""
+        auftrag = _auftrag(projekt, '40000.00')
+        abschlag = _abschlag(projekt, '3000.00')
+        schluss = _schluss(auftrag, '40000.00')
+        _zahlen(abschlag, '1190.00')
+
+        services.abschlaege_absetzen(beleg_id=schluss.pk)
+
+        rest = schluss.positionen.get(ist_abschlagsrest=True)
+        assert services.positionssumme(
+            menge=rest.menge, einzelpreis=rest.einzelpreis) == Decimal('2000.00')
+        assert services.belegsummen(schluss).netto == Decimal('39000.00')
 
     def test_erneut_absetzen_gleicht_ab(self, lage):
         _, schluss = lage
