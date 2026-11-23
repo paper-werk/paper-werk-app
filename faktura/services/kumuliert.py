@@ -39,6 +39,7 @@ Abschlag abrechnet; ein Abschlag darf seinen Vorgänger aber nicht abrechnen.
 """
 
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 
 from ..models import (
@@ -53,7 +54,7 @@ from ..models import (
 )
 from ..models import einheit as einheit_tabelle
 from ..positionsnummer import sortierschluessel
-from .abschlaege import Abzugszeile
+from .abschlaege import Abzugszeile, abgerechnet_in
 from .summen import positionssumme
 from .zuschlaege import gehoert_zu
 
@@ -102,8 +103,18 @@ def ist_kumulierbar(beleg: Beleg) -> bool:
 
 def vorgaenger_abschlaege(beleg: Beleg) -> list[Beleg]:
     """Festgeschriebene, nicht stornierte Abschläge des Projekts vor diesem,
-    in der Reihenfolge von ``Beleg.abschlagsreihe``. Die Neufassung eines
-    stornierten Abschlags hat damit dieselben Vorgänger wie das Original."""
+    in der Reihenfolge von ``Beleg.abschlagsreihe`` (R-183). Die Neufassung
+    eines stornierten Abschlags hat damit dieselben Vorgänger wie das
+    Original.
+
+    Ohne Abschläge, die eine (Teil-)Schlussrechnung vor diesem Abschlag
+    (Belegdatum, pk) vollständig abgesetzt hat: Abschläge sind vorläufig
+    und gehen in der Schlussrechnung auf (§ 14 Abs. 5 S. 2 UStG), ein
+    späterer Abschlag beginnt eine neue Reihe, etwa zu einem Folgeauftrag. Abschläge vor der
+    Schlussrechnung behalten ihre Vorgänger, damit sich ihre Anzeige mit
+    dem Festschreiben der Schlussrechnung nicht ändert; nach deren Storno
+    zählt der Abschlag wieder.
+    """
     geschwister = [b for stelle in Beleg.abschlagsreihe(beleg.projekt_id)
                    for b in stelle]
     davor = []
@@ -115,7 +126,19 @@ def vorgaenger_abschlaege(beleg: Beleg) -> list[Beleg]:
     else:
         # Beleg nicht in der Liste (ungespeichert): keine Vorgänger.
         return []
-    return davor
+    return [b for b in davor if not _schluss_davor(b, beleg)]
+
+
+def _ordnung(beleg: Beleg) -> tuple:
+    """Ordnung von R-012; ein Entwurf ohne Belegdatum steht zuletzt."""
+    return (beleg.belegdatum or date.max, beleg.pk)
+
+
+def _schluss_davor(abschlag: Beleg, beleg: Beleg) -> bool:
+    """Ob eine festgeschriebene (Teil-)Schlussrechnung, die ``abschlag``
+    vollständig absetzt, vor ``beleg`` steht."""
+    schluss = abgerechnet_in(abschlag)
+    return schluss is not None and _ordnung(schluss) < _ordnung(beleg)
 
 
 def kumulierter_abschlag(beleg: Beleg) -> KumulierterAbschlag | None:

@@ -194,6 +194,7 @@ Hauptauftrag gibt es eine Gesamtabnahme und damit eine Schlussrechnung.
 |---|---|---|
 | Wann | Leistung kommt hinzu, solange der Auftrag läuft | Leistung wird beauftragt, nachdem die Schlussrechnung gestellt ist |
 | Anlegen | „Nachtrag anlegen“ am Hauptauftrag | neues Angebot und neuer Auftrag im selben Projekt |
+| Abschläge | kumuliert mit denen des Hauptauftrags | neue Reihe, ohne die schlussgerechneten |
 | Schlussrechnung | eine gemeinsame über Hauptauftrag und Nachträge | eine eigene; die erste bleibt unverändert |
 
 Beim Folgeauftrag verweist der Kopftext auf den ersten Auftrag, etwa

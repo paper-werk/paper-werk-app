@@ -147,6 +147,10 @@ offener Abschlag bleibt offen und wird für sich gemahnt. Unter den
 Positionen der Maske steht dieselbe Aufstellung („Kumuliert, wie im PDF“).
 Mitgezählt werden nur festgeschriebene, nicht stornierte Abschläge. In einem
 Projekt mit Teilabnahme bleibt jeder Abschlag in der einfachen Form.
+Mit einer festgeschriebenen Schlussrechnung endet die Reihe der Abschläge,
+die sie absetzt. Ein späterer Abschlag im Projekt, etwa zu einem
+[Folgeauftrag](#folgeauftrag), zählt sie nicht mit und steht wieder in der
+einfachen Form; seine Nummer zählt im Projekt weiter.
 
 **Korrektur eines früheren Abschlags.** Wird die 1. Abschlagsrechnung
 storniert und neu geschrieben, nachdem die 2. bereits festgeschrieben ist,
