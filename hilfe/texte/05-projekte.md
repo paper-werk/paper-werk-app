@@ -202,6 +202,12 @@ Beim Folgeauftrag verweist der Kopftext auf den ersten Auftrag, etwa
 Schlussrechnung auf die erste Schlussrechnung. Die Projektakte zählt beide
 Aufträge zur Auftragssumme.
 
+Soll ein Auftrag für sich schlussgerechnet werden, während ein anderer im
+Projekt noch läuft, legen Sie für ihn ein eigenes Projekt an. Die
+Schlussrechnung setzt alle Abschläge ihres Projekts ab. Sind darunter
+Abschläge zu einem anderen Auftrag, nennt die Versandseite sie unter
+„Abschläge eines anderen Auftrags“.
+
 Eine schon gestellte Schlussrechnung zu stornieren, um neue Leistung in
 eine gemeinsame Schlussrechnung aufzunehmen, ist möglich
 ([Stornorechnungen](#stornorechnung)). Die neue

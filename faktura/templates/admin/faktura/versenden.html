@@ -144,6 +144,25 @@
         </div>
       {% endif %}
 
+      {% comment %} Die Schlussrechnung setzt alle Abschläge des Projekts ab;
+         ein parallel laufender Auftrag gehört in ein eigenes Projekt
+         (abschlaege_anderer_auftraege). Hinweis, keine Sperre. {% endcomment %}
+      {% if fremde_abschlaege %}
+        <div class="mt-6">
+          {% component "unfold/components/card.html" with title="Abschläge eines anderen Auftrags" %}
+            <ul class="list-disc mb-2 ml-5 text-sm text-font-important-light dark:text-font-important-dark">
+              {% for eintrag in fremde_abschlaege %}
+                <li>{{ eintrag }}</li>
+              {% endfor %}
+            </ul>
+            <p class="text-font-subtle-light text-xs dark:text-font-subtle-dark">
+              Für einen Auftrag mit eigener Schlussrechnung ein eigenes Projekt anlegen.
+              <a href="{% url 'hilfe' %}#folgeauftrag" target="_blank" rel="noopener" class="text-primary-600 dark:text-primary-500">Mehr in der Hilfe</a>
+            </p>
+          {% endcomponent %}
+        </div>
+      {% endif %}
+
       <div class="flex flex-wrap gap-3 justify-end mt-6">
         {% component "unfold/components/button.html" with href="../.." variant="default" %}
           Abbrechen

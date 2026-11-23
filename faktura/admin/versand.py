@@ -238,6 +238,11 @@ class VersandMixin:
              'offene_abschlaege': (
                  services.offene_abgesetzte_abschlaege(beleg)
                  if beleg.status == BelegStatus.ENTWURF else []),
+             # Hinweis, weil Paper-Werk einen parallel schlussgerechneten
+             # Auftrag nicht abbildet (eigenes Projekt).
+             'fremde_abschlaege': (
+                 services.abschlaege_anderer_auftraege(beleg)
+                 if beleg.status == BelegStatus.ENTWURF else []),
              'anlagenvorschau': self._anlagenvorschau(beleg),
              'form': formular,
              'title': 'Versenden'},
