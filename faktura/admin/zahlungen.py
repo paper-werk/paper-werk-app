@@ -4,8 +4,10 @@ Eigenes Modul, weil eine Zahlung kein Beleg ist: kein Nummernkreis, keine
 Festschreibung, kein PDF.
 """
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Q
+from django.urls import reverse
+from django.utils.html import format_html
 from unfold import admin as unfold_admin
 from unfold.contrib.filters.admin import AutocompleteSelectFilter
 
@@ -124,6 +126,31 @@ class ZahlungAdmin(Kopfleiste, VersionAdminMixin,
                                 if f != 'erfasst_am']})
             for titel, optionen in felder
         ]
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Bei einem Rest der Hinweis auf gekürzte Abschläge desselben
+        Kunden (``services.gekuerzte_abschlaege``): Der Rest kann der
+        nachgezahlte gekürzte Teil sein."""
+        zahlung = (Zahlung.objects.filter(pk=object_id).first()
+                   if request.method == 'GET' else None)
+        if zahlung is not None:
+            from .. import services
+            for zuordnung in services.gekuerzte_abschlaege(zahlung):
+                abschlag = zuordnung.beleg
+                self.message_user(request, format_html(
+                    '{} {} ist um {} gekürzt (<a href="{}">Zahlung vom {}</a>). '
+                    'Gilt der Rest dafür: Kürzung dort auf 0 setzen, mit '
+                    'Notiz, dann hier zuordnen. <a href="{}#{}" '
+                    'target="_blank" rel="noopener">Mehr in der Hilfe</a>',
+                    abschlag.rechnungsbezeichnung, abschlag.nummer,
+                    formate.geld_mit_waehrung(zuordnung.kuerzung),
+                    reverse('admin:faktura_zahlung_change',
+                            args=[zuordnung.zahlung_id]),
+                    f'{zuordnung.zahlung.datum:%d.%m.%Y}',
+                    reverse('hilfe'), 'kuerzung-zuruecknehmen'),
+                    messages.WARNING)
+        return super().change_view(request, object_id, form_url,
+                                   extra_context)
 
     def get_queryset(self, request):
         # Prefetch der Zuordnungen für die Spalten "Verteilt" und "Rest".

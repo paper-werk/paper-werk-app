@@ -174,6 +174,28 @@ Danach hat der Abschlag nichts mehr offen, und die Zahlung steht auf
 „abgerechnet“; was vom Abschlag nicht bezahlt war, fordert die
 Schlussrechnung.
 
+### Kürzung zurücknehmen {#kuerzung-zuruecknehmen}
+
+Erkennt der Kunde den gekürzten Teil später an und zahlt ihn, etwa
+zusammen mit dem nächsten Abschlag, gehört die Zahlung auf den gekürzten
+Abschlag:
+
+1. Öffnen Sie die Zahlung mit der Kürzung. Setzen Sie in der Zeile des
+   Abschlags **Gekürzt** auf 0 und tragen Sie in die **Notiz** daneben
+   ein, was geschehen ist, etwa „Kürzung 3.033,61 € zurückgenommen,
+   bezahlt mit Zahlung vom 28.09.2026“. Der Abschlag hat den Betrag
+   danach wieder offen.
+2. Ordnen Sie an der neuen Zahlung den Betrag diesem Abschlag zu, den
+   Rest wie gewohnt dem neuen Abschlag.
+
+Die Notiz ist der einzige Nachweis der früheren Kürzung; der Verlauf der
+Zahlung zeigt nur, dass das Feld geändert wurde. Ist die Schlussrechnung
+schon festgeschrieben, ordnen Sie die Zahlung ihr zu.
+
+Hat eine Zahlung einen Rest und ist beim selben Kunden ein Abschlag
+gekürzt, der noch in keiner Schlussrechnung steht, nennt die Maske der
+Zahlung diesen Abschlag.
+
 ## Umlage und Sicherheitseinbehalt {#einbehalt}
 
 Manche Auftraggeber ziehen von jeder Rechnung eine **Umlage** ab, etwa

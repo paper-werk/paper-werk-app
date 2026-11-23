@@ -20,6 +20,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.urls import reverse
 
 from auswertung import kundenakte
 from faktura import facturx, pdf, services
@@ -32,6 +33,8 @@ from faktura.models import (
     Kontakt,
     Projekt,
     Rechnungsart,
+    Zahlung,
+    Zahlungszuordnung,
 )
 from faktura.tests.test_pdf import xml_wert
 
@@ -372,3 +375,80 @@ class TestZahlungNachDemAbsetzen:
         assert schluss.status == BelegStatus.FESTGESCHRIEBEN
         assert not schluss.positionen.filter(ist_abschlagsrest=True).exists()
         assert services.belegsummen(schluss).netto == Decimal('37000.00')
+
+
+class TestKuerzungZuruecknehmen:
+    """Der Kunde zahlt den gekürzten Teil mit dem nächsten Abschlag nach.
+    Kürzung an der ersten Zahlung auf 0, Rest der zweiten Zahlung auf den
+    gekürzten Abschlag (Hilfe, „Kürzung zurücknehmen“). AB 1 über 50.000,
+    40.000 bezahlt, 10.000 gekürzt; AB 2 über 50.000; Zahlung 71.400 brutto
+    auf beide."""
+
+    @pytest.fixture
+    def belege(self, projekt, kunde):
+        auftrag = _auftrag(projekt, '120000.00')
+        ab1 = _abschlag(projekt, '50000.00')
+        erste = _zahlen(ab1, '47600.00', kuerzung='11900.00')
+        ab2 = _abschlag(projekt, '50000.00')
+        zweite = Zahlung.objects.create(datum=EINGANG, betrag=Decimal('71400.00'),
+                                        kunde=kunde)
+        _zuordnen(zweite, ab2, '59500.00')
+        return auftrag, ab1, ab2, erste, zweite
+
+    def test_ohne_ruecknahme_bleibt_ein_rest_und_der_hinweis_nennt_ab1(
+            self, belege):
+        _, ab1, _, erste, zweite = belege
+
+        assert zweite.rest == Decimal('11900.00')
+        assert [z.beleg for z in services.gekuerzte_abschlaege(zweite)] == [ab1]
+
+    def test_nach_ruecknahme_fordert_die_schlussrechnung_nur_den_rest(
+            self, belege):
+        auftrag, ab1, _, erste, zweite = belege
+        zuordnung = erste.zuordnungen.get()
+        zuordnung.kuerzung = Decimal('0.00')
+        zuordnung.notiz = 'Kürzung zurückgenommen, bezahlt mit Zahlung 2'
+        zuordnung.full_clean()
+        zuordnung.save()
+        _zuordnen(zweite, ab1, '11900.00')
+
+        assert zweite.rest == Decimal('0.00')
+        assert services.offener_betrag(ab1) == Decimal('0.00')
+        assert services.gekuerzte_abschlaege(zweite) == []
+        schluss = _schluss(auftrag, '120000.00')
+        assert services.belegsummen(schluss).netto == Decimal('20000.00')
+
+    def test_kein_hinweis_ohne_rest(self, belege, projekt, kunde):
+        ab3 = _abschlag(projekt, '100.00')
+        voll = Zahlung.objects.create(datum=EINGANG, betrag=Decimal('119.00'),
+                                      kunde=kunde)
+        _zuordnen(voll, ab3, '119.00')
+
+        assert services.gekuerzte_abschlaege(voll) == []
+
+    def test_kein_hinweis_nach_der_schlussrechnung(self, belege):
+        auftrag, _, _, _, zweite = belege
+        services.beleg_festschreiben(
+            beleg_id=_schluss(auftrag, '120000.00').pk)
+
+        assert services.gekuerzte_abschlaege(zweite) == []
+
+    def test_die_maske_der_zahlung_zeigt_den_hinweis(self, buero, belege):
+        _, ab1, _, erste, zweite = belege
+
+        antwort = buero.get(reverse('admin:faktura_zahlung_change',
+                                    args=[zweite.pk]))
+
+        warnungen = [m for m in antwort.context['messages']
+                     if m.level_tag == 'warning']
+        assert len(warnungen) == 1
+        assert reverse('admin:faktura_zahlung_change',
+                       args=[erste.pk]) in str(warnungen[0])
+
+
+def _zuordnen(zahlung, beleg, betrag):
+    zuordnung = Zahlungszuordnung(zahlung=zahlung, beleg=beleg,
+                                  betrag=Decimal(betrag))
+    zuordnung.full_clean()
+    zuordnung.save()
+    return zuordnung
