@@ -5,7 +5,9 @@ Konstante, Rundungsmodus, Bedingung) und führt die Tests aus, die die
 geänderte Zeile laut Coverage ausführen. Schlägt kein Test fehl, hat die
 Mutation überlebt: An dieser Stelle bliebe ein Rechenfehler unbemerkt.
 
-    .venv/Scripts/python mutationstest.py core/rechnen.py faktura/services/summen.py
+    .venv/Scripts/python mutationstest/mutationstest.py core/rechnen.py faktura/services/summen.py
+
+Konzept, Auswertung und Grenzen in ``mutationstest/README.md``.
 
 Gearbeitet wird in einer Kopie des Repos (``--ziel``, Vorgabe im Temp-Ordner)
 mit eigener Datenbank ``test_paperwerk_mutation``, damit Arbeitsordner und
@@ -40,7 +42,7 @@ import time
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-QUELLE = Path(__file__).resolve().parent
+QUELLE = Path(__file__).resolve().parent.parent
 PYTHON = QUELLE / '.venv' / 'Scripts' / 'python.exe'
 if not PYTHON.exists():
     PYTHON = QUELLE / '.venv' / 'bin' / 'python'
