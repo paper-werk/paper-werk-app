@@ -62,7 +62,9 @@ def rechnung_korrigieren(*, beleg_id: int, benutzer=None) -> tuple[Beleg, Beleg]
 
     Im Admin der Button "Rechnung korrigieren"; erzeugt eine
     festgeschriebene Stornorechnung und einen neuen Entwurf. Rückgabe:
-    (Stornobeleg, neuer Entwurf).
+    (Stornobeleg, neuer Entwurf). Nicht bei festgeschriebenem Nachlass
+    und nicht, solange der Rechnung eine Zahlung zugeordnet ist
+    (``_pruefe_ohne_zahlung``).
     """
     original = Beleg.objects.select_for_update().get(pk=beleg_id)
 
@@ -85,6 +87,8 @@ def rechnung_korrigieren(*, beleg_id: int, benutzer=None) -> tuple[Beleg, Beleg]
             f'„Weitere …“, „Nachlass stornieren“), dann die Rechnung. Ist nur '
             f'der Betrag zu hoch, genügt ein weiterer Nachlass.'
         )
+
+    _pruefe_ohne_zahlung(original)
 
     storno = _beleg_kopieren(
         original,
@@ -117,6 +121,39 @@ def rechnung_korrigieren(*, beleg_id: int, benutzer=None) -> tuple[Beleg, Beleg]
     original.save()
 
     return storno, neuer_entwurf
+
+
+def _pruefe_ohne_zahlung(rechnung: Beleg) -> None:
+    """Storno nur ohne Zahlungszuordnung.
+
+    Eine Zahlung tilgt die Forderung, nicht das Dokument. Ob sie auf die
+    Neufassung angerechnet wird, hängt davon ab, wer gezahlt hat und ob
+    die Neufassung dieselbe Schuld betrifft; bei Zahlung eines Dritten
+    braucht es dessen Zustimmung (§ 267 BGB), sonst wird erstattet. Das
+    entscheidet der Benutzer: Er löst die Zuordnung an der Zahlung, deren
+    Betrag danach als Rest steht, und ordnet sie nach dem Festschreiben der
+    Neufassung zu.
+
+    Verworfen: die Zuordnungen automatisch auf die Neufassung umhängen,
+    weil das bei Zahlung eines Dritten falsch ist; sie an der stornierten
+    Rechnung stehen lassen, weil die Zahlung dann als verteilt gilt und
+    die Neufassung den vollen Betrag fordert.
+    """
+    from .. import formate
+
+    zuordnungen = list(rechnung.zahlungszuordnungen
+                       .select_related('zahlung')
+                       .order_by('zahlung__datum', 'pk'))
+    if not zuordnungen:
+        return
+    zahlungen = ', '.join(
+        f'{formate.geld(z.ausgleich)} € aus der Zahlung vom '
+        f'{z.zahlung.datum:%d.%m.%Y}' for z in zuordnungen)
+    raise FalscherStatus(
+        f'Zugeordnet: {zahlungen}. Zuordnung an der Zahlung lösen, dann '
+        f'stornieren. Die Zahlung danach der Neufassung zuordnen oder '
+        f'erstatten.'
+    )
 
 
 def _leistungen_umhaengen(original: Beleg, entwurf: Beleg) -> None:

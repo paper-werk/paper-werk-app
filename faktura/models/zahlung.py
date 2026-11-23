@@ -219,6 +219,14 @@ class Zahlungszuordnung(ErhoehtElternversion):
                     'beleg': 'Auf einen Entwurf wird nicht gezahlt; die '
                              'Rechnung muss festgeschrieben sein.',
                 })
+            # Zuordnungen aus der Zeit vor der Sperre in
+            # ``rechnung_korrigieren`` lassen sich nur löschen.
+            if self.beleg.status == BelegStatus.STORNIERT:
+                raise ValidationError({
+                    'beleg': f'{self.beleg} ist storniert. Zuordnung '
+                             f'löschen und die Zahlung der Neufassung '
+                             f'zuordnen.',
+                })
             if (self.kuerzung and self.kuerzung > 0
                     and self.beleg.rechnungsart != Rechnungsart.ABSCHLAG):
                 raise ValidationError({

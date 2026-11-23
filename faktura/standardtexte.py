@@ -118,8 +118,8 @@ ANSCHREIBEN = [
      'im Anhang erhalten Sie die {beleg}. Damit ist die ursprüngliche '
      'Rechnung aufgehoben; eine Zahlung darauf ist nicht mehr '
      'erforderlich.\n\n'
-     'Bereits geleistete Zahlungen erstatten wir Ihnen '
-     'selbstverständlich zurück.\n\n'
+     'Bereits geleistete Zahlungen rechnen wir auf die neue Rechnung '
+     'an oder erstatten sie Ihnen.\n\n'
      'Mit freundlichen Grüßen\n{firma}'),
     ('Rechnungskorrektur', BelegTyp.GUTSCHRIFT,
      'Sehr geehrte Damen und Herren,\n\n'

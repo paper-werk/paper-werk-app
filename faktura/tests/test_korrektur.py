@@ -3,12 +3,17 @@
 from decimal import Decimal
 
 import pytest
+from django.utils import timezone
 
 from faktura import services
 from faktura.models import (
+    Beleg,
     BelegStatus,
     BelegTyp,
+    Zahlungszuordnung,
 )
+
+HEUTE = timezone.localdate()
 
 
 @pytest.mark.django_db
@@ -61,6 +66,45 @@ class TestRechnungKorrigieren:
     def test_entwurf_kann_nicht_storniert_werden(self, rechnung):
         with pytest.raises(services.FalscherStatus):
             services.rechnung_korrigieren(beleg_id=rechnung.pk)
+
+    def test_mit_zugeordneter_zahlung_bricht_ab_und_legt_nichts_an(
+            self, rechnung):
+        """Regression: Die Zuordnung blieb an der stornierten Rechnung, die
+        Zahlung galt als verteilt und die Neufassung forderte den vollen
+        Betrag."""
+        original = services.beleg_festschreiben(beleg_id=rechnung.pk)
+        services.zahlung_verbuchen(beleg_id=original.pk, datum=HEUTE,
+                                   betrag=Decimal('500.00'))
+
+        with pytest.raises(services.FalscherStatus):
+            services.rechnung_korrigieren(beleg_id=original.pk)
+
+        original.refresh_from_db()
+        assert original.status == BelegStatus.FESTGESCHRIEBEN
+        assert not Beleg.objects.filter(vorgaenger=original).exists()
+        assert Zahlungszuordnung.objects.filter(beleg=original).exists()
+
+    def test_nach_loesen_der_zuordnung_mindert_die_zahlung_die_neufassung(
+            self, rechnung):
+        """Ablauf nach der Sperre: Zuordnung lösen, stornieren, Neufassung
+        festschreiben, Zahlung zuordnen."""
+        original = services.beleg_festschreiben(beleg_id=rechnung.pk)
+        zahlung = services.zahlung_verbuchen(
+            beleg_id=original.pk, datum=HEUTE, betrag=Decimal('500.00'))
+
+        zahlung.zuordnungen.all().delete()
+        assert zahlung.rest == Decimal('500.00')
+
+        _, entwurf = services.rechnung_korrigieren(beleg_id=original.pk)
+        neu = services.beleg_festschreiben(beleg_id=entwurf.pk)
+        zuordnung = Zahlungszuordnung(zahlung=zahlung, beleg=neu,
+                                      betrag=Decimal('500.00'))
+        zuordnung.full_clean()
+        zuordnung.save()
+
+        brutto = services.belegsummen(neu).brutto
+        assert services.offener_betrag(neu) == brutto - Decimal('500.00')
+        assert zahlung.rest == Decimal('0.00')
 
     def test_kette_bleibt_nachvollziehbar(self, rechnung):
         original = services.beleg_festschreiben(beleg_id=rechnung.pk)

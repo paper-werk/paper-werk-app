@@ -14,12 +14,14 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
 from faktura import services
 from faktura.models import (
     Beleg,
+    BelegStatus,
     BelegTyp,
     Kontakt,
     Zahlung,
@@ -363,6 +365,64 @@ class TestDieZahlungsmaske:
         waehlbar = list(feld.queryset)
         assert rechnung in waehlbar
         assert bezahlte not in waehlbar
+
+    def test_zuordnung_auf_stornierte_rechnung_erscheint_und_laesst_sich_loeschen(
+            self, buero, rechnung):
+        """Altbestand aus der Zeit vor der Sperre in
+        ``rechnung_korrigieren``. Regression: Die Zeile erschien ohne
+        Rechnung, und die Zahlung ließ sich nicht mehr speichern."""
+        zahlung = services.zahlung_verbuchen(
+            beleg_id=rechnung.pk, datum=HEUTE, betrag=Decimal('100.00'))
+        zuordnung = zahlung.zuordnungen.get()
+        Beleg.objects.filter(pk=rechnung.pk).update(
+            status=BelegStatus.STORNIERT)
+        url = reverse('admin:faktura_zahlung_change', args=[zahlung.pk])
+
+        seite = buero.get(url).content.decode()
+        assert f'value="{rechnung.pk}" selected' in seite
+
+        zahlung.refresh_from_db()
+        antwort = buero.post(url, {
+            'datum': HEUTE.strftime('%d.%m.%Y'),
+            'betrag': '100.00',
+            'zahlungsart': zahlung.zahlungsart,
+            'kunde': zahlung.kunde_id or '',
+            'zahlername': zahlung.zahlername,
+            'verwendungszweck': zahlung.verwendungszweck,
+            'referenz': '',
+            'notiz': '',
+            'version': zahlung.version,
+            'zuordnungen-TOTAL_FORMS': '1',
+            'zuordnungen-INITIAL_FORMS': '1',
+            'zuordnungen-MIN_NUM_FORMS': '0',
+            'zuordnungen-MAX_NUM_FORMS': '1000',
+            'zuordnungen-0-id': zuordnung.pk,
+            'zuordnungen-0-zahlung': zahlung.pk,
+            'zuordnungen-0-beleg': rechnung.pk,
+            'zuordnungen-0-betrag': '100.00',
+            'zuordnungen-0-skonto': '0.00',
+            'zuordnungen-0-kuerzung': '0.00',
+            'zuordnungen-0-notiz': '',
+            'zuordnungen-0-DELETE': 'on',
+        })
+
+        assert antwort.status_code == 302
+        assert not Zahlungszuordnung.objects.filter(pk=zuordnung.pk).exists()
+        zahlung.refresh_from_db()
+        assert zahlung.rest == Decimal('100.00')
+
+    def test_eine_stornierte_rechnung_ist_nicht_zuordenbar(self, rechnung):
+        Beleg.objects.filter(pk=rechnung.pk).update(
+            status=BelegStatus.STORNIERT)
+        rechnung.refresh_from_db()
+        zahlung = Zahlung.objects.create(datum=HEUTE,
+                                         betrag=Decimal('100.00'))
+
+        zuordnung = Zahlungszuordnung(zahlung=zahlung, beleg=rechnung,
+                                      betrag=Decimal('100.00'))
+        with pytest.raises(ValidationError) as fehler:
+            zuordnung.full_clean()
+        assert 'beleg' in fehler.value.message_dict
 
     def test_das_formular_hat_einen_abschnitt_fuer_die_zuordnung(
             self, buero):
