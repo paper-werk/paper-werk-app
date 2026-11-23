@@ -157,6 +157,18 @@ class TestAufbauWieImErstenAbschlag:
         # 2.000,00 + 60,00 + Zuschlag 5 % auf je 1.030,00 = 103,00.
         assert ' | Summe Titel 1 Erkundung | 2.163,00' in zeilen
 
+    def test_freie_position_ohne_titel_behaelt_ihre_nummer_nicht(
+            self, projekt, auftrag):
+        """Außerhalb eines Titels ist die Nummer einer freien Position über
+        mehrere Abschläge nicht eindeutig; sie wird neu vergeben."""
+        _fest(_abschlag(projekt, auftrag, ERSTER_TAG, frei='5'))
+        zweiter = _abschlag(projekt, auftrag, ZWEITER_TAG, frei='5')
+
+        kumuliert = services.kumulierter_abschlag(zweiter)
+
+        fahrt = next(p for p in kumuliert.positionen if p.bezeichnung == 'Fahrt')
+        assert fahrt.position != '5'
+
     def test_titel_ohne_zeilen_erscheint_nicht(self, projekt, auftrag):
         erster = _abschlag(projekt, auftrag, ERSTER_TAG)
         _titel(erster, '9', 'Leer')

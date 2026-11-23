@@ -164,6 +164,21 @@ class TestUmlageVomBrutto:
             'Anteil Versicherung 1,1 % aus 6.651,98 brutto')
 
 
+def test_ohne_leistung_weder_umlage_noch_einbehalt(kunde):
+    projekt = _projekt(
+        kunde, umlage_bezeichnung='Anteil Versicherung',
+        umlage_prozent=D('1.1'), umlage_grundlage=Abzugsgrundlage.BRUTTO,
+        einbehalt_prozent=D('10'))
+    beleg = services.beleg_anlegen(
+        projekt=projekt, typ=BelegTyp.RECHNUNG,
+        rechnungsart=Rechnungsart.ABSCHLAG, betreff='Abschlag')
+
+    services.abzuege_nachrechnen(beleg)
+
+    beleg.refresh_from_db()
+    assert (beleg.umlage_text, beleg.einbehalt_text) == ('', '')
+
+
 class TestUmlagezeile:
     def test_nicht_doppelt(self, versicherung):
         beleg = _abschlag(versicherung, '1', '1000.00', festschreiben=False)
