@@ -184,6 +184,29 @@ und Nachträge“ zur Auftragssumme, und seine Positionen stehen in den
 Abnahmen des Hauptauftrags zur Wahl. Einen
 Nachtrag zu einem Nachtrag gibt es nicht.
 
+### Nachtrag oder Folgeauftrag {#folgeauftrag}
+
+Eine Schlussrechnung gehört zu einem Auftrag. Sie entsteht aus dessen
+Gesamtabnahme, und die umfasst den Hauptauftrag mit allen Nachträgen. Je
+Hauptauftrag gibt es eine Gesamtabnahme und damit eine Schlussrechnung.
+
+| | Nachtrag | Folgeauftrag |
+|---|---|---|
+| Wann | Leistung kommt hinzu, solange der Auftrag läuft | Leistung wird beauftragt, nachdem die Schlussrechnung gestellt ist |
+| Anlegen | „Nachtrag anlegen“ am Hauptauftrag | neues Angebot und neuer Auftrag im selben Projekt |
+| Schlussrechnung | eine gemeinsame über Hauptauftrag und Nachträge | eine eigene; die erste bleibt unverändert |
+
+Beim Folgeauftrag verweist der Kopftext auf den ersten Auftrag, etwa
+„Folgeauftrag zu AB-2026-0003 vom 03.02.2026.“, und der Kopftext der
+Schlussrechnung auf die erste Schlussrechnung. Die Projektakte zählt beide
+Aufträge zur Auftragssumme.
+
+Eine schon gestellte Schlussrechnung zu stornieren, um neue Leistung in
+eine gemeinsame Schlussrechnung aufzunehmen, ist möglich
+([Stornorechnungen](#stornorechnung)). Die neue
+Schlussrechnung setzt dann die Zahlungen auf die stornierte nicht ab;
+die Zahlungen werden ihr nach dem Festschreiben zugeordnet.
+
 **Die Liste** zeigt vorn die Spalte „Akte“ mit „ansehen“. Der Filter
 „Nachtrag zu“ zeigt die Nachträge eines Auftrags.
 
