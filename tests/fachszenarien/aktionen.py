@@ -632,6 +632,7 @@ def schlussrechnung(lauf: Lauf, schritt: dict) -> Beleg:
         # abnahme_eine_gesamtabnahme_je_auftrag). Weitere Leistung kommt über
         # "Stornieren und neu schreiben" der Schlussrechnung in eine neue
         # Gesamtschlussrechnung.
+        geloest = _zuordnungen_loesen(lauf, abgerechnet)
         _detailaktion(lauf, abgerechnet, 'korrigieren')
         lauf.belege[f'Storno-{_name_von(lauf, abgerechnet)}'] = Beleg.objects.filter(
             vorgaenger=abgerechnet, typ=BelegTyp.STORNO).latest('pk').pk
@@ -647,6 +648,10 @@ def schlussrechnung(lauf: Lauf, schritt: dict) -> Beleg:
     lauf.client.post(_url(beleg, 'abschlaege'))
     beleg = _versenden(lauf, beleg)
     lauf.belege[schritt['name']] = beleg.pk
+    if abgerechnet is not None:
+        # Dieselbe Schuld beim selben Kunden: Zahlungen auf die stornierte
+        # Schlussrechnung werden angerechnet.
+        _zuordnungen_anlegen(lauf, geloest, beleg)
     return beleg
 
 
@@ -718,11 +723,14 @@ def rechnung(lauf: Lauf, schritt: dict) -> Beleg:
 
 
 def storno_und_neufassung(lauf: Lauf, schritt: dict) -> Beleg:
-    """"Stornieren und neu schreiben" an der Rechnung. In der Neufassung
-    den Empfänger auf den Kunden setzen, weitere Leistung hinzufügen,
-    versenden; danach die Zuordnung der Zahlung von der stornierten
-    Rechnung auf die Neufassung umhängen (Maske der Zahlung)."""
+    """"Stornieren und neu schreiben" an der Rechnung. Vorher die
+    Zuordnungen der Zahlungen lösen (Maske der Zahlung), weil eine Rechnung
+    mit zugeordneter Zahlung nicht storniert wird. In der Neufassung den
+    Empfänger auf den Kunden setzen, weitere Leistung hinzufügen,
+    versenden; mit ``zahlung_umbuchen`` danach die Zahlungen der
+    Neufassung zuordnen, sonst bleiben sie als Rest stehen (erstattet)."""
     alt = lauf.beleg(schritt['rechnung'])
+    geloest = _zuordnungen_loesen(lauf, alt)
     _detailaktion(lauf, alt, 'korrigieren')
     neu = Beleg.objects.filter(vorgaenger=alt, typ=BelegTyp.RECHNUNG,
                                status=BelegStatus.ENTWURF).latest('pk')
@@ -737,34 +745,49 @@ def storno_und_neufassung(lauf: Lauf, schritt: dict) -> Beleg:
     neu = _versenden(lauf, neu)
     lauf.belege[schritt['neu']] = neu.pk
     if 'zahlung_umbuchen' in schritt:
-        _zuordnung_umhaengen(lauf, alt, neu)
+        _zuordnungen_anlegen(lauf, geloest, neu)
     return neu
 
 
-def _zuordnung_umhaengen(lauf: Lauf, alt: Beleg, neu: Beleg) -> None:
-    zuordnung = Zahlungszuordnung.objects.filter(beleg=alt).first()
-    if zuordnung is None:
-        lauf.luecken.append(f'Keine Zuordnung auf {alt} zum Umbuchen')
+def _zuordnungen_loesen(lauf: Lauf, beleg: Beleg) -> list[dict]:
+    """Löscht in der Maske jeder Zahlung die Zeile auf ``beleg``. Gibt
+    Zahlung, Betrag und Skonto der gelösten Zeilen zurück."""
+    geloest = []
+    for zuordnung in Zahlungszuordnung.objects.filter(beleg=beleg).order_by('pk'):
+        formular = maske.oeffnen(lauf.client, reverse(
+            'admin:faktura_zahlung_change', args=[zuordnung.zahlung_id]))
+        index = next((i for i in range(formular.zeilen('zuordnungen'))
+                      if formular.wert(f'zuordnungen-{i}-id') == str(zuordnung.pk)),
+                     None)
+        if index is None:
+            raise Luecke(f'Zuordnung {zuordnung.pk} nicht in der Zahlungsmaske')
+        formular.setzen(f'zuordnungen-{index}-DELETE', True)
+        formular.absenden('_save')
+        if zuordnung.pk in lauf.zahlungen:
+            lauf.zahlungen.remove(zuordnung.pk)
+        geloest.append({'zahlung': zuordnung.zahlung_id,
+                        'betrag': zuordnung.betrag, 'skonto': zuordnung.skonto})
+    return geloest
+
+
+def _zuordnungen_anlegen(lauf: Lauf, geloest: list[dict], beleg: Beleg) -> None:
+    """Ordnet die gelösten Zahlungen in deren Maske ``beleg`` zu."""
+    if not geloest:
+        lauf.luecken.append(f'Keine Zahlung auf den Vorgänger von {beleg} zum Umbuchen')
         return
-    formular = maske.oeffnen(
-        lauf.client, reverse('admin:faktura_zahlung_change', args=[zuordnung.zahlung_id]))
-    gefunden = False
-    for index in range(formular.zeilen('zuordnungen')):
-        if formular.wert(f'zuordnungen-{index}-id') != str(zuordnung.pk):
-            continue
-        if formular.wert(f'zuordnungen-{index}-beleg') != str(alt.pk):
-            lauf.luecken.append(
-                f'Zahlungsmaske zeigt die Zuordnung {zuordnung.betrag} auf die '
-                f'stornierte {alt.nummer} ohne Rechnung; Umhängen auf '
-                f'{neu.nummer} nicht möglich')
-            return
-        if str(neu.pk) not in {w for w, _ in formular.optionen(f'zuordnungen-{index}-beleg')}:
-            raise Luecke(f'{neu} in der Zuordnung der Zahlung nicht wählbar')
-        formular.setzen(f'zuordnungen-{index}-beleg', neu.pk)
-        gefunden = True
-    if not gefunden:
-        raise Luecke(f'Zuordnung {zuordnung.pk} nicht in der Zahlungsmaske')
-    formular.absenden('_save')
+    for eintrag in geloest:
+        formular = maske.oeffnen(lauf.client, reverse(
+            'admin:faktura_zahlung_change', args=[eintrag['zahlung']]))
+        index = formular.freie_zeile('zuordnungen')
+        if str(beleg.pk) not in {w for w, _ in formular.optionen(
+                f'zuordnungen-{index}-beleg')}:
+            raise Luecke(f'{beleg} in der Zuordnung der Zahlung nicht wählbar')
+        formular.zeile('zuordnungen', index, beleg=beleg.pk,
+                       betrag=eintrag['betrag'], skonto=eintrag['skonto'])
+        vorher = set(Zahlungszuordnung.objects.values_list('pk', flat=True))
+        formular.absenden('_save')
+        lauf.zahlungen.extend(Zahlungszuordnung.objects.exclude(pk__in=vorher)
+                              .values_list('pk', flat=True))
 
 
 def auftrag_wiedereroeffnen_und_nachtrag(lauf: Lauf, schritt: dict) -> Beleg:
