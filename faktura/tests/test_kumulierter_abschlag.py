@@ -397,3 +397,104 @@ class TestMaske:
                                  args=[ab1.pk])).content.decode()
 
         assert 'Kumuliert, wie im PDF' not in html
+
+
+@pytest.fixture
+def schlussgerechnet(projekt, auftrag):
+    """AB 1 und AB 2 auf den Auftrag, Schlussrechnung vom 01.03.2026 setzt
+    beide ab; danach ein Folgeauftrag im selben Projekt."""
+    gutachten = _ap(auftrag, '3.1')
+    ab1 = _abschlag(projekt, (gutachten, 'Gutachten', '1', 'LS', '2000.00',
+                              '19.00'), tag=date(2026, 1, 5))
+    ab2 = _abschlag(projekt, (gutachten, 'Gutachten', '1', 'LS', '1000.00',
+                              '19.00'), tag=date(2026, 2, 4))
+    gesamt = Abnahme.objects.create(auftrag=auftrag, art=Abnahmeart.GESAMT,
+                                    abgenommen_am=date(2026, 2, 27))
+    schluss = services.rechnung_aus_abnahme(abnahme_id=gesamt.pk)
+    schluss.belegdatum = date(2026, 3, 1)
+    schluss.save()
+    schluss = services.beleg_festschreiben(beleg_id=schluss.pk)
+
+    folge = services.beleg_anlegen(projekt=projekt, typ=BelegTyp.AUFTRAG,
+                                   betreff='Folgeauftrag')
+    services.position_hinzufuegen(
+        beleg=folge, position='5', bezeichnung='Ausführungsplanung',
+        menge=Decimal('1'), einheit='LS', einzelpreis=Decimal('9000.00'),
+        steuersatz='19.00')
+    folge = services.beleg_festschreiben(beleg_id=folge.pk)
+    return ab1, ab2, schluss, folge
+
+
+def _folgeabschlag(projekt, folge, preis, tag, festschreiben=True):
+    return _abschlag(projekt, (_ap(folge, '5'), 'Ausführungsplanung', '1',
+                               'LS', preis, '19.00'),
+                     tag=tag, festschreiben=festschreiben)
+
+
+@pytest.mark.django_db
+class TestNachDerSchlussrechnung:
+    """R-183: Mit der Schlussrechnung endet die Reihe der Abschläge, die sie
+    absetzt. Regression: Der Abschlag zum Folgeauftrag zeigte den
+    schlussgerechneten Auftrag und zog dessen Abschläge ab."""
+
+    def test_der_folgeabschlag_hat_keine_vorgaenger(self, projekt,
+                                                    schlussgerechnet):
+        _, _, _, folge = schlussgerechnet
+        ab3 = _folgeabschlag(projekt, folge, '4000.00', date(2026, 4, 1))
+
+        assert services.vorgaenger_abschlaege(ab3) == []
+        assert services.kumulierter_abschlag(ab3) is None
+
+    def test_auch_als_entwurf_ohne_belegdatum(self, projekt,
+                                              schlussgerechnet):
+        _, _, _, folge = schlussgerechnet
+        ab3 = _folgeabschlag(projekt, folge, '4000.00', date(2026, 4, 1),
+                             festschreiben=False)
+        ab3.belegdatum = None
+        ab3.save()
+
+        assert services.vorgaenger_abschlaege(ab3) == []
+
+    def test_die_reihe_des_folgeauftrags_kumuliert_wieder(
+            self, projekt, schlussgerechnet):
+        _, _, _, folge = schlussgerechnet
+        ab3 = _folgeabschlag(projekt, folge, '4000.00', date(2026, 4, 1))
+        ab4 = _folgeabschlag(projekt, folge, '3000.00', date(2026, 5, 4),
+                             festschreiben=False)
+
+        kumuliert = services.kumulierter_abschlag(ab4)
+
+        assert kumuliert.vorgaenger == [ab3]
+        assert _netto_je_satz(kumuliert) == _belegnetto_je_satz(ab4)
+
+    def test_der_abschlag_vor_der_schlussrechnung_behaelt_den_vorgaenger(
+            self, schlussgerechnet):
+        ab1, ab2, _, _ = schlussgerechnet
+
+        assert services.vorgaenger_abschlaege(ab2) == [ab1]
+
+    def test_nach_storno_der_schlussrechnung_zaehlt_der_abschlag_wieder(
+            self, projekt, schlussgerechnet):
+        ab1, ab2, schluss, folge = schlussgerechnet
+        services.rechnung_korrigieren(beleg_id=schluss.pk)
+        ab3 = _folgeabschlag(projekt, folge, '4000.00', date(2026, 4, 1))
+
+        assert services.vorgaenger_abschlaege(ab3) == [ab1, ab2]
+
+    def test_die_nummer_bleibt_je_projekt_fortlaufend(
+            self, projekt, schlussgerechnet):
+        _, _, _, folge = schlussgerechnet
+        ab3 = _folgeabschlag(projekt, folge, '4000.00', date(2026, 4, 1))
+
+        assert ab3.abschlagsnummer == 3
+
+    def test_der_einbehalt_rechnet_nur_mit_der_neuen_reihe(
+            self, projekt, schlussgerechnet):
+        """R-190 kumuliert über dieselben Vorgänger: 5 % aus 4.000,00 netto,
+        ohne die Abschläge vor der Schlussrechnung."""
+        _, _, _, folge = schlussgerechnet
+        projekt.einbehalt_prozent = Decimal('5')
+        projekt.save()
+        ab3 = _folgeabschlag(projekt, folge, '4000.00', date(2026, 4, 1))
+
+        assert ab3.einbehalt == Decimal('200.00')
