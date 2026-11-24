@@ -270,10 +270,12 @@ def umgebung():
 
 
 def kopieren(ziel: Path):
-    """Arbeitskopie aus den versionierten Dateien des Arbeitsstands und
-    ``.env``. Ergebnisse und Abdeckung im Ziel bleiben erhalten."""
+    """Arbeitskopie aus den versionierten und den nicht ignorierten neuen
+    Dateien des Arbeitsstands und ``.env``. Ergebnisse und Abdeckung im
+    Ziel bleiben erhalten."""
     dateien = subprocess.run(
-        ['git', 'ls-files', '-z'], cwd=QUELLE, capture_output=True, check=True,
+        ['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+        cwd=QUELLE, capture_output=True, check=True,
     ).stdout.decode().split('\0')
     for name in [d for d in dateien if d] + ['.env']:
         q = QUELLE / name
