@@ -73,6 +73,16 @@ def _zahlungen_gleich_schluss_brutto(lauf):
     return summe_zahlungen(lauf) == _leistung(_schluss(lauf)).brutto
 
 
+def _zahlungen_gleich_schluss_brutto_bis_auf_rundung(lauf):
+    """Wie ``_zahlungen_gleich_schluss_brutto``, mit höchstens einem Cent
+    je Abschlag: Die Restzeile (R-174) rundet netto je Position, ihr Brutto
+    kann vom nicht vereinnahmten Betrag abweichen (befunde.md, B6)."""
+    abschlaege = rechnungen(lauf).filter(
+        rechnungsart=Rechnungsart.ABSCHLAG).count()
+    differenz = summe_zahlungen(lauf) - _leistung(_schluss(lauf)).brutto
+    return abs(differenz) <= Decimal('0.01') * abschlaege
+
+
 def _zahlungen_und_skonti_gleich_schluss_brutto(lauf):
     return summe_zahlungen(lauf) + summe_skonti(lauf) == _leistung(_schluss(lauf)).brutto
 
@@ -241,6 +251,8 @@ AM_ENDE = {
         _steuer_abgesetzt_plus_rest,
     # Fall 02
     'schluss_netto == 60840.00': _netto_gleich('60840.00'),
+    'summe_zahlungen == schluss_brutto bis auf 0.01 je Abschlag':
+        _zahlungen_gleich_schluss_brutto_bis_auf_rundung,
     'schluss_zeithonorar <= 10500.00': _zeithonorar_hoechstens('10500.00'),
     'für jede Rechnung: netto und ust unabhängig vom Einbehalt':
         _einbehalt_mindert_nichts,
