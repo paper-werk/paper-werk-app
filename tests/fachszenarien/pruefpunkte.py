@@ -296,6 +296,12 @@ AM_ENDE = {
         _nachgewiesen_abgerechnet(('AR1', 'SR'), 'BOHR'),
     'zeilen(AR1, BOHR) == 1 and zeilen(SR, BOHR) == 1':
         _eine_zeile(('AR1', 'SR'), 'BOHR'),
+    'betrag(SR, LABOR) == weiterberechnet(LABOR)':
+        _nachgewiesen_abgerechnet(('SR',), 'LABOR'),
+    'zeilen(SR, LABOR) == 1': _eine_zeile(('SR',), 'LABOR'),
+    'weiterberechnet == rund(einkauf * (1 + aufschlag))':
+        lambda lauf: all(_nachgewiesen_abgerechnet(('SR',), k)(lauf)
+                         for k in ('BOHR', 'LABOR')),
     # Fall 04
     'summe_netto(nicht storniert) == 19540.00': _summe_nicht_stornierter('19540.00'),
     'RE1 + Storno(RE1) == 0': _rechnung_plus_storno_null,

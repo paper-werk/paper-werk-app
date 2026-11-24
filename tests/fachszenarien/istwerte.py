@@ -153,6 +153,7 @@ ISTWERTE = {
     'offen': offen_je_kunde,
     'bohrung_angebot': weiterberechnet('BOHR'),
     'bohrung_weiterberechnet': weiterberechnet('BOHR'),
+    'labor_angebot': weiterberechnet('LABOR'),
     'labor_weiterberechnet': weiterberechnet('LABOR'),
     'feldarbeiten': weiterberechnet('FELD'),
 }
