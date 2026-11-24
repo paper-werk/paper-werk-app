@@ -338,15 +338,15 @@ bleibt. Alle Zahlungen auf eine Rechnung stehen in ihrem Reiter
 ### Die Liste Zahlungseingänge
 
 Hier stehen alle Geldeingänge, auch solche, die mehrere Rechnungen
-bezahlen. Die Spalten: Datum, Zahler, Betrag, Verteilt, Rest und Art. Der
-Filter „Verteilung“ zeigt Zahlungen, die noch nicht ganz oder gar nicht
+bezahlen. Die Spalten: Datum, Zahler, Betrag, Verteilt, Erstattet, Rest
+und Art. Der Filter „Verteilung“ zeigt Zahlungen, die noch nicht ganz oder gar nicht
 zugeordnet sind, also Geld auf dem Konto, das zu keiner Rechnung gehört.
 
 **Eine Sammelüberweisung** über mehrere Rechnungen erfassen Sie hier mit
 „+“:
 
-- oben **Zahlungsdatum** (Wertstellung laut Auszug), **Betrag** und
-  **Zahlungsart**,
+- oben **Zahlungsdatum** (Wertstellung laut Auszug), **Betrag**,
+  **Zahlungsart** und **Erstattet**, siehe unten,
 - unter „Zuordnung Kunde“ den **Kunden**, den **Namen laut Auszug**,
   **Verwendungszweck**, **Referenz** (eindeutige Kennung aus dem
   Kontoauszug) und eine **Notiz**,
@@ -356,6 +356,19 @@ zugeordnet sind, also Geld auf dem Konto, das zu keiner Rechnung gehört.
   Rechnungen, auf denen etwas offen ist.
 
 Was nach dem Verteilen übrig bleibt, zeigt die Spalte „Rest“.
+
+### Erstattung {#erstattung}
+
+Gehört ein Teil der Zahlung zu keiner Rechnung, etwa bei einer
+Überzahlung, einer doppelten Überweisung oder einer Zahlung auf eine
+stornierte Rechnung, und überweisen Sie ihn zurück: In der Zahlung den
+Betrag unter **Erstattet** eintragen, Datum und Grund in die **Notiz**.
+Der Rest sinkt um den erstatteten Betrag; ist er 0, erscheint die
+Zahlung nicht mehr im Filter „Verteilung“. Rechnungen und offene Posten
+ändern sich nicht.
+
+Zugeordnet und erstattet zusammen dürfen den Betrag der Zahlung nicht
+übersteigen.
 
 ## Mahnungen {#mahnung}
 
@@ -436,8 +449,8 @@ stornieren. Dann:
    ihn. Skonto oder Kürzung der alten Zeile tragen Sie dabei neu ein.
 
 Das PDF der Neufassung nennt den vollen Betrag ohne die angerechnete
-Zahlung. Offen ist nach der Zuordnung der Rest. Eine Erstattung bildet
-Paper-Werk nicht ab; der Rest bleibt dann an der Zahlung stehen.
+Zahlung. Offen ist nach der Zuordnung der Rest. Zur Erstattung siehe
+[Erstattung](#erstattung).
 
 Zuordnungen auf eine schon stornierte Rechnung aus älteren Ständen zeigt
 die Zahlung mit der stornierten Rechnung an. Sie lassen sich nur löschen.

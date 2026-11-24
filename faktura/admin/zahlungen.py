@@ -5,7 +5,7 @@ Festschreibung, kein PDF.
 """
 
 from django.contrib import admin, messages
-from django.db.models import Q
+from django.db.models import F, Q
 from django.urls import reverse
 from django.utils.html import format_html
 from unfold import admin as unfold_admin
@@ -79,7 +79,9 @@ class VerteiltFilter(admin.SimpleListFilter):
         if not self.value():
             return queryset
         if self.value() == 'ohne':
-            return queryset.filter(zuordnungen__isnull=True)
+            # Ohne ganz erstattete Zahlungen, an denen nichts zu tun ist.
+            return (queryset.filter(zuordnungen__isnull=True)
+                    .exclude(erstattet=F('betrag')))
         offene = [z.pk for z in queryset.prefetch_related('zuordnungen')
                   if z.rest > 0]
         return queryset.filter(pk__in=offene)
@@ -92,7 +94,7 @@ class ZahlungAdmin(Kopfleiste, VersionAdminMixin,
     nicht zugeordnete Rest."""
 
     list_display = ['datum', 'wer', 'betrag_anzeige', 'verteilt_anzeige',
-                    'rest_anzeige', 'zahlungsart']
+                    'erstattet_anzeige', 'rest_anzeige', 'zahlungsart']
     list_display_links = ['datum', 'wer']
     # Kunde als Filter, den der Link "Alle Zahlungen dieses Kunden" aus der
     # Kundenakte verwendet.
@@ -109,7 +111,7 @@ class ZahlungAdmin(Kopfleiste, VersionAdminMixin,
     readonly_fields = ['erfasst_am']
     # Zwei offene Abschnitte: Betrag und Zuordnung.
     fieldsets = [
-        (None, {'fields': ['datum', 'betrag', 'zahlungsart']}),
+        (None, {'fields': ['datum', 'betrag', 'zahlungsart', 'erstattet']}),
         ('Zuordnung Kunde', {
             'fields': ['kunde', 'zahlername', 'verwendungszweck',
                        'referenz', 'notiz', 'erfasst_am'],
@@ -171,6 +173,12 @@ class ZahlungAdmin(Kopfleiste, VersionAdminMixin,
     @admin.display(description='Verteilt')
     def verteilt_anzeige(self, zahlung):
         return formate.geld_mit_waehrung(zahlung.zugeordnet)
+
+    @admin.display(description='Erstattet', ordering='erstattet')
+    def erstattet_anzeige(self, zahlung):
+        if zahlung.erstattet == 0:
+            return '-'
+        return formate.geld_mit_waehrung(zahlung.erstattet)
 
     @admin.display(description='Rest')
     def rest_anzeige(self, zahlung):
