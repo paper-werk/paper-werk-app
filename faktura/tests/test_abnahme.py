@@ -639,6 +639,17 @@ class TestAbschlaegeAndererAuftraege:
 
         assert [(f.abschlag, f.auftrag) for f in befund] == [(fremd, auftrag)]
 
+    def test_bezahlter_abschlag_eines_parallelen_auftrags_wird_genannt(
+            self, projekt, auftrag, lph_1_4):
+        """Ohne Restzeile, weil voll bezahlt."""
+        gutachten = _zweiter_auftrag(projekt)
+        fremd = abschlag(projekt, '3000.00', auftragsposition=lph_1_4,
+                         bezahlt=True)
+
+        befund = services.abschlaege_anderer_auftraege(_schluss_zu(gutachten))
+
+        assert [(f.abschlag, f.auftrag) for f in befund] == [(fremd, auftrag)]
+
     def test_abschlag_zu_einem_nachtrag_gehoert_zum_auftrag(
             self, projekt, auftrag):
         nachtrag = _zweiter_auftrag(projekt, nachtrag_zu=auftrag)
