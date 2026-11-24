@@ -876,7 +876,7 @@ def rechnung(lauf: Lauf, schritt: dict) -> Beleg:
     """Gewöhnliche Rechnung über erfasste Leistung, Zeitraum vom Auftrag
     bis zur letzten Erfassung. Ein anderer Kunde als der des Projekts steht
     nur im Empfängerfeld; die offenen Posten führen die Rechnung beim
-    Projektkunden (B5.4)."""
+    Projektkunden."""
     tag = schritt['datum']
     inhalt = _inhalt(lauf, schritt) or set()
     # Ende des Zeitraums vor der Erfassung des Leistungsstands, die am

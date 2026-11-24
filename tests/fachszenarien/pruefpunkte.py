@@ -76,7 +76,7 @@ def _zahlungen_gleich_schluss_brutto(lauf):
 def _zahlungen_gleich_schluss_brutto_bis_auf_rundung(lauf):
     """Wie ``_zahlungen_gleich_schluss_brutto``, mit höchstens einem Cent
     je Abschlag: Die Restzeile (R-174) rundet netto je Position, ihr Brutto
-    kann vom nicht vereinnahmten Betrag abweichen (befunde.md, B6)."""
+    kann vom nicht vereinnahmten Betrag abweichen."""
     abschlaege = rechnungen(lauf).filter(
         rechnungsart=Rechnungsart.ABSCHLAG).count()
     differenz = summe_zahlungen(lauf) - _leistung(_schluss(lauf)).brutto
