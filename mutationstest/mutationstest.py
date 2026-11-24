@@ -409,6 +409,11 @@ def main():
     if ergebnisdatei.exists():
         for z in ergebnisdatei.read_text(encoding='utf-8').splitlines():
             e = json.loads(z)
+            # Der Schlüssel hängt nur am Quelltext des Moduls. Nach neuer
+            # Abdeckung können neue Tests eine bisher nicht abgedeckte oder
+            # überlebende Mutation treffen.
+            if args.neu and e['status'] in ('nicht abgedeckt', 'überlebt'):
+                continue
             erledigt[e['schluessel']] = e
 
     ergebnisse, anzahl = [], 0

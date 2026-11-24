@@ -485,6 +485,8 @@ class TestAbschlaegeAbsetzen:
         assert services.abschlaege.uebernommener_rest(abschlag_) == Decimal(
             '5950.00')
         assert services.offener_betrag(abschlag_) == Decimal('3570.00')
+        assert {p.beleg: p.offen for p in services.offene_posten().posten
+                }[abschlag_] == Decimal('3570.00')
         # Teilweise abgerechnet, also noch in keiner Rechnung abgerechnet.
         assert services.abgerechnet_in(abschlag_) is None
 
