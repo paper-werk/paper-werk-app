@@ -144,6 +144,36 @@ def _steuersatz_der_position(name, kennung, satz):
     return pruefen
 
 
+def _nachgewiesen(lauf, kennung) -> set[Decimal]:
+    """Weiterberechneter Betrag einer Fremdleistung nach Einkauf mal
+    (1 + Aufschlag), in beiden Grundlagen der Regelfrage R1 (Netto der
+    Eingangsrechnung, Betrag nach eigenem Skonto)."""
+    eintrag = lauf.katalog[kennung]
+    faktor = 1 + Decimal(eintrag['aufschlag_prozent']) / 100
+    schritt = next(s for s in lauf.fall.schritte
+                   if s.get('fremdleistung') == kennung)
+    return {(Decimal(schritt[feld]) * faktor).quantize(Decimal('0.01'))
+            for feld in ('einkauf_netto', 'einkauf_netto_nach_skonto')
+            if feld in schritt}
+
+
+def _nachgewiesen_abgerechnet(namen, kennung):
+    def pruefen(lauf):
+        soll = _nachgewiesen(lauf, kennung)
+        return all(istwerte.weiterberechnet(kennung)(lauf, lauf.beleg(n), None)
+                   in soll for n in namen)
+    return pruefen
+
+
+def _eine_zeile(namen, kennung):
+    def pruefen(lauf):
+        bezeichnung = lauf.katalog[kennung]['bezeichnung']
+        return all(lauf.beleg(n).positionen.filter(
+            bezeichnung=bezeichnung, ist_abzug=False).count() == 1
+            for n in namen)
+    return pruefen
+
+
 def _summe_nicht_stornierter(betrag):
     def pruefen(lauf):
         return sum((_leistung(b).netto for b in rechnungen(lauf).exclude(
@@ -262,6 +292,10 @@ AM_ENDE = {
     'summe_zahlungen + summe_skonti == schluss_brutto':
         _zahlungen_und_skonti_gleich_schluss_brutto,
     'betrag(SR, BERICHT) == 7800.00': _betrag_der_position('SR', 'BERICHT', '7800.00'),
+    'betrag(AR1, BOHR) == weiterberechnet(BOHR) and betrag(SR, BOHR) == weiterberechnet(BOHR)':
+        _nachgewiesen_abgerechnet(('AR1', 'SR'), 'BOHR'),
+    'zeilen(AR1, BOHR) == 1 and zeilen(SR, BOHR) == 1':
+        _eine_zeile(('AR1', 'SR'), 'BOHR'),
     # Fall 04
     'summe_netto(nicht storniert) == 19540.00': _summe_nicht_stornierter('19540.00'),
     'RE1 + Storno(RE1) == 0': _rechnung_plus_storno_null,

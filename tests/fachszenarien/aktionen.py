@@ -54,6 +54,7 @@ from . import maske
 from .fall import Bindung, Fall, aufloesen, betrag
 
 PROZENT = 'P1'
+PAUSCHAL = 'LS'
 STUNDE = 'HUR'
 #: Bezeichnung der Position, die das Zeithonorar auf die Obergrenze kappt.
 KAPPUNG = 'Obergrenze Zeithonorar'
@@ -204,6 +205,18 @@ def _positionszeilen(formular, kennungen, lauf: Lauf, zuschlaege,
                            position=nummer, bezeichnung=k['bezeichnung'],
                            menge='100', einheit=PROZENT,
                            einzelpreis=_runden(preis), steuersatz=lauf.fall.steuersatz)
+        elif k['art'] == 'fremd':
+            # Fremdleistung als Position nach Schätzung (README). "LE" als
+            # pauschal, weil die Einheit der Fremdleistung zur
+            # Auftragsposition passen muss.
+            aufschlag = 1 + betrag(k.get('aufschlag_prozent', '0')) / HUNDERT
+            formular.zeile('positionen', index, zeilenart='leistung',
+                           position=nummer, bezeichnung=k['bezeichnung'],
+                           langtext=k.get('hinweis', ''),
+                           menge=k['menge'], einheit=PAUSCHAL,
+                           einzelpreis=_runden(
+                               betrag(k['einkauf_geschaetzt']) * aufschlag),
+                           steuersatz=lauf.fall.steuersatz)
         else:
             formular.zeile('positionen', index, zeilenart='leistung',
                            position=nummer, bezeichnung=k['bezeichnung'],
@@ -393,7 +406,8 @@ def _aufschlag_setzen(lauf: Lauf, beleg: Beleg, kennung: str) -> None:
     deren Positionsnummer."""
     eintrag = lauf.katalog[kennung]
     prozent = eintrag.get('aufschlag_prozent')
-    if not prozent:
+    # Mit Auftragsposition gilt deren Preis, der den Aufschlag enthält.
+    if not prozent or kennung in lauf.auftragspositionen:
         return
     position = beleg.positionen.filter(bezeichnung=eintrag['bezeichnung']).last()
     if position is None:
@@ -780,8 +794,8 @@ def stunden_erfassen(lauf: Lauf, schritt: dict) -> None:
 
 def fremdleistung_erfassen(lauf: Lauf, schritt: dict) -> None:
     """Eingangsrechnung mit einer Fremdleistung auf das Projekt, zum
-    Nettobetrag der Rechnung, ohne Auftragsposition, weil der Auftrag keine
-    Position dafür hat."""
+    Nettobetrag der Rechnung, auf die Auftragsposition der Kennung, falls
+    der Auftrag eine hat."""
     kennung = schritt['fremdleistung']
     eintrag = lauf.katalog[kennung]
     netto = betrag(schritt['einkauf_netto'])
@@ -795,8 +809,9 @@ def fremdleistung_erfassen(lauf: Lauf, schritt: dict) -> None:
     formular.zeile(prefix, 0, projekt=lauf.projekt.pk,
                    bezeichnung=eintrag['bezeichnung'],
                    leistungsdatum=f'{schritt["datum"]:%d.%m.%Y}',
-                   einheit='LS', menge='1', einkaufspreis=netto,
-                   weiterberechenbar=True)
+                   einheit=PAUSCHAL, menge='1', einkaufspreis=netto,
+                   weiterberechenbar=True,
+                   auftragsposition=lauf.auftragspositionen.get(kennung, ''))
     if f'{prefix}-0-einkauf_netto' in formular:
         formular.setzen(f'{prefix}-0-einkauf_netto', netto)
     vorher = set(Fremdleistung.objects.values_list('pk', flat=True))
