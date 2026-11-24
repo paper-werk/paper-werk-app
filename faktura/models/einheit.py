@@ -67,7 +67,7 @@ GRUNDAUSSTATTUNG = {
 
 #: Anzeigetext weiterer Codes aus ``SCHREIBWEISEN``, die beim ersten Füllen
 #: nur dann zur Auswahl stehen, wenn Positionen sie tragen.
-ANZEIGE = {'MIN': 'Min', 'WEE': 'Woche', 'MON': 'Monat', 'PR': 'Paar'}
+ANZEIGE = {'MIN': 'Min', 'WEE': 'Wo', 'MON': 'Monat', 'PR': 'Paar', 'CMT': 'cm'}
 
 #: Übliche Schreibweisen zum Code, für Importe und Demodaten, deren Einheit
 #: als Text vorliegt. Schlüssel normalisiert (``_normalisiert``). Die
@@ -86,7 +86,8 @@ SCHREIBWEISEN = {
     'l': 'LTR', 'ltr': 'LTR', 'liter': 'LTR',
     'km': 'KMT',
     'satz': 'SET',
-    'min': 'MIN', 'woche': 'WEE', 'wochen': 'WEE', 'monat': 'MON',
+    'cm': 'CMT',
+    'min': 'MIN', 'wo': 'WEE', 'woche': 'WEE', 'wochen': 'WEE', 'monat': 'MON',
     'monate': 'MON', 'paar': 'PR',
 }
 

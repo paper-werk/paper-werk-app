@@ -4,6 +4,8 @@
 
 import importlib
 import sys
+from datetime import time
+from decimal import ROUND_HALF_UP, Decimal
 
 import faktura.models.einheit
 from django.db import migrations, models
@@ -12,22 +14,43 @@ _faktura = importlib.import_module('faktura.migrations.0066_einheit')
 
 
 def stunden_ohne_uhrzeit(apps, ausgabe) -> None:
-    """Meldet Zeilen, die als Menge erfasst wurden und jetzt Zeitleistungen
-    sind: auf einer Position in Stunden, die bisher keine Art hatte. Ohne
-    Von und Bis haben sie die Dauer 0 und würden mit 0 Stunden
-    abgerechnet; sie brauchen Uhrzeiten."""
+    """Setzt Uhrzeiten an Zeilen, die als Menge erfasst wurden und jetzt
+    Zeitleistungen sind: auf einer Position in Stunden, die bisher keine Art
+    hatte. Ohne Von und Bis hätten sie die Dauer 0.
+
+    ``von`` wird 00:00, ``bis`` 00:00 plus Menge in ganzen Minuten,
+    ``menge`` leer. 00:00 markiert die Zeile als umgesetzt. Zeilen ab
+    24 Stunden oder ohne positive Dauer bleiben unverändert und stehen in
+    der Ausgabe."""
     zeile = apps.get_model('erfassung', 'Erfassungszeile')
     betroffen = (zeile.objects
                  .filter(models.Q(auftragsposition__einheit='HUR')
                          | models.Q(auftragsposition__isnull=True,
                                     leistung__einheit='HUR'))
                  .filter(von__isnull=True, menge__isnull=False)
-                 .order_by('pk').values_list('pk', flat=True))
-    if betroffen:
+                 .order_by('pk'))
+    umgestellt, unveraendert = [], []
+    for z in betroffen:
+        minuten = int((z.menge * 60).quantize(Decimal('1'), ROUND_HALF_UP))
+        if not 0 < minuten < 24 * 60:
+            unveraendert.append(z.pk)
+            continue
+        z.von = time(0, 0)
+        z.bis = time(minuten // 60, minuten % 60)
+        z.dauer_minuten = minuten
+        z.menge = None
+        z.save(update_fields=['von', 'bis', 'dauer_minuten', 'menge'])
+        umgestellt.append(z.pk)
+    if umgestellt:
         ausgabe.append(
-            f'  Erfassungszeile: {len(betroffen)} Zeilen auf Stunden mit '
-            f'Menge statt Uhrzeiten (Dauer 0): '
-            f'{", ".join(str(pk) for pk in betroffen)}')
+            f'  Erfassungszeile: {len(umgestellt)} Zeilen auf Stunden mit '
+            f'Menge statt Uhrzeiten, jetzt ab 00:00: '
+            f'{", ".join(str(pk) for pk in umgestellt)}')
+    if unveraendert:
+        ausgabe.append(
+            f'  Erfassungszeile: {len(unveraendert)} Zeilen auf Stunden mit '
+            f'Menge ab 24 Stunden, Dauer 0, Uhrzeiten nachtragen: '
+            f'{", ".join(str(pk) for pk in unveraendert)}')
 
 
 def vorwaerts(apps, schema_editor):

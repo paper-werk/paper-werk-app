@@ -4,7 +4,7 @@
 # an der Position (faktura/models/einheit.py).
 #
 # Die Datenmigration bildet jeden vorhandenen Einheitentext auf einen Code
-# ab. Texte ohne Treffer werden leer und stehen in der Ausgabe von
+# ab. Texte ohne Treffer werden C62 (Stück) und stehen in der Ausgabe von
 # ``migrate``, ebenso Positionen, deren bisherige Art von der Erfassungsart
 # der Einheit abweicht. Die Tabelle ``faktura_einheit`` füllt
 # ``einheit.grundausstattung_anlegen`` nach dem ``migrate``.
@@ -32,7 +32,8 @@ SCHREIBWEISEN = {
     'l': 'LTR', 'ltr': 'LTR', 'liter': 'LTR',
     'km': 'KMT',
     'satz': 'SET',
-    'min': 'MIN', 'woche': 'WEE', 'wochen': 'WEE', 'monat': 'MON',
+    'cm': 'CMT',
+    'min': 'MIN', 'wo': 'WEE', 'woche': 'WEE', 'wochen': 'WEE', 'monat': 'MON',
     'monate': 'MON', 'paar': 'PR',
 }
 
@@ -46,6 +47,10 @@ DATEI = (Path(__file__).resolve().parent.parent / 'daten'
 def _codes() -> set[str]:
     with DATEI.open(encoding='utf-8') as datei:
         return {code for code, _ in json.load(datei)['codes']}
+
+
+#: Code für Texte ohne Treffer.
+UNBEKANNT = 'C62'
 
 
 def einheit_als_code(text: str, codes: set[str]) -> str:
@@ -70,8 +75,9 @@ def texte_umstellen(modell, codes, ausgabe, *, mit_art: bool) -> None:
         code = einheit_als_code(text, codes)
         zeilen = modell.objects.filter(einheit=text)
         if text and not code:
+            code = UNBEKANNT
             ausgabe.append(f'  {name}: Einheit „{text}“ unbekannt, '
-                           f'{zeilen.count()} Zeilen ohne Einheit')
+                           f'{zeilen.count()} Zeilen jetzt {code}')
         if mit_art and code:
             art = ERFASSUNGSART.get(code, 'menge')
             abweichend = zeilen.exclude(art='').exclude(art=art)
