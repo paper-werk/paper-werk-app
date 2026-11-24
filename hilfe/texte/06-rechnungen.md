@@ -251,6 +251,17 @@ Abschlags als „gestellt …, bezahlt …“; die Schlussrechnung fordert sie m
 Umsatzsteuer zurück. Eine Umlage vom Brutto zieht die Schlussrechnung auf
 die volle Leistung ab.
 
+**Einbehalt auf die Schlussrechnung.** Behält der Kunde von der
+Schlussrechnung einen vereinbarten Betrag ein, etwa für Mängelansprüche bis
+zum Ende der Gewährleistung, tragen Sie ihn beim Vermerken der Zahlung unter
+**Einbehalten** ein. Das Feld gibt es nur an Schluss- und
+Teilschlussrechnungen. Der Betrag wird nicht gemahnt und bleibt Forderung;
+Projekt- und Kundenakte zeigen ihn unter „Einbehalten“. Zahlt der Kunde ihn
+aus oder löst eine Bürgschaft ihn ab, setzen Sie **Einbehalten** an der
+Zahlung auf 0, schreiben in die **Notiz** daneben, was geschehen ist, und
+ordnen die neue Zahlung der Schlussrechnung zu, wie beim
+[Zurücknehmen einer Kürzung](#kuerzung-zuruecknehmen).
+
 ## Schlussrechnungen {#schlussrechnung}
 
 Die Schlussrechnung führt die volle Leistung auf und setzt die gestellten
@@ -314,6 +325,8 @@ bisher Gezahltes und den offenen Betrag. Die Felder:
 - **Skonto**: nur, wenn der Kunde Skonto abgezogen hat; der Betrag in
   Euro, nicht der Prozentsatz.
 - **Gekürzt**: nur an Abschlagsrechnungen, siehe dort.
+- **Einbehalten**: nur an Schluss- und Teilschlussrechnungen, siehe
+  [Einbehalt auf die Schlussrechnung](#einbehalt).
 - **Art**: Überweisung, Lastschrift, Bar, Karte oder Verrechnung.
 - **Verwendungszweck**: wie auf dem Auszug; leer bedeutet die
   Rechnungsnummer.
@@ -338,7 +351,8 @@ zugeordnet sind, also Geld auf dem Konto, das zu keiner Rechnung gehört.
   **Verwendungszweck**, **Referenz** (eindeutige Kennung aus dem
   Kontoauszug) und eine **Notiz**,
 - unter „Zuordnung Rechnungen“ je Rechnung eine Zeile mit **Beleg**,
-  **Betrag**, **Skonto**, **Gekürzt** und **Notiz**. Zur Wahl stehen nur
+  **Betrag**, **Skonto**, **Gekürzt**, **Einbehalten** und **Notiz**. Zur
+  Wahl stehen nur
   Rechnungen, auf denen etwas offen ist.
 
 Was nach dem Verteilen übrig bleibt, zeigt die Spalte „Rest“.

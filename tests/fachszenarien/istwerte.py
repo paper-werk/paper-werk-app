@@ -43,7 +43,11 @@ def _netto(positionen) -> Decimal:
 
 
 def offen_gesamt(lauf: Lauf, beleg=None, schritt=None) -> Decimal:
-    return sum((services.offener_betrag(b) for b in rechnungen(lauf)), NULL)
+    """Saldo wie im Katalog: offene Posten (R-147) plus Einbehaltenes
+    (R-192), das bestehen bleibt, aber noch nicht fällig ist."""
+    offen = sum((services.offener_betrag(b) for b in rechnungen(lauf)), NULL)
+    return offen + services.einbehalten(
+        Beleg.objects.filter(projekt=lauf.projekt)).gesamt
 
 
 def offen_je_kunde(lauf: Lauf, beleg, schritt) -> dict[str, Decimal]:

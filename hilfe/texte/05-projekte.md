@@ -76,6 +76,11 @@ Akte. Darunter, für wer die Zahlen sehen darf, die Kennzahlen:
   Rechnung.
 - **Kosten**: eigene Arbeit (Stunden mal Kostensatz) und Zukauf.
 - **Ergebnis**: Leistungswert minus Kosten.
+- **Einbehalten**: was der Kunde einbehält und erst später zahlt, brutto,
+  nur wenn etwas einbehalten ist. Das ist der Sicherheitseinbehalt der
+  Abschläge bis zur Schlussrechnung und der Einbehalt an Zahlungen auf
+  Schlussrechnungen (siehe [Einbehalt](#einbehalt)). Er zählt nicht zu den
+  offenen Posten und wird nicht gemahnt.
 - **Effektiver Stundensatz**: Erlös je geleisteter Stunde, mit dem Faktor
   auf den Kostensatz; nur, wenn Stunden erfasst sind.
 

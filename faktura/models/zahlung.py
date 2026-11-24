@@ -120,6 +120,12 @@ class Zahlungszuordnung(ErhoehtElternversion):
     Schlussrechnung. Anders als Skonto wird er nicht erlassen; er schließt
     nur den offenen Posten, damit nicht gemahnt wird, was anderweitig
     gefordert ist.
+
+    ``einbehalten`` gibt es nur an Schluss- und Teilschlussrechnungen: ein
+    vereinbarter Einbehalt des Kunden, etwa für Mängelansprüche. Er
+    schließt den offenen Posten wie die Kürzung, weil er erst später fällig
+    wird, und bleibt Forderung (``services.einbehalten``). Zahlt der Kunde
+    ihn aus, wird er auf 0 gesetzt und die Zahlung zugeordnet.
     """
 
     #: Inline-Änderungen inkrementieren die Version des Elternobjekts.
@@ -160,6 +166,16 @@ class Zahlungszuordnung(ErhoehtElternversion):
                    'späteren Abschlag oder die Schlussrechnung. Zählt zum '
                    'Ausgleich, nicht zum Vereinnahmten.',
     )
+    einbehalten = models.DecimalField(
+        'Einbehalten', max_digits=12, decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text='Nur bei Schluss- und Teilschlussrechnungen: vereinbarter '
+                  'Einbehalt des Kunden, etwa für Mängelansprüche. Schließt '
+                  'den offenen Posten, wird nicht gemahnt.',
+        db_comment='Kein Geld und nicht erlassen; später fällig. Zählt zum '
+                   'Ausgleich, nicht zum Vereinnahmten.',
+    )
     notiz = models.TextField('Notiz', blank=True, default='')
 
     class Meta:
@@ -179,11 +195,13 @@ class Zahlungszuordnung(ErhoehtElternversion):
             ),
             models.CheckConstraint(
                 condition=(models.Q(betrag__gt=0) | models.Q(skonto__gt=0)
-                           | models.Q(kuerzung__gt=0)),
+                           | models.Q(kuerzung__gt=0)
+                           | models.Q(einbehalten__gt=0)),
                 name='zuordnung_traegt_einen_betrag',
                 violation_error_message=(
                     'Eine Zuordnung über null Euro sagt nichts. Bitte einen '
-                    'Betrag, einen Skontoabzug oder eine Kürzung eintragen.'),
+                    'Betrag, einen Skontoabzug, eine Kürzung oder einen '
+                    'Einbehalt eintragen.'),
             ),
         ]
 
@@ -192,9 +210,9 @@ class Zahlungszuordnung(ErhoehtElternversion):
 
     @property
     def ausgleich(self) -> Decimal:
-        """Ausgleich der Rechnung durch diese Zeile: Zahlung, Skonto und
-        Kürzung."""
-        return self.betrag + self.skonto + self.kuerzung
+        """Ausgleich der Rechnung durch diese Zeile: Zahlung, Skonto,
+        Kürzung und Einbehalt (R-144)."""
+        return self.betrag + self.skonto + self.kuerzung + self.einbehalten
 
     @property
     def vereinnahmt(self) -> Decimal:
@@ -235,6 +253,15 @@ class Zahlungszuordnung(ErhoehtElternversion):
                                 'erneut. Bei einer anderen Rechnung ist ein '
                                 'endgültiger Abzug Skonto oder eine '
                                 'Rechnungskorrektur.',
+                })
+            if (self.einbehalten and self.einbehalten > 0
+                    and self.beleg.rechnungsart not in (
+                        Rechnungsart.SCHLUSS, Rechnungsart.TEILSCHLUSS)):
+                raise ValidationError({
+                    'einbehalten': 'Einbehalten wird nur an einer Schluss- '
+                                   'oder Teilschlussrechnung. Am Abschlag '
+                                   'gilt der Sicherheitseinbehalt des '
+                                   'Projekts.',
                 })
 
         if self.zahlung_id and self.betrag is not None:

@@ -71,6 +71,15 @@
           {{ offen_anzahl }} Rechnung{{ offen_anzahl|pluralize:"en" }} nicht ausgeglichen.</div>
       {% endcomponent %}
 
+      {% comment %} Nur mit Einbehalt; nicht fällig, deshalb nicht in den
+         offenen Forderungen (R-192). {% endcomment %}
+      {% if einbehalten %}
+        {% component "admin/_kennzahl.html" with titel="Einbehalten" icon="lock_clock" %}
+          <div class="pw-kennzahl-wert">{{ einbehalten|geld }} €</div>
+          <div class="pw-kennzahl-text">{{ einbehalten_hinweis }}</div>
+        {% endcomponent %}
+      {% endif %}
+
       {% comment %} Einzige Karte mit wechselnder Farbe, weil Überfälliges eine
          Handlung verlangt. Klassennamen vollständig ausgeschrieben, weil
          Tailwind (Unfold und eigener Build, stile/eingang.css) nur

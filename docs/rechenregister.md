@@ -254,7 +254,7 @@ der Bruttobetrag wird.
 | R-141 | Zugeordnete Zahlung | Summe der `betrag` ihrer Zuordnungen: **ohne Skonto**, denn der verbraucht nichts von der Zahlung | `Zahlung.zugeordnet` | `+` |
 | R-142 | Rest einer Zahlung | Betrag laut Auszug minus R-141; kann nicht negativ werden (`clean` weist das ab) | `Zahlung.rest` | `+` |
 | R-143 | Zahlung vollständig verteilt | R-142 gleich null | `Zahlung.ist_verteilt` | `+` |
-| R-144 | Ausgleich einer Zuordnung | Betrag plus Skonto plus Kürzung (R-175): was die Rechnung abnimmt, nicht was floss | `Zahlungszuordnung.ausgleich` | `+` |
+| R-144 | Ausgleich einer Zuordnung | Betrag plus Skonto plus Kürzung (R-175) plus Einbehalten: was die Rechnung abnimmt, nicht was floss. Einbehalten nur an Schluss- und Teilschlussrechnungen | `Zahlungszuordnung.ausgleich` | `+` |
 | R-145 | Auf eine Rechnung gezahlt | Summe der `betrag` ihrer Zuordnungen: die Frage des Kontoabgleichs | `Beleg.bezahlt` | `+` |
 | R-146 | Auf eine Rechnung ausgeglichen | Summe der R-144 ihrer Zuordnungen: die Frage des Mahnlaufs | `Beleg.ausgeglichen` | `+` |
 | R-147 | Offener Betrag | Zahlbetrag (R-191) minus R-146 minus R-182, **nie negativ**. Null bei allem, was keine festgeschriebene Rechnung ist: Entwurf, Angebot, Storno. **Beim Abschlag:** null, sobald jede seiner Positionen in einer festgeschriebenen (Teil-)Schlussrechnung abgesetzt ist (die Forderung ist erloschen, R-174); vorher abzüglich der Restzeilen festgeschriebener Teilschlussrechnungen | `services.offener_betrag`, `Beleg.offener_betrag` | `+` |
@@ -265,6 +265,7 @@ der Bruttobetrag wird.
 | R-152 | Summe der überfälligen Posten | Dasselbe, beschränkt auf R-150 größer null | `Postenstand.offen_ueberfaellig` | `+` |
 | R-153 | Mahnbetrag | Der **offene** Betrag der Rechnung (R-147), nicht ihre Bruttosumme (R-005). Eine ausgeglichene Rechnung wird abgewiesen | `services.mahnung_erstellen` | `+` |
 | R-176 | Zahlungsstand einer Rechnung | Nur an einer festgeschriebenen Rechnung, sonst leer (Entwurf, Storno, kein Rechnungsbeleg). R-147 größer null: **über Frist**, wenn R-150 größer null, sonst **offen**. R-147 gleich null: **abgerechnet**, wenn es ein Abschlag ist, den eine festgeschriebene Schlussrechnung ganz absetzt (`ganz_abgerechnete`), sonst **bezahlt**. Dieselbe Frist wie R-152 (Test vergleicht beide) | `services.zahlungsstand` | `+` |
+| R-192 | Einbehalten | Brutto, getrennt vom offenen Betrag (R-147), weil nicht fällig: Sicherheitseinbehalt (R-190) der festgeschriebenen Abschläge, die noch nicht ganz in einer festgeschriebenen (Teil-)Schlussrechnung abgesetzt sind (`ganz_abgerechnete`), plus Einbehalten der Zuordnungen auf festgeschriebene Rechnungen. Für einen Kunden über dieselbe Belegmenge wie die Kundenakte. Kennzahl in Projekt- und Kundenakte, nur größer null | `services.einbehalten` | `+` |
 
 **Nicht gerechnet: Skonto.** Der Abzug steht in der Zuordnung, weil ein
 Anwender ihn eingetragen hat. Ob eine Unterzahlung Skonto ist, ein Abzug

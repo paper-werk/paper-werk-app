@@ -768,6 +768,19 @@ class ZahlungForm(forms.Form):
                   'gemahnt; die Schlussrechnung fordert ihn. Nicht für '
                   'Skonto.',
     )
+    #: Nur an Schluss- und Teilschlussrechnung; sonst entfernt.
+    einbehalten = forms.DecimalField(
+        label='Einbehalten',
+        max_digits=12,
+        decimal_places=2,
+        min_value=0,
+        required=False,
+        localize=True,
+        widget=BetragWidget,
+        help_text='Vereinbarter Einbehalt des Kunden, brutto, etwa für '
+                  'Mängelansprüche. Wird nicht gemahnt und bleibt '
+                  'Forderung.',
+    )
     zahlungsart = forms.ChoiceField(
         label='Art',
         choices=Zahlungsart,
@@ -783,10 +796,13 @@ class ZahlungForm(forms.Form):
                   'Rechnungsnummer.',
     )
 
-    def __init__(self, *args, mit_kuerzung: bool = False, **kwargs):
+    def __init__(self, *args, mit_kuerzung: bool = False,
+                 mit_einbehalt: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         if not mit_kuerzung:
             del self.fields['kuerzung']
+        if not mit_einbehalt:
+            del self.fields['einbehalten']
 
     def clean_skonto(self):
         """Leeres Feld ergibt 0 (kein ``None``)."""
@@ -794,3 +810,6 @@ class ZahlungForm(forms.Form):
 
     def clean_kuerzung(self):
         return self.cleaned_data.get('kuerzung') or Decimal('0.00')
+
+    def clean_einbehalten(self):
+        return self.cleaned_data.get('einbehalten') or Decimal('0.00')

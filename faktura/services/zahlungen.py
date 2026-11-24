@@ -236,7 +236,8 @@ def offene_posten(stichtag=None, *, belege=None) -> Postenstand:
         Zahlungszuordnung.objects
         .filter(beleg__in=alle)
         .values('beleg_id')
-        .annotate(summe=Sum(F('betrag') + F('skonto') + F('kuerzung')))
+        .annotate(summe=Sum(F('betrag') + F('skonto') + F('kuerzung')
+                           + F('einbehalten')))
         .values_list('beleg_id', 'summe')
     )
     gemindert = nachlaesse(alle)
@@ -286,6 +287,7 @@ def offene_posten(stichtag=None, *, belege=None) -> Postenstand:
 def zahlung_verbuchen(*, beleg_id: int, datum: date, betrag: Decimal,
                       skonto: Decimal = Decimal('0.00'),
                       kuerzung: Decimal = Decimal('0.00'),
+                      einbehalten: Decimal = Decimal('0.00'),
                       zahlungsart: str = Zahlungsart.UEBERWEISUNG,
                       verwendungszweck: str = '',
                       notiz: str = '') -> Zahlung:
@@ -295,8 +297,9 @@ def zahlung_verbuchen(*, beleg_id: int, datum: date, betrag: Decimal,
     ``betrag`` ist gezahlt, ``skonto`` erlassen; zusammen gleichen sie die
     Forderung aus. Skonto wird nicht berechnet, weil der Kontoauszug zeigt,
     ob die Frist eingehalten ist. ``kuerzung`` nur beim Abschlag: der nicht
-    anerkannte, später geforderte Teil. Zahlung und Zuordnung entstehen in
-    einer Transaktion.
+    anerkannte, später geforderte Teil; ``einbehalten`` nur an Schluss- und
+    Teilschlussrechnung: der vereinbarte, später fällige Einbehalt. Zahlung
+    und Zuordnung entstehen in einer Transaktion.
     """
     beleg = Beleg.objects.select_related('kunde', 'projekt__kunde').get(
         pk=beleg_id)
@@ -332,7 +335,7 @@ def zahlung_verbuchen(*, beleg_id: int, datum: date, betrag: Decimal,
 
     zuordnung = Zahlungszuordnung(
         zahlung=zahlung, beleg=beleg, betrag=betrag, skonto=skonto,
-        kuerzung=kuerzung)
+        kuerzung=kuerzung, einbehalten=einbehalten)
     try:
         # Validiert wird im Modell; hier wird nur der Exception-Typ
         # übersetzt.
@@ -367,3 +370,43 @@ def gekuerzte_abschlaege(zahlung: Zahlung) -> list[Zahlungszuordnung]:
         .order_by('beleg__belegdatum', 'beleg__pk', 'pk'))
     erledigt = ganz_abgerechnete([z.beleg_id for z in zuordnungen])
     return [z for z in zuordnungen if z.beleg_id not in erledigt]
+
+
+@dataclass(frozen=True)
+class Einbehalten:
+    """Einbehaltene, noch nicht fällige Forderungen, brutto (R-192)."""
+
+    #: Sicherheitseinbehalt der Abschläge (R-190), die noch in keiner
+    #: festgeschriebenen Schlussrechnung abgerechnet sind.
+    abschlaege: Decimal
+    #: Einbehalten an Zahlungen auf Schluss- und Teilschlussrechnungen.
+    schlussrechnungen: Decimal
+
+    @property
+    def gesamt(self) -> Decimal:
+        return self.abschlaege + self.schlussrechnungen
+
+
+def einbehalten(belege) -> Einbehalten:
+    """Einbehalte über ``belege`` (Queryset), etwa die eines Projekts oder
+    Kunden, für die Kennzahl in den Akten (R-192).
+
+    Getrennt vom offenen Betrag (R-147), weil Mahnung und Zahlungsstand nur
+    mit dem Fälligen rechnen. Der Sicherheitseinbehalt eines Abschlags
+    endet mit der Schlussrechnung, die ihn über die Restzeile zurückfordert
+    (R-174); danach steht er in deren offenem Betrag.
+    """
+    abschlaege = belege.filter(
+        typ=BelegTyp.RECHNUNG, rechnungsart=Rechnungsart.ABSCHLAG,
+        status=BelegStatus.FESTGESCHRIEBEN, einbehalt__gt=0)
+    werte = dict(abschlaege.values_list('pk', 'einbehalt'))
+    erledigt = ganz_abgerechnete(list(werte))
+    sicherheit = sum((wert for pk, wert in werte.items()
+                      if pk not in erledigt), Decimal('0.00'))
+    schluss = (Zahlungszuordnung.objects
+               .filter(beleg__in=belege,
+                       beleg__status=BelegStatus.FESTGESCHRIEBEN,
+                       einbehalten__gt=0)
+               .aggregate(summe=Sum('einbehalten'))['summe']
+               or Decimal('0.00'))
+    return Einbehalten(abschlaege=sicherheit, schlussrechnungen=schluss)

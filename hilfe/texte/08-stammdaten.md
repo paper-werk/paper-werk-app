@@ -83,7 +83,9 @@ Die Abschnitte: **Anschriften**, **Kontaktdaten**, **Konditionen**,
 **Letzte Belege** mit Brutto und Offen (mit „Alle Rechnungen dieses
 Kunden“) und **Zahlungseingänge** (mit „Alle Zahlungen dieses Kunden“).
 Bei Lieferanten kommen die **Eingangsrechnungen** dazu. Beträge sieht nur,
-wer das Recht für das Controlling hat.
+wer das Recht für das Controlling hat. Behält der Kunde etwas ein, steht
+neben den offenen Forderungen die Karte **Einbehalten**, wie in der
+[Projektakte](#projektakte).
 
 ## Leistungskatalog {#katalogposition}
 
