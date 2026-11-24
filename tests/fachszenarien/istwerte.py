@@ -28,7 +28,7 @@ from decimal import Decimal
 from faktura import services
 from faktura.models import Beleg, Rechnungsart, Zahlungszuordnung, Zeilenart
 
-from .aktionen import STUNDE, Lauf, abschlaege_bis, rechnungen
+from .aktionen import KAPPUNG, STUNDE, Lauf, abschlaege_bis, rechnungen
 
 NULL = Decimal('0.00')
 
@@ -106,7 +106,9 @@ def auftrag_unberechnet_netto(lauf, beleg, schritt):
 
 
 def zeithonorar(lauf, beleg, schritt):
-    return _netto(beleg.positionen.filter(einheit=STUNDE, ist_abzug=False))
+    """Stunden abzüglich der Kappung auf die Obergrenze."""
+    return (_netto(beleg.positionen.filter(einheit=STUNDE, ist_abzug=False))
+            + _netto(beleg.positionen.filter(bezeichnung=KAPPUNG)))
 
 
 def leistung_ohne_zuschlag(lauf, beleg, schritt):

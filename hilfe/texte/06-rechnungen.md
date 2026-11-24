@@ -298,6 +298,16 @@ dann versenden.
 
 Schlussrechnungen lassen sich nicht duplizieren.
 
+### Zeithonorar mit Obergrenze {#obergrenze}
+
+Eine vereinbarte Obergrenze für ein Zeithonorar, etwa „nach Aufwand,
+höchstens 10.500,00 € netto“, hat kein eigenes Feld. Liegen die
+erfassten Stunden darüber, legen Sie in der Schlussrechnung eine Position
+an: Bezeichnung „Obergrenze Zeithonorar“, Menge 1, Einzelpreis die
+Differenz mit Minus, etwa −642,00 €. Zuschläge ohne Angabe bei „Zuschlag
+auf“, etwa Nebenkosten, rechnen dann auf den gekappten Betrag. Beim
+Versenden bestätigen Sie die Überschreitung der beauftragten Stunden.
+
 ## Teilschlussrechnungen {#teilschlussrechnung}
 
 Eine Teilschlussrechnung rechnet eine abgenommene Teilleistung ab. Sie
