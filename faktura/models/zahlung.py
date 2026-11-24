@@ -34,6 +34,11 @@ class Zahlung(MitVersion):
     Die Zahlung enthält den Betrag laut Auszug, die Zuordnungen verteilen
     ihn. Nicht Zugeordnetes erscheint als Rest, damit eine übersehene
     Rechnung einer Sammelüberweisung nicht gemahnt wird.
+
+    ``erstattet`` ist der an den Zahler zurücküberwiesene Teil, etwa eine
+    Überzahlung. Er mindert den Rest und wirkt nicht auf Rechnungen. Die
+    Rückzahlung ist kein eigener Datensatz, weil Paper-Werk keine Ausgänge
+    führt und eine negative Zahlung keiner Rechnung zugeordnet werden kann.
     """
 
     datum = models.DateField(
@@ -78,6 +83,15 @@ class Zahlung(MitVersion):
         help_text='Eindeutige Kennung aus dem Kontoauszug. Wird beim Import '
                   'gesetzt und bleibt sonst leer.',
     )
+    erstattet = models.DecimalField(
+        'Erstattet', max_digits=12, decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text='An den Zahler zurücküberwiesen, etwa eine Überzahlung. '
+                  'Datum und Grund in die Notiz.',
+        db_comment='Zurückgezahlter Teil von betrag, keiner Rechnung '
+                   'zugeordnet. Zuordnungen plus erstattet höchstens betrag.',
+    )
     notiz = models.TextField('Notiz', blank=True, default='')
     erfasst_am = models.DateTimeField('Erfasst am', auto_now_add=True)
 
@@ -98,8 +112,19 @@ class Zahlung(MitVersion):
 
     @property
     def rest(self) -> Decimal:
-        """Nicht zugeordneter Betrag, nie negativ (``Zahlungszuordnung.clean``)."""
-        return self.betrag - self.zugeordnet
+        """Weder zugeordneter noch erstatteter Betrag, nie negativ
+        (``clean``, ``Zahlungszuordnung.clean``)."""
+        return self.betrag - self.zugeordnet - self.erstattet
+
+    def clean(self):
+        """Höchstens der Betrag laut Auszug erstattet."""
+        super().clean()
+        if (self.betrag is not None and self.erstattet
+                and self.erstattet > self.betrag):
+            raise ValidationError({
+                'erstattet': f'Erstattet werden höchstens die {self.betrag} '
+                             f'EUR der Zahlung.',
+            })
 
     @property
     def ist_verteilt(self) -> bool:
@@ -265,8 +290,11 @@ class Zahlungszuordnung(ErhoehtElternversion):
                 })
 
         if self.zahlung_id and self.betrag is not None:
+            # Erstattet vom Elternobjekt, im Admin mit dem Wert aus dem
+            # Formular.
             andere = self.zahlung.zuordnungen.exclude(pk=self.pk)
-            verteilt = sum((z.betrag for z in andere), Decimal('0.00'))
+            verteilt = (sum((z.betrag for z in andere), Decimal('0.00'))
+                        + (self.zahlung.erstattet or Decimal('0.00')))
             if verteilt + self.betrag > self.zahlung.betrag:
                 frei = self.zahlung.betrag - verteilt
                 raise ValidationError({

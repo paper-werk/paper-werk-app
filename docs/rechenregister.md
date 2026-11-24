@@ -252,7 +252,7 @@ der Bruttobetrag wird.
 | Nr | Größe | Rechenregel | Implementierung | Test |
 | --- | --- | --- | --- | --- |
 | R-141 | Zugeordnete Zahlung | Summe der `betrag` ihrer Zuordnungen: **ohne Skonto**, denn der verbraucht nichts von der Zahlung | `Zahlung.zugeordnet` | `+` |
-| R-142 | Rest einer Zahlung | Betrag laut Auszug minus R-141; kann nicht negativ werden (`clean` weist das ab) | `Zahlung.rest` | `+` |
+| R-142 | Rest einer Zahlung | Betrag laut Auszug minus R-141 minus `erstattet` (an den Zahler zurücküberwiesen); kann nicht negativ werden (`clean` an Zahlung und Zuordnung weist das ab) | `Zahlung.rest` | `+` |
 | R-143 | Zahlung vollständig verteilt | R-142 gleich null | `Zahlung.ist_verteilt` | `+` |
 | R-144 | Ausgleich einer Zuordnung | Betrag plus Skonto plus Kürzung (R-175) plus Einbehalten: was die Rechnung abnimmt, nicht was floss. Einbehalten nur an Schluss- und Teilschlussrechnungen | `Zahlungszuordnung.ausgleich` | `+` |
 | R-145 | Auf eine Rechnung gezahlt | Summe der `betrag` ihrer Zuordnungen: die Frage des Kontoabgleichs | `Beleg.bezahlt` | `+` |

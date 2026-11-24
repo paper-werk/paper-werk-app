@@ -386,6 +386,7 @@ class TestDieZahlungsmaske:
             'datum': HEUTE.strftime('%d.%m.%Y'),
             'betrag': '100.00',
             'zahlungsart': zahlung.zahlungsart,
+            'erstattet': '0.00',
             'kunde': zahlung.kunde_id or '',
             'zahlername': zahlung.zahlername,
             'verwendungszweck': zahlung.verwendungszweck,
