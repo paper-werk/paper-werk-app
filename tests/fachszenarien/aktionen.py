@@ -781,7 +781,7 @@ def _ueber_schaetzung(lauf: Lauf) -> bool:
 
 def _nach_nachweis(lauf: Lauf, beleg: Beleg) -> None:
     """Preis einer Position nach Nachweis von Hand auf Einkauf mal
-    (1 + Aufschlag), wie in der Hilfe beschrieben (B7). Grundlage ist das
+    (1 + Aufschlag), wie in der Hilfe beschrieben. Grundlage ist das
     Netto der Eingangsrechnung (R1.A in Fall 03); Paper-Werk kennt keinen
     eigenen Skonto auf den Einkauf."""
     for kennung, k in lauf.katalog.items():
