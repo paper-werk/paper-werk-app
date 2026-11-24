@@ -410,3 +410,9 @@ genannt.
 
 Was nicht übernommen wird, bleibt offen und zählt in der Projektakte und
 unter „Nicht abgerechnet“ weiter mit.
+
+**Abrechnung nach Nachweis.** Steht im Auftrag eine Fremdleistung mit
+geschätztem Betrag, etwa „Bohrungen, Abrechnung nach Nachweis zzgl. 8 %“,
+übernimmt die Rechnung den Preis der Auftragsposition. Ändern Sie den
+Einzelpreis der Position in der Rechnung auf Einkauf mal Aufschlag, etwa
+9.465,00 € × 1,08 = 10.222,20 €, vor dem Versenden.
