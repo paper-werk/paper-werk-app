@@ -55,6 +55,8 @@ from .fall import Bindung, Fall, aufloesen, betrag
 
 PROZENT = 'P1'
 STUNDE = 'HUR'
+#: Bezeichnung der Position, die das Zeithonorar auf die Obergrenze kappt.
+KAPPUNG = 'Obergrenze Zeithonorar'
 HUNDERT = Decimal('100')
 CENT = Decimal('0.01')
 
@@ -94,6 +96,8 @@ class Lauf:
     #: gewöhnlichen Rechnung.
     letzte_leistung: date | None = None
     zahlungen: list[int] = field(default_factory=list)
+    #: Obergrenze des Zeithonorars aus dem Nachtragsangebot, netto.
+    obergrenze: Decimal | None = None
     #: Gekürzte, noch zu fordernde Beträge je Rechnungsname, brutto.
     strittig: dict[str, Decimal] = field(default_factory=dict)
     #: Lücken, nach denen der Fall weiterläuft; der Test übernimmt sie
@@ -245,8 +249,10 @@ def _empfaenger_setzen(formular, kunde: Kontakt) -> None:
             formular.setzen(name, getattr(werte[name], 'pk', werte[name]))
 
 
-def _versenden(lauf: Lauf, beleg: Beleg) -> Beleg:
-    """"Versenden", Knopf ohne E-Mail: schreibt fest."""
+def _versenden(lauf: Lauf, beleg: Beleg, *, mehrmenge: bool = False) -> Beleg:
+    """"Versenden", Knopf ohne E-Mail: schreibt fest. ``mehrmenge``: Die
+    Überschreitung der beauftragten Menge ist Teil des Falls und wird ohne
+    Befund bestätigt."""
     formular = maske.oeffnen(lauf.client, _url(beleg, 'versenden'))
     knopf = next((n for n, _, t in formular.knoepfe
                   if n and n not in ('senden', 'herunterladen')), None)
@@ -260,8 +266,9 @@ def _versenden(lauf: Lauf, beleg: Beleg) -> Beleg:
         wieder = maske.oeffnen(lauf.client, _url(beleg, 'versenden'))
         if 'mengen_bestaetigt' not in maske.oeffnen_html(abgelehnt):
             raise
-        lauf.luecken.append(f'{beleg}: Überschreitung der beauftragten Menge '
-                            f'bestätigt ({abgelehnt})')
+        if not mehrmenge:
+            lauf.luecken.append(f'{beleg}: Überschreitung der beauftragten '
+                                f'Menge bestätigt ({abgelehnt})')
         wieder.werte['mengen_bestaetigt'] = ['on']
         wieder.absenden(knopf)
     beleg.refresh_from_db()
@@ -433,9 +440,9 @@ def angebot(lauf: Lauf, schritt: dict, name: str = 'angebot') -> Beleg:
     geschaetzt = schritt.get('stunden_geschaetzt', {})
     kennungen = schritt.get('leistungen') or list(geschaetzt)
     if 'obergrenze' in schritt:
-        lauf.luecken.append(
-            f'{schritt.get("name", name)}: Obergrenze {schritt["obergrenze"]} '
-            f'für das Zeithonorar nicht abbildbar')
+        # Kein Feld im Beleg; die Schlussrechnung kappt von Hand
+        # (``_obergrenze_kappen``).
+        lauf.obergrenze = betrag(schritt['obergrenze'])
     beleg = _beleg_anlegen(
         lauf, 'angebot', schritt, kunde=kunde,
         positionen=lambda f: _positionszeilen(
@@ -733,14 +740,38 @@ def schlussrechnung(lauf: Lauf, schritt: dict) -> Beleg:
     beleg = Beleg.objects.filter(abnahme_id=lauf.belege['abnahme'],
                                  status=BelegStatus.ENTWURF).latest('pk')
     _leistungen_hinzufuegen(lauf, beleg, _inhalt(lauf, schritt))
+    gekappt = _obergrenze_kappen(lauf, beleg)
     lauf.client.post(_url(beleg, 'abschlaege'))
-    beleg = _versenden(lauf, beleg)
+    beleg = _versenden(lauf, beleg, mehrmenge=gekappt)
     lauf.belege[schritt['name']] = beleg.pk
     if abgerechnet is not None:
         # Dieselbe Schuld beim selben Kunden: Zahlungen auf die stornierte
         # Schlussrechnung werden angerechnet.
         _zuordnungen_anlegen(lauf, geloest, beleg)
     return beleg
+
+
+def _obergrenze_kappen(lauf: Lauf, beleg: Beleg) -> bool:
+    """Liegt das Zeithonorar über der Obergrenze, eine Position mit
+    negativem Preis über die Differenz, wie in der Hilfe beschrieben. Die
+    Zuschläge rechnen auf den gekappten Betrag, weil die Position eine
+    Leistung ist."""
+    if lauf.obergrenze is None:
+        return False
+    stunden = sum((p.menge * p.einzelpreis for p in beleg.positionen.filter(
+        einheit=STUNDE, ist_abzug=False)), Decimal('0'))
+    ueber = _runden(stunden - lauf.obergrenze)
+    if ueber <= 0:
+        return False
+    formular = maske.oeffnen(lauf.client, _url(beleg))
+    index = formular.freie_zeile('positionen')
+    formular.zeile('positionen', index, zeilenart='leistung', position='890',
+                   bezeichnung=KAPPUNG, menge='1', einheit='LS',
+                   einzelpreis=-ueber, steuersatz=lauf.fall.steuersatz)
+    formular.absenden('_continue')
+    if not beleg.positionen.filter(bezeichnung=KAPPUNG).exists():
+        raise Luecke(f'{KAPPUNG}: Position mit negativem Preis abgelehnt')
+    return True
 
 
 def stunden_erfassen(lauf: Lauf, schritt: dict) -> None:
@@ -786,7 +817,7 @@ def rechnung(lauf: Lauf, schritt: dict) -> Beleg:
     """Gewöhnliche Rechnung über erfasste Leistung, Zeitraum vom Auftrag
     bis zur letzten Erfassung. Ein anderer Kunde als der des Projekts steht
     nur im Empfängerfeld; die offenen Posten führen die Rechnung beim
-    Projektkunden."""
+    Projektkunden (B5.4)."""
     tag = schritt['datum']
     inhalt = _inhalt(lauf, schritt) or set()
     # Ende des Zeitraums vor der Erfassung des Leistungsstands, die am
@@ -795,10 +826,6 @@ def rechnung(lauf: Lauf, schritt: dict) -> Beleg:
     _leistungsstand_erfassen(
         lauf, {k: '1' for k in inhalt if lauf.katalog[k]['art'] == 'leistung'}, tag)
     kunde = lauf.kunden.get(schritt.get('kunde', ''))
-    if kunde is not None and kunde != lauf.projekt.kunde:
-        lauf.luecken.append(
-            f'{schritt["name"]} an {kunde.name}: im Projekt nur über das '
-            f'Empfängerfeld; offene Posten beim Projektkunden')
     beginn = lauf.beleg('auftrag').belegdatum
     beleg = _beleg_anlegen(lauf, 'rechnung', schritt, kunde=kunde, felder={
         'leistungsdatum': f'{beginn:%d.%m.%Y}',
