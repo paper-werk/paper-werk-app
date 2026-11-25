@@ -86,6 +86,10 @@ class TestWasAbgewiesenWird:
 
         assert 'erstattet' in fehler.value.message_dict
 
+    def test_ganz_erstatten_ist_zulaessig(self, kunde):
+        Zahlung(datum=HEUTE, betrag=Decimal('500.00'), kunde=kunde,
+                erstattet=Decimal('500.00')).full_clean()
+
     def test_zuordnung_ueber_den_nicht_erstatteten_teil(self, kunde,
                                                        rechnung):
         """1.500,00 eingegangen, 400,00 erstattet: frei sind 1.100,00."""

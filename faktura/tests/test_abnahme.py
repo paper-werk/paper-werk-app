@@ -485,6 +485,8 @@ class TestAbschlaegeAbsetzen:
         assert services.abschlaege.uebernommener_rest(abschlag_) == Decimal(
             '5950.00')
         assert services.offener_betrag(abschlag_) == Decimal('3570.00')
+        assert {p.beleg: p.offen for p in services.offene_posten().posten
+                }[abschlag_] == Decimal('3570.00')
         # Teilweise abgerechnet, also noch in keiner Rechnung abgerechnet.
         assert services.abgerechnet_in(abschlag_) is None
 
@@ -632,6 +634,17 @@ class TestAbschlaegeAndererAuftraege:
         fremd = abschlag(projekt, '3000.00', auftragsposition=lph_1_4)
         abschlag(projekt, '1000.00',
                  auftragsposition=gutachten.positionen.get())
+
+        befund = services.abschlaege_anderer_auftraege(_schluss_zu(gutachten))
+
+        assert [(f.abschlag, f.auftrag) for f in befund] == [(fremd, auftrag)]
+
+    def test_bezahlter_abschlag_eines_parallelen_auftrags_wird_genannt(
+            self, projekt, auftrag, lph_1_4):
+        """Ohne Restzeile, weil voll bezahlt."""
+        gutachten = _zweiter_auftrag(projekt)
+        fremd = abschlag(projekt, '3000.00', auftragsposition=lph_1_4,
+                         bezahlt=True)
 
         befund = services.abschlaege_anderer_auftraege(_schluss_zu(gutachten))
 

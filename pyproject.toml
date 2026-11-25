@@ -145,6 +145,7 @@ filterwarnings = [
 include = [
     "core/rechnen.py",
     "faktura/services/*.py",
+    "faktura/models/zahlung.py",
     "faktura/formate.py",
     "faktura/facturx.py",
     "erfassung/services/*.py",
