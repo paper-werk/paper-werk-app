@@ -238,6 +238,30 @@ class TestPostausgangJeBelegart:
     def test_uebrige_belege_nutzen_den_standard(self, typ, postausgaenge):
         assert services.postausgang(Beleg(typ=typ)) == 'default'
 
+    def test_versand_zaehlt_nach_dem_postausgang_des_belegs(self, settings):
+        """Nur ``rechnung`` per SMTP, ``default`` Console (#154).
+
+        Regression: Die Versandseite einer Rechnung meldete "kein
+        Postausgang", obwohl sie über ``rechnung`` hinausging.
+        """
+        settings.MAILERS = {
+            'default': {'BACKEND': 'django.core.mail.backends.console.EmailBackend'},
+            'rechnung': {'BACKEND': 'django.core.mail.backends.smtp.EmailBackend'},
+        }
+
+        assert services.versand_geht_hinaus(Beleg(typ=BelegTyp.RECHNUNG))
+        assert not services.versand_geht_hinaus(Beleg(typ=BelegTyp.ANGEBOT))
+
+    def test_ein_konsolen_postausgang_des_belegs_zaehlt_nicht(self, settings):
+        """``default`` per SMTP, ``rechnung`` Console wie in ``dev.py``."""
+        settings.MAILERS = {
+            'default': {'BACKEND': 'django.core.mail.backends.smtp.EmailBackend'},
+            'rechnung': {'BACKEND': 'django.core.mail.backends.console.EmailBackend'},
+        }
+
+        assert not services.versand_geht_hinaus(Beleg(typ=BelegTyp.RECHNUNG))
+        assert services.versand_geht_hinaus(Beleg(typ=BelegTyp.ANGEBOT))
+
     def test_ohne_eigenen_postausgang_gilt_der_standard(
             self, entwurf, settings):
         """Ohne ``RECHNUNG_EMAIL_HOST`` fehlt der Alias; versendet wird wie

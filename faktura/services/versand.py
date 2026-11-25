@@ -71,15 +71,17 @@ def kopieadresse(beleg: Beleg | None = None) -> str:
     return absenderadresse(beleg)
 
 
-def versand_geht_hinaus() -> bool:
-    """Ob eine Mail tatsächlich versendet wird.
+def versand_geht_hinaus(beleg: Beleg | None = None) -> bool:
+    """Ob eine Mail für ``beleg`` tatsächlich versendet wird.
 
-    Damit der Admin nicht "versendet" meldet, wenn nur das Console-Backend
-    konfiguriert ist. Geprüft wird das Backend, weil ``dev.py`` es
-    unabhängig von ``EMAIL_HOST`` setzt.
+    Geprüft wird das Backend des Postausgangs von ``beleg``
+    (``postausgang()``), weil ein eigener Postausgang per SMTP versendet,
+    während ``default`` auf das Console-Backend zeigt, und umgekehrt.
+    Maßgeblich ist das Backend, weil ``dev.py`` es unabhängig von
+    ``EMAIL_HOST`` setzt.
     """
-    backend = mailers.settings.get('default', {}).get('BACKEND', '')
-    return 'console' not in backend and 'locmem' not in backend         and 'dummy' not in backend
+    backend = mailers.settings.get(postausgang(beleg), {}).get('BACKEND', '')
+    return not any(art in backend for art in ('console', 'locmem', 'dummy'))
 
 
 class Versandanhang(TextChoices):

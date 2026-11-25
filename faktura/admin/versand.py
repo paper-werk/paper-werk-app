@@ -141,7 +141,7 @@ class VersandMixin:
                 f'{zusatz}.')
 
             # Ohne konfiguriertes SMTP weist die Meldung darauf hin.
-            if services.versand_geht_hinaus():
+            if services.versand_geht_hinaus(versendet):
                 self.message_user(
                     request,
                     f'{versendet} festgeschrieben und an '
@@ -222,7 +222,7 @@ class VersandMixin:
              'ist_entwurf': beleg.status == BelegStatus.ENTWURF,
              'kopie_an': services.kopieadresse(beleg),
              'mit_kopie': getattr(settings, 'FAKTURA_VERSAND_KOPIE', True),
-             'geht_hinaus': services.versand_geht_hinaus(),
+             'geht_hinaus': services.versand_geht_hinaus(beleg),
              'formattext': self._formattext(beleg),
              'kunde': facturx.kunde_des_belegs(beleg),
              # Vor dem Versand angezeigt, weil sich der Zustellweg nur am
